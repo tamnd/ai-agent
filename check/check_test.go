@@ -72,7 +72,7 @@ func TestMissingSlug(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, f := range Run(c, Options{}) {
-		if f.Rule == "G05" && f.Severity == Block && strings.Contains(f.Msg, "no-such-node") {
+		if f.Rule == "E01" && f.Severity == Block && strings.Contains(f.Msg, "no-such-node") {
 			return
 		}
 	}
