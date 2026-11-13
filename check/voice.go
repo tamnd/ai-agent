@@ -64,7 +64,7 @@ var codeSpanRE = regexp.MustCompile("`[^`]*`")
 
 // linkText keeps the text of a link, except the defined term "frontier model", which K04 allows in a link.
 func linkText(m string) string {
-	text := m
+	var text string
 	switch {
 	case strings.HasPrefix(m, "[["):
 		text = strings.TrimSuffix(strings.TrimPrefix(m, "[["), "]]")
