@@ -62,7 +62,7 @@ func (r *run) claim(p string, c *claims.Claim) {
 			r.add("T01", Block, p, 0, "the %s of the claim %q is %q; write a date such as 2026-11-13", d.name, c.ID, d.v)
 		}
 	}
-	if len(c.Evidence) == 0 && !(c.Type == claims.Mathematical && (c.Derivation != "" || c.Lean != "")) {
+	if len(c.Evidence) == 0 && (c.Type != claims.Mathematical || (c.Derivation == "" && c.Lean == "")) {
 		r.add("G02", Level, p, 0, "the claim %q has no source", c.ID)
 	}
 	for i, e := range c.Evidence {
