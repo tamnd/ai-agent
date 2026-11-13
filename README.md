@@ -72,6 +72,7 @@ The exit codes are 0 for success, 1 when a check finds a problem, 2 for a usage 
 | `site` | The templates, assets and pages of the site. |
 | `spec` | The specification. The site publishes it at [/spec/](https://ai.tamnd.com/spec/). |
 | `testdata/corpus` | A small content tree for the tests. |
+| `work` | The agent pipeline scripts of spec 14: catalog, stubs, writer, gate, audit, provenance, pull requests and deploy. See [work/README.md](work/README.md). |
 
 ## Develop
 
