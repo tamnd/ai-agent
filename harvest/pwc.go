@@ -16,7 +16,7 @@ import (
 
 // PwCRevision is the revision of the Hugging Face dataset pwc-archive/files that the adapter reads. The site closed
 // in July 2025 and its last dump does not change, so the revision is pinned and a new one is a reviewed change.
-const PwCRevision = "1af3a546770f9b98665523ccba4b22b4f3e18c1f"
+const PwCRevision = "1af3a546770f9b98665523ccba4b22b4f3e18c1f" //nolint:gosec // G101: a git revision, not a credential
 
 // PwCURL is the URL of a file of the dump at the pinned revision.
 func PwCURL(file string) string {
@@ -253,7 +253,7 @@ func year(v any) (int, bool) {
 	return 0, false
 }
 
-var arxivURLRE = regexp.MustCompile(`arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})`)
+var arxivURLRE = regexp.MustCompile(`^(?:https?://)?(?:www\.|export\.)?arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})`)
 
 // arxivFromURL gives the arXiv id of an abs or pdf URL, without its version.
 func arxivFromURL(u string) string {

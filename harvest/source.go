@@ -37,7 +37,7 @@ type Source struct {
 // Sources are the five sources of M0 (spec 21.2, deliverable 6). The licences were read on the sources' own pages
 // on the date in Checked; a person approves each class (13.10).
 var Sources = []Source{
-	{
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "epoch-ai", Name: "Epoch AI, Data on AI Models and Data on Machine Learning Hardware",
 		URL: "https://epoch.ai/data/ai-models", Owner: "Epoch AI",
 		Licence: "CC-BY-4.0", Checked: "2026-11-14", Class: "C",
@@ -76,7 +76,7 @@ var Sources = []Source{
 		Credit: "Thank you to arXiv for use of its open access interoperability.",
 		Note:   "The metadata is CC0; the abstracts are not kept.",
 	},
-	{
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "wikidata", Name: "Wikidata",
 		URL: "https://www.wikidata.org/", Owner: "Wikimedia Foundation",
 		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
