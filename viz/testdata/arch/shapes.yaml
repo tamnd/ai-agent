@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: MIT
+# The shape contract of the original encoder-decoder Transformer (spec 08.6): post-norm layers, sinusoidal positions with no parameters, and one embedding matrix shared by the encoder, the decoder and the output layer.
+# The example config is small, so that the tests can run the forward pass on it; base and big are the models of the paper.
+config:
+  d_model:  {meaning: "width of the residual stream", symbol: "d_{\\text{model}}", example: 16}
+  n_heads:  {meaning: "number of attention heads", symbol: "h", example: 4}
+  d_head:   {meaning: "width of each head, d_k = d_v", symbol: "d_k", formula: "d_model / n_heads"}
+  d_ff:     {meaning: "width of the hidden layer of the feedforward network", symbol: "d_{\\text{ff}}", example: 64}
+  n_layers: {meaning: "number of layers in the encoder, and again in the decoder", symbol: "L", example: 2, sample: [1, 2]}
+  vocab:    {meaning: "size of the shared vocabulary", symbol: "|\\mathcal{V}|", example: 50, sample: [5, 20]}
+axes:
+  B: {meaning: "batch", example: 2}
+  S: {meaning: "length of the source sequence", example: 6}
+  T: {meaning: "length of the target sequence", example: 5}
+  H: n_heads
+  D: d_head
+  M: d_model
+  F: d_ff
+  V: vocab
+blocks:
+  - id: embed
+    meaning: "token embedding, scaled by the square root of d_model, plus the sinusoidal positions"
+    eq: [pe]
+    inputs: {tokens: "(B, T)"}
+    outputs: {x: "(B, T, M)"}
+    params: "V * M"
+  - id: enc_attn
+    meaning: "multi-head self-attention of an encoder layer"
+    eq: [attention, multihead]
+    inputs: {x: "(B, S, M)"}
+    outputs: {y: "(B, S, M)"}
+    internals: {q: "(B, H, S, D)", k: "(B, H, S, D)", v: "(B, H, S, D)", weights: "(B, H, S, S)"}
+    params: "4 * M * M + 4 * M"
+    flops_forward: "8 * B * S * M * M + 4 * B * S * S * M"
+  - id: enc_ffn
+    meaning: "feedforward network of an encoder layer"
+    eq: [ffn]
+    inputs: {x: "(B, S, M)"}
+    outputs: {y: "(B, S, M)"}
+    internals: {hidden: "(B, S, F)"}
+    params: "2 * M * F + F + M"
+    flops_forward: "4 * B * S * M * F"
+  - id: norm
+    meaning: "layer normalization: a scale and a shift for each feature"
+    params: "2 * M"
+  - id: enc_layer
+    of: [enc_attn, enc_ffn, norm, norm]
+    inputs: {x: "(B, S, M)"}
+    outputs: {y: "(B, S, M)"}
+    params: "4 * M * M + 2 * M * F + 9 * M + F"
+  - id: dec_attn
+    meaning: "masked multi-head self-attention of a decoder layer"
+    eq: [attention, multihead]
+    inputs: {x: "(B, T, M)"}
+    outputs: {y: "(B, T, M)"}
+    internals: {q: "(B, H, T, D)", k: "(B, H, T, D)", v: "(B, H, T, D)", weights: "(B, H, T, T)"}
+    params: "4 * M * M + 4 * M"
+    flops_forward: "8 * B * T * M * M + 4 * B * T * T * M"
+  - id: cross_attn
+    meaning: "multi-head attention from the decoder to the output of the encoder"
+    eq: [attention, multihead]
+    inputs: {x: "(B, T, M)", memory: "(B, S, M)"}
+    outputs: {y: "(B, T, M)"}
+    internals: {q: "(B, H, T, D)", k: "(B, H, S, D)", v: "(B, H, S, D)", weights: "(B, H, T, S)"}
+    params: "4 * M * M + 4 * M"
+    flops_forward: "4 * B * T * M * M + 4 * B * S * M * M + 4 * B * T * S * M"
+  - id: dec_ffn
+    meaning: "feedforward network of a decoder layer"
+    eq: [ffn]
+    inputs: {x: "(B, T, M)"}
+    outputs: {y: "(B, T, M)"}
+    internals: {hidden: "(B, T, F)"}
+    params: "2 * M * F + F + M"
+    flops_forward: "4 * B * T * M * F"
+  - id: dec_layer
+    of: [dec_attn, cross_attn, dec_ffn, norm, norm, norm]
+    inputs: {x: "(B, T, M)", memory: "(B, S, M)"}
+    outputs: {y: "(B, T, M)"}
+    params: "8 * M * M + 2 * M * F + 15 * M + F"
+  - id: logits
+    meaning: "output layer, with the matrix of the embedding, so no parameters of its own"
+    inputs: {y: "(B, T, M)"}
+    outputs: {logits: "(B, T, V)"}
+    params: "0"
+    flops_forward: "2 * B * T * M * V"
+model:
+  params_non_embedding: {formula: "n_layers * (enc_layer.params + dec_layer.params)", symbol: "N", meaning: "parameters of the layers, without the embedding"}
+  params: {formula: "params_non_embedding + embed.params", meaning: "all parameters, with the embedding counted once"}
+  flops_forward: {formula: "n_layers * (enc_layer.flops_forward + dec_layer.flops_forward) + logits.flops_forward", symbol: "C", meaning: "FLOPs of one forward pass over the batch, a multiply-add counted as 2; the softmax, the normalizations and the activations are left out"}
+  kv_cache: {formula: "2 * n_layers * T * M", meaning: "numbers that the decoder's self-attention keeps for one sequence when it writes token by token"}
+  sources:
+    - {work: vaswani-2017-attention, locator: "Sections 3.1 to 3.4 and Table 3"}
+    - {work: kaplan-2020-scaling-laws, locator: "Section 2.1 and Table 1, for the FLOP count"}
+configs:
+  base: {meaning: "the base model, with the vocabulary of about 37,000 tokens taken as 37,000", d_model: 512, n_heads: 8, d_ff: 2048, n_layers: 6, vocab: 37000, source: {work: vaswani-2017-attention, locator: "Table 3, row base, and Section 5.1"}}
+  big: {meaning: "the big model, with the same vocabulary", d_model: 1024, n_heads: 16, d_ff: 4096, n_layers: 6, vocab: 37000, source: {work: vaswani-2017-attention, locator: "Table 3, row big, and Section 5.1"}}

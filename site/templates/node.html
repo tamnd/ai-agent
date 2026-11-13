@@ -95,11 +95,33 @@
 {{range .}}<tr id="fact-{{.ID}}"><th scope="row">{{.Label}}</th><td>{{.Value}}{{with .Note}}<p class="fact-note">{{.}}</p>{{end}}</td><td><span class="chip status-{{.Status}}">{{.Status}}</span></td><td>{{.AsOf}}</td><td><ul>{{$disputed := eq .Status "disputed"}}{{range .Sources}}<li><code>{{.Src}}</code> ({{.Kind}}){{with .Loc}}, {{.}}{{end}}{{if $disputed}}: {{.Value}}{{end}}{{with .AsOf}}, as of {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
 </tbody></table></div></section>{{end}}
 
+{{define "arch-figure"}}<figure class="arch" aria-labelledby="arch-title">
+<figcaption id="arch-title"><strong>{{.Title}}, block by block.</strong> Change a size or pick a preset, and every shape, parameter count and FLOP count of the figure follows, from the formulas of the tables below.</figcaption>
+<form class="arch-controls" action="#" onsubmit="return false">
+<label class="arch-preset">Preset <select data-preset>{{range .Presets}}<option value="{{.}}">{{.}}</option>{{end}}<option value="">custom</option></select></label>
+{{range .Controls}}<label title="{{.Meaning}}"><span class="arch-sym">{{.Symbol}}</span> <code>{{.Name}}</code> <input type="number" min="1" step="1" inputmode="numeric" data-size="{{.Name}}" value="{{.Value}}" list="arch-{{.Name}}" aria-label="{{.Name}}: {{.Meaning}}"></label><datalist id="arch-{{.Name}}">{{range .Choices}}<option value="{{.}}"></option>{{end}}</datalist>
+{{end}}</form>
+<p class="arch-error" role="alert" hidden></p>
+<ol class="arch-stack">{{range .Stack}}{{template "arch-block" .}}{{end}}</ol>
+<dl class="arch-totals">{{range .Totals}}<div><dt>{{.Symbol}} <code>{{.Name}}</code>{{with .Meaning}} <span class="shapes-meaning">{{.}}</span>{{end}}</dt><dd class="num" data-v="model:{{.Name}}">{{.Value}}</dd></div>{{end}}</dl>
+<p class="arch-live visually-hidden" aria-live="polite"></p>
+<script type="application/json">{{.Data}}</script>
+</figure>{{end}}
+
+{{define "arch-block"}}<li class="arch-block">
+<div class="arch-head">{{if .Link}}<a href="{{.Link}}"><code>{{.ID}}</code></a>{{else}}<code>{{.ID}}</code>{{end}}{{if gt .Count 1}} <span class="arch-count">&times; {{.Count}}</span>{{end}}{{with .Repeat}} <span class="arch-count">&times; <code>{{.}}</code> = <span data-v="sizes:{{.}}">{{$.Times}}</span></span>{{end}}</div>
+{{with .Meaning}}<p class="shapes-meaning">{{.}}</p>{{end}}
+{{with .Tensors}}<ul class="arch-tensors">{{range .}}<li><span class="shapes-role">{{.Role}}</span> <code>{{.Name}}</code> <span class="num" data-t="{{.Key}}">{{.Dims}}</span></li>{{end}}</ul>{{end}}
+<p class="arch-counts"><span class="num" data-v="params:{{.ID}}">{{.Params}}</span> parameters, <span class="num" data-v="flops:{{.ID}}">{{.Flops}}</span> forward FLOPs</p>
+{{with .Parts}}<ol class="arch-parts">{{range .}}{{template "arch-block" .}}{{end}}</ol>{{end}}
+</li>{{end}}
+
 {{define "shapes-section"}}<h2 id="shapes-and-parameters">Shapes and parameters</h2>
 {{template "shapes-body" .}}{{end}}
 
 {{define "shapes-body"}}{{with .Shapes}}<section class="shapes" aria-label="Shapes and parameters">
 <p class="shapes-intro">These formulas come from <a href="{{.File}}">shapes.yaml</a>. The tests of each implementation check its shapes, its parameter count and its FLOP count against them.</p>
+{{with .Arch}}{{template "arch-figure" .}}{{end}}
 <div class="table-wrap"><table class="shapes-table"><caption>Sizes</caption><thead><tr><th scope="col">Symbol</th><th scope="col">Name</th><th scope="col">Meaning</th><th scope="col">Formula</th>{{range .Configs}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>
 {{range .Sizes}}<tr><td>{{.Symbol}}</td><th scope="row"><code>{{.Name}}</code></th><td>{{.Meaning}}</td><td>{{.Formula}}</td>{{range .Values}}<td class="num">{{.}}</td>{{end}}</tr>{{end}}
 </tbody></table></div>

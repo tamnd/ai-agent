@@ -534,11 +534,15 @@ func visual(n *node.Node, env Env) (r Rung) {
 	r = Rung{Max: 3}
 	defer func() { r.Label, r.Name = fmt.Sprintf("V%d", r.Level), vNames[r.Level] }()
 	figs, _ := filepath.Glob(filepath.Join(n.Dir, "figures", "*.svg"))
-	if n.Scene == "" && len(figs) == 0 {
-		r.Next = []string{"add viz/scene.ts or a figure (10)"}
+	if n.Scene == "" && n.ArchScene == "" && len(figs) == 0 {
+		if n.Kind == "architecture" && n.Shapes != nil {
+			r.Next = []string{"run aik viz shapes -w " + n.Slug + " for the architecture scene (12.6)"}
+			return r
+		}
+		r.Next = []string{"add viz/scene.ts or a figure (12)"}
 		return r
 	}
-	if n.Scene == "" {
+	if n.Scene == "" && n.ArchScene == "" {
 		r.Level = 1
 		r.Next = []string{"add an interactive scene in viz/scene.ts"}
 		return r
@@ -550,6 +554,13 @@ func visual(n *node.Node, env Env) (r Rung) {
 	}
 	if len(fails) > 0 {
 		r.Next = fails
+		return r
+	}
+	if n.ArchScene != "" && n.Kind == "architecture" {
+		// The generated scene of 12.6 is enough for V2 (12.15): it has controls, presets and a text view, and
+		// aik viz check ran its numbers against shapes.yaml (V07, V14).
+		r.Level = 2
+		r.Next = []string{"V3 needs a review of the scene for clarity and accessibility by a person who is not the author (15.4)"}
 		return r
 	}
 	r.Level = 1

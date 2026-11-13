@@ -118,6 +118,7 @@ type builder struct {
 	results map[string]map[string]status.Test
 	decls   formal.Decls
 	scenes  map[string]viz.Report
+	arch    map[string]*viz.ArchData // the compiled architecture scenes, by slug
 	status  map[string]status.Status
 	hue     map[string]int // by top area id
 	report  Report
@@ -164,7 +165,7 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	if opt.AgentURL == "" {
 		opt.AgentURL = "https://github.com/tamnd/ai-agent"
 	}
-	b := &builder{opt: opt, c: c, scenes: map[string]viz.Report{}, status: map[string]status.Status{}, hue: map[string]int{}}
+	b := &builder{opt: opt, c: c, scenes: map[string]viz.Report{}, arch: map[string]*viz.ArchData{}, status: map[string]status.Status{}, hue: map[string]int{}}
 	b.report.Scenes = b.scenes
 	short := opt.Commit
 	if len(short) > 7 {
@@ -495,6 +496,26 @@ func (b *builder) assets() error {
 }
 
 func (b *builder) buildScenes() error {
+	archJS := false
+	for _, n := range b.c.Nodes {
+		if n.ArchScene == "" {
+			continue
+		}
+		d, r := viz.NodeArch(b.c, n)
+		for _, f := range r.Fails {
+			b.opt.Log("%s: %s", n.ArchScene, f)
+		}
+		b.scenes[n.Slug] = r
+		if d != nil {
+			b.arch[n.Slug] = d
+			archJS = true
+		}
+	}
+	if archJS {
+		if err := b.write("assets/arch.js", []byte(viz.ArchJS())); err != nil {
+			return err
+		}
+	}
 	for _, n := range b.c.Nodes {
 		if n.Scene == "" {
 			continue
@@ -519,6 +540,12 @@ func (b *builder) buildScenes() error {
 		r := viz.Check(viz.Scene{Slug: n.Slug, Bundle: js, Presets: presets, IDs: ids["main"], Ref: ref, RefErr: refErr})
 		for _, f := range r.Fails {
 			b.opt.Log("%s: %s", n.Scene, f)
+		}
+		if a, ok := b.scenes[n.Slug]; ok { // the node has an architecture scene too: one report holds both
+			r.Fails = append(r.Fails, a.Fails...)
+			if a.Skipped != "" {
+				r.Skipped = a.Skipped
+			}
 		}
 		b.scenes[n.Slug] = r
 		if err := b.write("assets/scenes/"+n.Slug+".js", js); err != nil {

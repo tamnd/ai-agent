@@ -198,6 +198,8 @@ type Node struct {
 	Impls     []Impl   `json:"impls,omitempty"`
 	Proofs    []Proof  `json:"proofs,omitempty"`
 	Scene     string   `json:"scene,omitempty"` // path of viz/scene.ts, relative to the root
+	// ArchScene is the path of viz/shapes.scene.yaml, the architecture scene of 12.6, relative to the root.
+	ArchScene string   `json:"arch_scene,omitempty"`
 	Presets   []Preset `json:"presets,omitempty"`
 	// Facts are the records of facts.yaml (spec 04.9), with their computed status.
 	Facts  []facts.Fact   `json:"facts,omitempty"`
@@ -416,6 +418,10 @@ func readScene(root string, n *Node) error {
 		rel, _ := filepath.Rel(root, p)
 		n.Scene = filepath.ToSlash(rel)
 	}
+	if p := filepath.Join(n.Dir, "viz", "shapes.scene.yaml"); fileExists(p) {
+		rel, _ := filepath.Rel(root, p)
+		n.ArchScene = filepath.ToSlash(rel)
+	}
 	b, err := os.ReadFile(filepath.Join(n.Dir, "viz", "presets.yaml"))
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
@@ -445,4 +451,9 @@ func IsBuildFile(name string) bool {
 		}
 	}
 	return strings.HasSuffix(b, ".csproj") || strings.HasSuffix(b, ".sln") || strings.HasSuffix(b, ".fsproj")
+}
+
+func fileExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && !info.IsDir()
 }
