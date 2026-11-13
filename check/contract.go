@@ -26,7 +26,7 @@ var sizeRE = regexp.MustCompile(`^len\((\w+)\)$`)
 // contracts runs the S rules on a problem node that has contract.yaml (spec 09, 13.3).
 func (r *run) contracts(n *node.Node) {
 	dir := filepath.Join(r.root, n.Rel)
-	if n.Kind != "problem" || !contract.Exists(dir) {
+	if n.Kind != "task" || !contract.Exists(dir) {
 		return
 	}
 	p := n.Rel + "/contract.yaml"

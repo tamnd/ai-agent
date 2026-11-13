@@ -1,6 +1,6 @@
 ---
 tag: 9CMPMD
-kind: model
+kind: concept
 slug: comparison-model
 name: Comparison model
 aliases: [decision tree model, comparison-based model]

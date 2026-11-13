@@ -1,6 +1,6 @@
 ---
 tag: 2B7QDX
-kind: algorithm
+kind: method
 slug: binary-search
 name: Binary search
 aliases: [half-interval search, logarithmic search, bisection search]

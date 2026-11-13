@@ -286,7 +286,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	if len(p.Proofs) > 0 {
 		html = insertAfterSection(html, b.snippet("proofs-inline", p), "correctness", "complexity", "history", "references")
 	}
-	if n.Kind == "problem" {
+	if n.Kind == "task" {
 		p.Solvers = b.solverRows(n)
 		if len(p.Solvers) > 0 {
 			if hasH2(html, "known-algorithms") {
@@ -438,7 +438,7 @@ func props(m map[string]any) []Prop {
 }
 
 func (b *builder) card(n *node.Node, p *NodePage) *Card {
-	if n.Kind != "algorithm" && n.Kind != "data-structure" && n.Kind != "problem" {
+	if n.Kind != "method" && n.Kind != "architecture" && n.Kind != "metric" && n.Kind != "task" {
 		return nil
 	}
 	c := &Card{}
@@ -666,7 +666,7 @@ func (b *builder) sourceViews(n *node.Node) []SourceView {
 
 func jsonLD(b *builder, n *node.Node) template.JS {
 	t := "DefinedTerm"
-	if n.Kind == "algorithm" || n.Kind == "data-structure" {
+	if n.Kind == "method" || n.Kind == "architecture" || n.Kind == "metric" {
 		t = "TechArticle"
 	}
 	m := map[string]any{
@@ -676,7 +676,7 @@ func jsonLD(b *builder, n *node.Node) template.JS {
 		"headline":    n.Name,
 		"description": n.Summary,
 		"url":         b.opt.BaseURL + "/" + n.Slug + "/",
-		"identifier":  "al://" + n.Tag,
+		"identifier":  "ai://" + n.Tag,
 		"license":     "https://creativecommons.org/licenses/by-sa/4.0/",
 		"isPartOf":    map[string]string{"@type": "WebSite", "name": "Algorithm", "url": b.opt.BaseURL + "/"},
 	}

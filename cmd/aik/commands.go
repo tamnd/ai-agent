@@ -83,7 +83,7 @@ var slugRE = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 func cmdNew(args []string) error {
 	f := newFlags("new", "-area <top/sub> [-name <name>] [<kind>] <slug>")
 	root := f.String("root", ".", "the root of the content repository")
-	kind := f.String("kind", "algorithm", "the kind of the node")
+	kind := f.String("kind", "method", "the kind of the node")
 	area := f.String("area", "", "the area path, for example sorting/comparison")
 	name := f.String("name", "", "the display name; the default comes from the slug")
 	level := f.String("level", "core", "the level: intro, core, advanced or research")

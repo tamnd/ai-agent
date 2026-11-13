@@ -25,7 +25,7 @@ func TestMint(t *testing.T) {
 	t.Cleanup(func() { tagSource = cryptoSource })
 	root := copyCorpus(t)
 	for _, s := range []string{"heap-sort", "shell-sort"} {
-		if got := run([]string{"new", "algorithm", s, "-area", "sorting/comparison-sorts", "-root", root}); got != 0 {
+		if got := run([]string{"new", "method", s, "-area", "sorting/comparison-sorts", "-root", root}); got != 0 {
 			t.Fatalf("aik new %s exits with %d", s, got)
 		}
 	}

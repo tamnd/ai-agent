@@ -15,13 +15,16 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// Kinds are the 12 node kinds of spec 04.1.
-var Kinds = []string{
-	"area", "concept", "definition", "model", "problem", "abstract-type",
-	"algorithm", "data-structure", "technique", "theorem", "exercise", "person",
-}
+// Kinds are the ids of the 28 kinds of spec 04.2, in the order of KindTable.
+var Kinds = func() []string {
+	out := make([]string, len(KindTable))
+	for i, k := range KindTable {
+		out[i] = k.ID
+	}
+	return out
+}()
 
-// IsKind tells if k is one of the 12 kinds.
+// IsKind tells if k is one of the 28 kinds.
 func IsKind(k string) bool {
 	return slices.Contains(Kinds, k)
 }
@@ -29,7 +32,7 @@ func IsKind(k string) bool {
 // Levels are the editorial levels of spec 05.5.
 var Levels = []string{"intro", "core", "advanced", "research"}
 
-// Solve is one `solves` edge. The short form is a problem slug. The long form has conditions (spec 04.4).
+// Solve is one `solves` edge. The short form is a task slug. The long form has conditions (spec 04.4).
 type Solve struct {
 	Problem  string         `yaml:"problem" json:"problem"`
 	Requires map[string]any `yaml:"requires,omitempty" json:"requires,omitempty"`
