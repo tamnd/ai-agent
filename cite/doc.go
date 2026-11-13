@@ -18,7 +18,7 @@ import (
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-1"
+const ExtractorVersion = "aik-doc-3"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
@@ -129,6 +129,7 @@ func Parse(text string) *Doc {
 	}
 	var last []int // the number of the last heading, with letters as 1000+index
 	var lines []line
+	page := 0
 	for off := 0; off < len(text); {
 		end := strings.IndexByte(text[off:], '\n')
 		if end < 0 {
@@ -137,10 +138,16 @@ func Parse(text string) *Doc {
 			end += off
 		}
 		raw := text[off:end]
-		lines = append(lines, line{off, strings.TrimSpace(strings.Trim(raw, "\f")), strings.HasPrefix(raw, "\f")})
+		page += strings.Count(raw, "\f")
+		lines = append(lines, line{off, strings.TrimSpace(strings.Trim(raw, "\f")), strings.HasPrefix(raw, "\f"), page})
 		off = end + 1
 	}
 	inApp, inRefs := false, false
+	type seenHead struct {
+		h   Head
+		pno int
+	}
+	var heads []seenHead
 	var stops []int // the starts of the lists of references, which end the heading before them
 	for i, l := range lines {
 		s := l.s
@@ -210,16 +217,25 @@ func Parse(text string) *Doc {
 		} else {
 			continue
 		}
+		title = joinCaps(title)
 		n := tuple(num)
-		if n == nil || !follows(last, n) {
+		if n == nil || !headTitle(num, title) {
 			continue
 		}
 		// A numbered reference, "1 D. E. Rumelhart, ... (1986)", is not a heading.
 		if title != "" && (len(strings.Fields(title)) > 14 || citedRE.MatchString(title)) {
 			continue
 		}
+		// The first heading again, on a later page, after a table of contents: the headings so far were its lines.
+		if len(n) == 1 && n[0] == 1 && len(heads) > 0 && title != "" && strings.EqualFold(heads[0].h.Title, title) && heads[0].pno < l.pno {
+			d.Heads, heads, last = nil, nil, nil
+		}
+		if !follows(last, n) {
+			continue
+		}
 		last = n
 		d.Heads = append(d.Heads, Head{Num: num, Title: title, Start: l.off})
+		heads = append(heads, seenHead{d.Heads[len(d.Heads)-1], l.pno})
 	}
 	for i := range d.Heads {
 		h := &d.Heads[i]
@@ -255,6 +271,7 @@ type line struct {
 	off  int
 	s    string
 	page bool // the line starts a page
+	pno  int  // the index of the page of the line
 }
 
 // footnotes finds the lines that start with a small number in the last third of a page.
@@ -298,6 +315,46 @@ func wordy(s string) bool {
 		}
 	}
 	return letters*10 >= len([]rune(s))*8 && wordRE.MatchString(s)
+}
+
+var (
+	capsRE = regexp.MustCompile(`\b([A-Z]) ([A-Z]{2,})\b`)
+	abbrRE = regexp.MustCompile(`\p{L}\. \p{L}`)
+	plurRE = regexp.MustCompile(`\b([A-Z]{2,}) S\b`)
+	vsRE   = regexp.MustCompile(`(?i)\bvs\.`)
+)
+
+// joinCaps mends the small capitals of a title, which the extraction splits after the first letter of each word:
+// "R EGULARIZING RNN S WITH LSTM CELLS" is "REGULARIZING RNNS WITH LSTM CELLS".
+func joinCaps(t string) string {
+	if t == "" || strings.ToUpper(t) != t {
+		return t
+	}
+	t = plurRE.ReplaceAllString(t, "${1}S")
+	return capsRE.ReplaceAllString(t, "$1$2")
+}
+
+// headTitle tells if a number and a title can be a heading. A title that is math ("X = apx") or a row of a table
+// ("Avg. Test RMSE", "CNNs*") is not, though "vs." is a word of headings ("Model Averaging vs. Weight Scaling"); a number with no title and a part 0 or a leading zero (1.0, 5.02) is a number
+// of a table.
+func headTitle(num, title string) bool {
+	if title == "" {
+		for _, p := range strings.Split(num, ".")[1:] {
+			if p == "0" || strings.HasPrefix(p, "0") {
+				return false
+			}
+		}
+		return true
+	}
+	if !wordy(title) || strings.ContainsAny(title, "=*|") || abbrRE.MatchString(vsRE.ReplaceAllString(title, "vs")) {
+		return false
+	}
+	for _, r := range title {
+		if r > 0xFFFF {
+			return false // mathematical letters, as 𝑋
+		}
+	}
+	return true
 }
 
 func firstRune(s string) rune {
