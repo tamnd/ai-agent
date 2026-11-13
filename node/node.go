@@ -74,6 +74,14 @@ type History struct {
 	Note   string   `yaml:"note,omitempty" json:"note,omitempty"`
 }
 
+// Hyperparameter is one entry of `hyperparameters` of a method (spec 04.5).
+type Hyperparameter struct {
+	Name      string         `yaml:"name" json:"name"`
+	Meaning   string         `yaml:"meaning" json:"meaning"`
+	Typical   string         `yaml:"typical,omitempty" json:"typical,omitempty"`
+	DefaultIn map[string]any `yaml:"default_in,omitempty" json:"default_in,omitempty"`
+}
+
 // Source is one entry of `sources`.
 type Source struct {
 	Book    string `yaml:"book,omitempty" json:"book,omitempty"`
@@ -100,6 +108,11 @@ type Front struct {
 	Techniques  []string          `yaml:"techniques,omitempty" json:"techniques,omitempty"`
 	Uses        []string          `yaml:"uses,omitempty" json:"uses,omitempty"`
 	VariantOf   string            `yaml:"variant_of,omitempty" json:"variant_of,omitempty"`
+	RelatedTo   []string          `yaml:"related_to,omitempty" json:"related_to,omitempty"`
+	AppliesTo   []string          `yaml:"applies_to,omitempty" json:"applies_to,omitempty"`
+	Purpose     string            `yaml:"purpose,omitempty" json:"purpose,omitempty"`
+	Hyper       []Hyperparameter  `yaml:"hyperparameters,omitempty" json:"hyperparameters,omitempty"`
+	Cost        map[string]string `yaml:"cost,omitempty" json:"cost,omitempty"`
 	Generalizes []string          `yaml:"generalizes,omitempty" json:"generalizes,omitempty"`
 	Model       string            `yaml:"model,omitempty" json:"model,omitempty"`
 	Complexity  *Complexity       `yaml:"complexity,omitempty" json:"complexity,omitempty"`
