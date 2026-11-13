@@ -1,0 +1,24 @@
+{{define "main"}}<div class="page">
+{{template "crumbs" .Crumbs}}
+<header class="page-head"><h1>{{.Heading}}</h1><p class="lead">The computed results table of this version of {{if .Benchmark.URL}}<a href="{{.Benchmark.URL}}">{{.Benchmark.Name}}</a>{{else}}{{.Benchmark.Name}}{{end}}.</p></header>
+<p class="cards-meta"><span>{{.Summary}}</span> <a href="{{.JSON}}">Download JSON</a></p>
+<p>Population: all result cards of this version that passed the citation check. Each block holds one comparable group: the results with the same metric and the same setting. A table never mixes two settings or two versions. <a href="/badges/#evidence-labels">Read what the labels mean</a>.</p>
+{{with .Hidden}}<p class="exp-note">{{.}}</p>{{end}}
+{{range .Groups}}{{template "result-group" .}}{{end}}
+{{with .Other}}<section aria-labelledby="other-settings"><h2 id="other-settings">Other settings</h2>
+<p>The source of each of these results does not state a key of the setting, so no other result is comparable with it.</p>
+{{range .}}{{template "result-group" .}}{{end}}</section>{{end}}
+{{if not (or .Groups .Other)}}<p>No result of this version passed the citation check yet.</p>{{end}}
+{{with .Versions}}<p class="page-links"><span>Other versions</span> {{range .}}<a href="{{.URL}}">{{.Name}}</a> {{end}}</p>{{end}}
+</div>{{end}}
+
+{{define "result-group"}}<section class="result-group">
+<h3 class="small">{{.Metric}} · {{.Setting}}</h3>
+<div class="table-wrap"><table class="result-table"><thead><tr><th scope="col">Rank</th><th scope="col">Model</th><th scope="col">Score</th><th scope="col">Source</th><th scope="col">Date</th><th scope="col">Evidence</th></tr></thead><tbody>
+{{range .Rows}}{{template "result-row" .}}{{end}}
+</tbody></table></div>
+{{with .Contested}}<details class="contested"><summary>{{len .}} contested {{if eq (len .) 1}}result{{else}}results{{end}}: independent sources give different numbers</summary>
+<div class="table-wrap"><table class="result-table"><tbody>{{range .}}{{template "result-row" .}}{{end}}</tbody></table></div></details>{{end}}
+</section>{{end}}
+
+{{define "result-row"}}<tr id="{{.Anchor}}"><td>{{if .Rank}}{{.Rank}}{{end}}</td><th scope="row">{{if .Model.Missing}}{{.Model.Name}}{{else}}<a href="{{.Model.URL}}">{{.Model.Name}}</a>{{end}}{{with .Variant}} <span class="card-owner">{{.}}</span>{{end}}</th><td>{{.Score}}</td><td><code>{{.Source}}</code>{{with .Loc}}, {{.}}{{end}}</td><td>{{.Date}}</td><td><span class="chip claim-chip label-{{.Evidence}}">{{.Evidence}}</span>{{if .Self}} <span class="self-reported" title="The developer of the model reports this result">self-reported</span>{{end}}</td></tr>{{end}}
