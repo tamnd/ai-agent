@@ -108,8 +108,7 @@ func dryCopy(root string) (string, error) {
 	}
 	src := os.DirFS(root + "/" + bridge.Dir)
 	if err := os.CopyFS(dir+"/"+bridge.Dir, src); err != nil && !errors.Is(err, os.ErrNotExist) {
-		os.RemoveAll(dir)
-		return "", err
+		return "", errors.Join(err, os.RemoveAll(dir))
 	}
 	return dir, nil
 }
