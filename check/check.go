@@ -55,14 +55,14 @@ var Rules = map[string]string{
 	"T04": "the path of the node matches its area",
 	"T05": "no status, level or badge is written in front matter",
 	"T06": "no provisional id is left on main",
-	"G01": "prereqs edges form a DAG",
-	"G02": "variant_of and generalizes edges have no cycle",
-	"G03": "each solves target is a problem node",
-	"G04": "each implements target is an abstract type",
-	"G05": "each edge target exists",
-	"G07": "no edge points to its own node; see_also has at most 8 targets",
-	"E01": "each complexity string parses",
-	"E04": "each variable of a claim is defined in vars, and the model exists",
+	"E01": "each edge target exists",
+	"E02": "each implements target is an abstract type",
+	"E03": "prereqs edges form a DAG",
+	"E04": "variant_of and generalizes edges have no cycle",
+	"E05": "each solves target is a problem node",
+	"E08": "no edge points to its own node; see_also has at most 8 targets",
+	"S10": "each complexity string parses",
+	"S11": "each variable of a complexity claim is defined in vars, and the model exists",
 	"W01": "the section headings of the kind are in order",
 	"W03": "pseudocode line ids are unique, and each @line marker names an existing id",
 	"I10": "each implementation and test file starts with the SPDX header",
@@ -159,8 +159,8 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.leanNode(n)
 	}
 	r.leanDecls()
-	r.cycles("G01", "prereqs", func(n *node.Node) []string { return n.Prereqs })
-	r.cycles("G02", "variant_of and generalizes", func(n *node.Node) []string {
+	r.cycles("E03", "prereqs", func(n *node.Node) []string { return n.Prereqs })
+	r.cycles("E04", "variant_of and generalizes", func(n *node.Node) []string {
 		out := slices.Clone(n.Generalizes)
 		if n.VariantOf != "" {
 			out = append(out, n.VariantOf)
@@ -289,22 +289,22 @@ func (r *run) tags() {
 func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
 	p := n.Rel + "/node.md"
 	if slug == n.Slug {
-		r.add("G07", Warn, p, 0, "%s points to its own node", field)
+		r.add("E08", Warn, p, 0, "%s points to its own node", field)
 		return
 	}
 	t, ok := r.c.BySlug[slug]
 	if !ok {
 		if to, moved := r.c.OldSlugs[slug]; moved {
-			r.add("G05", Block, p, 0, "%s: the slug %q moved to %q", field, slug, to)
+			r.add("E01", Block, p, 0, "%s: the slug %q moved to %q", field, slug, to)
 			return
 		}
-		r.add("G05", Block, p, 0, "%s: no node has the slug %q", field, slug)
+		r.add("E01", Block, p, 0, "%s: no node has the slug %q", field, slug)
 		return
 	}
 	if len(kinds) > 0 && !slices.Contains(kinds, t.Kind) {
-		rule := map[string]string{"solves": "G03", "implements": "G04"}[field]
+		rule := map[string]string{"solves": "E05", "implements": "E02"}[field]
 		if rule == "" {
-			rule = "G05"
+			rule = "E01"
 		}
 		r.add(rule, Block, p, 0, "%s: %q is a %s, not a %s", field, slug, t.Kind, strings.Join(kinds, " or "))
 	}
@@ -339,7 +339,7 @@ func (r *run) edges(n *node.Node) {
 		r.target(n, "people", s, "person")
 	}
 	if len(n.SeeAlso) > 8 {
-		r.add("G07", Warn, n.Rel+"/node.md", 0, "see_also has %d targets; the limit is 8", len(n.SeeAlso))
+		r.add("E08", Warn, n.Rel+"/node.md", 0, "see_also has %d targets; the limit is 8", len(n.SeeAlso))
 	}
 	if n.Model != "" {
 		r.target(n, "model", n.Model, "concept")
@@ -406,18 +406,18 @@ func (r *run) complexity(n *node.Node) {
 		for _, k := range sortedKeys(groups[g]) {
 			v := groups[g][k]
 			if err := ParseClaim(v); err != nil {
-				r.add("E01", Block, p, 0, "complexity.%s.%s %q: %v", g, k, v, err)
+				r.add("S10", Block, p, 0, "complexity.%s.%s %q: %v", g, k, v, err)
 				continue
 			}
 			for _, x := range Vars(v) {
 				if _, ok := c.Vars[x]; !ok {
-					r.add("E04", Block, p, 0, "complexity.%s.%s uses %q, which vars does not define", g, k, x)
+					r.add("S11", Block, p, 0, "complexity.%s.%s uses %q, which vars does not define", g, k, x)
 				}
 			}
 		}
 	}
 	if len(c.Time) > 0 && n.Model == "" && (n.Kind == "method" || n.Kind == "architecture") {
-		r.add("E04", Block, p, 0, "the node has complexity claims but no model")
+		r.add("S11", Block, p, 0, "the node has complexity claims but no model")
 	}
 }
 
