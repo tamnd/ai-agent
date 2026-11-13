@@ -405,6 +405,12 @@ func cmdStatus(args []string) error {
 	show("proof", st.H)
 	show("lean", st.L)
 	show("visual", st.V)
+	if st.D != nil {
+		show("data", *st.D)
+	}
+	if st.R != nil {
+		show("repro", *st.R)
+	}
 	var ids []string
 	for id := range st.I {
 		ids = append(ids, id)
