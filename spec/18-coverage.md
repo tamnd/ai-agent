@@ -170,7 +170,7 @@ A curator or a person can override a rule for one item with a reason.
 
 **Ideas.**
 
-Concepts, definitions, methods, architectures, tasks, metrics, theorems, findings, arguments, open problems and risks have no harvest threshold: every one that a canon work, a frontier source, a course, or two independent works name is a node (5.10). One that only one work names is a `part` of the page that it varies, or a card when it has a name that people search for.
+- S-X1: concepts, definitions, methods, architectures, tasks, metrics, theorems, findings, arguments, open problems and risks have no harvest threshold: every one that a canon work, a frontier source, a course, or two independent works name is a node (5.10). One that only one work names is a `part` of the page that it varies, or a card when it has a name that people search for.
 
 ## 18.6 Demand signals
 
