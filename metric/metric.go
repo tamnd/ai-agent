@@ -105,7 +105,9 @@ func Parse(b []byte) (*Contract, error) {
 
 func ident(s string) bool {
 	for i, r := range s {
-		if r != '_' && !(r >= 'a' && r <= 'z') && !(r >= 'A' && r <= 'Z') && !(i > 0 && r >= '0' && r <= '9') {
+		letter := r == '_' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z'
+		digit := i > 0 && r >= '0' && r <= '9'
+		if !letter && !digit {
 			return false
 		}
 	}
