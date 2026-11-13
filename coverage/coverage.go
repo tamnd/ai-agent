@@ -142,7 +142,7 @@ func NodeLevel(n *node.Node, st status.Status) (int, []string) {
 		5: func() []string {
 			out := slices.Concat(need(st.W, 4, "W", "the writing"), need(st.G, 3, "G", "the grounding"), x(func(_, b, _ int) int { return b }),
 				opt(st.R, 2, "R", "the experiments"), opt(st.D, 2, "D", "the data facts"))
-			if n.Kind == "theorem" && len(n.Front.Lean) > 0 {
+			if n.Kind == "theorem" && len(n.Lean) > 0 {
 				out = append(out, need(st.L, 2, "L", "the Lean proof")...)
 			}
 			if n.Scene != "" || n.ArchScene != "" {
