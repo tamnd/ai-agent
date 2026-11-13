@@ -41,7 +41,7 @@ Run these commands in a clone of tamnd/ai.
 | `aik viz check` | Builds each scene and runs each preset two times. |
 | `aik site serve` | Renders the site and serves it at http://localhost:8150. |
 | `aik site check` | Renders the site and checks each internal link. |
-| `aik site deploy` | Renders the site, checks the limits of the host and uploads the tree. It reads `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from the environment and does not print them. |
+| `aik site deploy` | Renders the site, checks the limits of the host and uploads the tree as the static assets of the Cloudflare Worker `ai-site` on ai.tamnd.com. Add `-preview` to upload a preview version under the alias of the branch. It reads `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from the environment and does not print them. |
 
 `aik help` shows all commands. A command that is planned but not built yet exits with code 3 and names its milestone.
 

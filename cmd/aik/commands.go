@@ -947,7 +947,7 @@ func cmdSite(args []string) error {
 	return usageError{fmt.Sprintf("unknown subcommand %q; use build, serve, check or deploy", sub)}
 }
 
-// serveDir serves the site like Cloudflare Pages: /a/ maps to a/index.html, and a missing page gets 404.html.
+// serveDir serves the site like the static assets of a Cloudflare Worker: /a/ maps to a/index.html, and a missing page gets 404.html.
 func serveDir(dir string) http.Handler {
 	files := http.FileServer(http.Dir(dir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
