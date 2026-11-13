@@ -196,7 +196,7 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	for _, n := range c.Nodes {
 		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls})
 	}
-	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
+	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
 	for _, f := range steps {
 		if err := f(); err != nil {
 			return nil, err
@@ -639,6 +639,7 @@ func (b *builder) redirects() (string, map[string]string) {
 			moved["/"+s2] = "/" + n.Slug + "/"
 		}
 	}
+	b.cardMoves(moved)
 	return s.String(), moved
 }
 

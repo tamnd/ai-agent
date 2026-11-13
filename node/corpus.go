@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tamnd/ai-agent/card"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -80,17 +81,24 @@ type Corpus struct {
 	OldSlugs map[string]string
 	// Errors are the node directories that could not be read. Package check reports them as T01.
 	Errors []error
+	// Cards are the cards of cards/ (spec 04.6), in the order of the files and their lines.
+	Cards []*card.Card
+	// CardByKey maps the key of each card (its slug, or its owner and slug) to the first card with that key.
+	CardByKey map[string]*card.Card
+	// CardErrors are the lines of cards/ that are not cards. Package check reports them as T01.
+	CardErrors []error
 }
 
 // Load reads the whole content tree at root.
 func Load(root string) (*Corpus, error) {
 	c := &Corpus{
-		Root:     root,
-		BySlug:   map[string]*Node{},
-		ByTag:    map[string]*Node{},
-		AreaByID: map[string]*Area{},
-		LangByID: map[string]*Lang{},
-		Reserved: map[string]bool{},
+		Root:      root,
+		BySlug:    map[string]*Node{},
+		ByTag:     map[string]*Node{},
+		AreaByID:  map[string]*Area{},
+		LangByID:  map[string]*Lang{},
+		Reserved:  map[string]bool{},
+		CardByKey: map[string]*card.Card{},
 	}
 	if err := readYAML(filepath.Join(root, "topics", "areas.yaml"), &c.Areas); err != nil {
 		return nil, err
@@ -157,6 +165,12 @@ func Load(root string) (*Corpus, error) {
 			if _, dup := c.ByTag[n.Tag]; !dup {
 				c.ByTag[n.Tag] = n
 			}
+		}
+	}
+	c.Cards, c.CardErrors = card.Read(root)
+	for _, cd := range c.Cards {
+		if _, dup := c.CardByKey[cd.Key()]; !dup && cd.Slug != "" {
+			c.CardByKey[cd.Key()] = cd
 		}
 	}
 	return c, nil

@@ -55,7 +55,7 @@ var Rules = map[string]string{
 	"T04": "the path of the node matches its area",
 	"T05": "no status, level or badge is written in front matter",
 	"T06": "no provisional id is left on main",
-	"E01": "each edge target exists",
+	"E01": "each edge target exists, as a node or a card",
 	"E02": "each implements target is an abstract type",
 	"E03": "prereqs edges form a DAG",
 	"E04": "variant_of and generalizes edges have no cycle",
@@ -148,6 +148,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.add("T01", Block, rel(c.Root, err.Error()), 0, "%v", err)
 	}
 	r.tags()
+	r.cards()
 	r.groups()
 	r.oldSlugs()
 	r.committedBuild()
@@ -313,6 +314,13 @@ func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
 		return
 	}
 	t, ok := r.c.BySlug[slug]
+	if cd := r.c.CardByKey[slug]; !ok && cd != nil {
+		// A slug in a field can name a card (spec 4.5).
+		if len(kinds) > 0 && !slices.Contains(kinds, cd.Kind) {
+			r.add("E01", Block, p, 0, "%s: %q is a %s card, not a %s", field, slug, cd.Kind, strings.Join(kinds, " or "))
+		}
+		return
+	}
 	if !ok {
 		if to, moved := r.c.OldSlugs[slug]; moved {
 			r.add("E01", Block, p, 0, "%s: the slug %q moved to %q", field, slug, to)

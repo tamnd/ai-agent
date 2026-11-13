@@ -1,0 +1,13 @@
+{{define "main"}}<div class="page">
+{{template "crumbs" .Crumbs}}
+<header class="page-head"><h1>{{.Heading}}</h1>{{with .Lead}}<p class="lead">{{.}}</p>{{end}}</header>
+<p class="cards-meta"><span>{{.Count}}</span> <span>Data as of {{.AsOf}}</span> <a href="{{.JSON}}">Download JSON</a></p>
+{{template "groups" .Nodes}}
+<section class="cards" aria-labelledby="cards"><h2 id="cards">Cards</h2>
+<p>A card is a row of facts with their sources. A card has no page of its own until somebody writes one. <a href="/contribute/">Help write a page</a>.</p>
+<div class="table-wrap"><table class="card-table"><thead><tr><th scope="col">Name</th><th scope="col">Summary</th><th scope="col">Facts</th><th scope="col">Sources</th></tr></thead><tbody>
+{{range .Rows}}<tr id="{{.Anchor}}"><th scope="row">{{.Name}}{{with .Owner}}<span class="card-owner">{{.}}</span>{{end}}<a class="card-tag" href="#{{.Anchor}}"><code>{{.Tag}}</code></a></th><td>{{.Summary}}</td><td>{{with .Facts}}<dl class="card-facts">{{range .}}<div><dt>{{.Label}}</dt><dd>{{.Value}}{{with .Loc}} <span class="card-loc">({{.}})</span>{{end}}</dd></div>{{end}}</dl>{{end}}</td><td>{{range .Sources}}<code>{{.}}</code> {{end}}</td></tr>{{end}}
+</tbody></table></div>
+{{with .Pages}}<nav class="pager" aria-label="Pages of the table"><ul>{{range .}}<li><a href="{{.URL}}"{{if eq .URL $.Path}} aria-current="page"{{end}}>{{.Name}}</a></li>{{end}}</ul></nav>{{end}}
+</section>
+</div>{{end}}
