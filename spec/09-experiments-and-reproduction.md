@@ -12,6 +12,7 @@ An experiment is the AI analogue of a proof. It is weaker than a proof and stron
 - It has five parts: `experiment.yaml` (the claim, the design, the config, the data pins, the seeds, the budget class), `run.py` (the script), `expect.yaml` (the statistical test that decides the claim, fixed before the first run), `results.json` (written only by `aik exp run -update`), and `figures/` (SVG plots made by the run).
 - An experiment that passes its test gives the claim the evidence label `measured-here` at the experiment's scale (07.4). It never changes what the page says about the claim at the paper's scale.
 - An experiment that fails its test is kept and shown. It is evidence that the claim does not hold at that scale, and the page says so (9.7). Failed experiments are never deleted to make a page look better (rule R10).
+- `aik exp run` runs `run.py` once for each arm and each seed, in the order of the seeds. Each run gets a job directory with `job.json` (the arm, the seed and the merged configuration) and the command `python3 run.py --job <dir>/job.json --out <dir>`. The script writes `<dir>/metrics.json`, `{"final": {"<metric>": <value>, ...}, "device": "cpu"}`, with the final value of each metric of `metrics`.
 - An experiment is not a test of the code. The learning smoke test of 08.7.6 checks that code can learn; an experiment checks a claim about the method.
 - The build computes the level R0 to R4 of the node from its experiments (9.11).
 
@@ -108,7 +109,7 @@ report: {ci: 0.95, bootstrap: {resamples: 10000, method: bca}}
 | `shape` | qualitative behaviour: a peak, a delayed jump, a crossing | the feature is found by its detector in at least `min_share` of seeds, with a bootstrap interval on its location |
 | `rate` | failure and risk demonstrations | the lower bound of the Wilson interval of the rate is above the claimed rate |
 
-The statistics are computed by `aik exp stats` from the per-seed metrics, with SciPy in the `aik-exp-stats` image. The same code computes every page's numbers.
+The statistics are computed by the package `exp` of `aik`, in Go, from the per-seed metrics, so that the check and the build need no image. The tests of the package compare its numbers with SciPy. The same code computes every page's numbers. In M0 a metric is read at `final` only, and the test `shape` is not built yet: an experiment that uses it stays inconclusive.
 
 ## 9.4 Budget classes and the GPU pool
 
@@ -168,7 +169,7 @@ Rules:
 {"experiment":"mlp-mnist","node":"3KD9QX","run":"r-2026-12-04-7f3c",
  "date":"2026-12-04","image":"ghcr.io/tamnd/aik-exp-pytorch-cpu@sha256:…",
  "hardware":{"class":"cpu-small","cpu":"AMD EPYC 7763","threads":2},
- "inputs_hash":"blake3:…","expect_hash":"blake3:…",
+ "inputs_hash":"sha256:…","expect_hash":"sha256:…",
  "seeds":[20261113,20261114,20261115,20261116,20261117,20261118,20261119,20261120,20261121,20261122],
  "arms":{"no-dropout":{"test_loss":{"mean":0.1532,"sd":0.0081,"per_seed":[…]}},
          "dropout":{"test_loss":{"mean":0.0958,"sd":0.0046,"per_seed":[…]}}},

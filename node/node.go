@@ -15,6 +15,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/tamnd/ai-agent/claims"
+	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/facts"
 )
 
@@ -187,6 +188,8 @@ type Node struct {
 	// Facts are the records of facts.yaml (spec 04.9), with their computed status.
 	Facts  []facts.Fact   `json:"facts,omitempty"`
 	Claims []claims.Claim `json:"claims,omitempty"`
+	// Exps are the experiments of exp/ (spec 09).
+	Exps []*exp.Experiment `json:"-"`
 }
 
 // Lang returns the implementation in a language, or nil.
@@ -273,6 +276,9 @@ func Read(root, dir string) (*Node, error) {
 		return nil, fmt.Errorf("%s/%w", n.Rel, err)
 	}
 	if n.Claims, err = claims.Read(n.Dir); err != nil {
+		return nil, fmt.Errorf("%s/%w", n.Rel, err)
+	}
+	if n.Exps, err = exp.Read(n.Dir, n.Rel); err != nil {
 		return nil, fmt.Errorf("%s/%w", n.Rel, err)
 	}
 	return n, nil

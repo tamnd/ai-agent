@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/tamnd/ai-agent/card"
+	"github.com/tamnd/ai-agent/exp"
 	"go.yaml.in/yaml/v3"
 )
 
@@ -109,6 +110,8 @@ type Corpus struct {
 	CardByKey map[string]*card.Card
 	// CardErrors are the lines of cards/ that are not cards. Package check reports them as T01.
 	CardErrors []error
+	// Pins are the datasets of registers/data-pins.yaml (spec 9.5), by id. It is nil when the register does not exist.
+	Pins map[string]*exp.Pin
 }
 
 // Load reads the whole content tree at root.
@@ -134,6 +137,11 @@ func Load(root string) (*Corpus, error) {
 			c.AreaByID[sub.Path()] = sub
 		}
 	}
+	pins, err := exp.LoadPins(filepath.Join(root, filepath.FromSlash(exp.PinsFile)))
+	if err != nil {
+		return nil, err
+	}
+	c.Pins = pins
 	c.LangFile = "registers/languages.yaml"
 	if _, err := os.Stat(filepath.Join(root, "registers", "frameworks.yaml")); err == nil {
 		c.LangFile, c.Frameworks = "registers/frameworks.yaml", true

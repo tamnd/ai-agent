@@ -98,6 +98,14 @@ var Rules = map[string]string{
 	"F10": "each module builds in at most 60 seconds; aik lean build -time reports it, and a module above 300 seconds blocks",
 	"L01": "each link in a node to /<slug>/ names a node, an area or a site page",
 	"T04": "no node slug is a reserved word, a language id or an area id",
+	"R01": "experiment.yaml is valid, names claims that exist in claims.yaml, and has a control arm for each comparative test",
+	"R02": "every input of an experiment is a generator in its directory or a dataset of registers/data-pins.yaml with a resolved licence and hashed files",
+	"R03": "scale_note states the scale of the experiment and the scale of the claim of the source",
+	"R04": "no page text presents a small-scale experiment as a reproduction of the result of a paper",
+	"R05": "results.json is written only by aik exp run -update, with the run id, the hashes, the seeds and every arm",
+	"R06": "expect.yaml exists before the first full run and does not change after it",
+	"R08": "every arm has the same seeds and the same tuning budget",
+	"R09": "the run stayed within the cap of its budget class",
 }
 
 // Options select what to check.
@@ -157,6 +165,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.front(n)
 		r.facts(n)
 		r.claims(n)
+		r.exps(n)
 		r.voice(n)
 		if len(slugs[n.Slug]) > 1 {
 			r.add("T03", Block, n.Rel+"/node.md", 0, "the slug %q is used by %d nodes", n.Slug, len(slugs[n.Slug]))
