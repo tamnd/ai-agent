@@ -83,8 +83,11 @@ var Rules = map[string]string{
 	"S04": "the section headings of the kind are in order",
 	"S10": "a card summary is at most 30 words",
 	"X11": "pseudocode line ids are unique, each @line marker names an existing id, and each line id of the main pseudocode has a marker in each tier-1 implementation",
-	"X19": "each implementation and test file starts with the SPDX header",
-	"X12": "each implementation language is in the register, and no implementation has a build file or a generated file under build/; aik gen writes them",
+	"X19": "each code file starts with the licence header, which names the page and the tag of the node in a tree with the framework register",
+	"X01": "the NumPy reference exists before any other framework version of the node",
+	"X07": "the code imports only the packages of the pinned set of its framework",
+	"X12": "the framework is in the register, the file names follow its conventions, and no implementation has a build file or a generated file under build/; aik gen writes them",
+	"X14": "a reference version has at most 200 lines",
 	"M04": "the task contract is sound: a custom checker has valid and invalid checker cases, edge.jsonl covers each edge class, each generator uses only its rng, a flaky case names its open issue, the oracles agree, and a person reviewed the contract of each core problem",
 	"X10": "mutants.ignore of an implementation lists at most 5% of its mutants, each with a reason, and each entry names a mutant of the sample",
 	"F01": "each Lean name in the front matter exists in decls.jsonl with the expected kind, and each time claim of a node with lean.cost has a class lemma of the same class",
@@ -563,7 +566,9 @@ func (r *run) impls(n *node.Node) {
 	for _, im := range n.Impls {
 		lang := r.c.LangByID[im.Lang]
 		if lang == nil {
-			r.add("X12", Block, n.Rel+"/impl/"+im.Lang, 0, "the language %q is not in registers/languages.yaml", im.Lang)
+			r.add("X12", Level, n.Rel+"/impl/"+im.Lang, 0, "the framework %q is not in %s (8.2.1)", im.Lang, r.c.LangFile)
+		} else if r.c.Frameworks {
+			r.framework(n, im, lang)
 		}
 		r.mutantsIgnore(im)
 		seen := map[string]bool{}
@@ -574,8 +579,8 @@ func (r *run) impls(n *node.Node) {
 			if f.Name == mutate.IgnoreFile {
 				continue
 			}
-			if !strings.Contains(firstLines(f.Content, 4), "SPDX-License-Identifier: MIT") {
-				r.add("X19", Block, f.Path, 1, "the file does not start with the SPDX header (08.11)")
+			if !r.c.Frameworks && !strings.Contains(firstLines(f.Content, 4), "SPDX-License-Identifier: MIT") {
+				r.add("X19", Level, f.Path, 1, "the file does not start with the SPDX header (8.12)")
 			}
 			if f.Test {
 				continue

@@ -84,3 +84,21 @@ func TestSandboxNoNetwork(t *testing.T) {
 		t.Errorf("the test fails for another reason:\n%s", got.Output)
 	}
 }
+
+func TestFrameworkImage(t *testing.T) {
+	s := NewSandbox("docker", map[string]string{"python": "py@sha256:1", "jax": "jax@sha256:2"})
+	for fw, want := range map[string]string{"numpy": "py@sha256:1", "pytorch": "py@sha256:1", "jax": "jax@sha256:2", "python": "py@sha256:1"} {
+		if got, ok := s.Image(fw); !ok || got != want {
+			t.Errorf("Image(%q) = %q, %v; want %q", fw, got, ok, want)
+		}
+	}
+	if _, ok := s.Image("julia"); ok {
+		t.Error("julia has an image")
+	}
+	if rc, ok := Recipes["pytorch"]; !ok || rc.ID != "pytorch" || rc.Run == nil {
+		t.Errorf("the recipe of pytorch is %+v", rc)
+	}
+	if _, ok := adapters["numpy"]; !ok {
+		t.Error("numpy has no adapter")
+	}
+}

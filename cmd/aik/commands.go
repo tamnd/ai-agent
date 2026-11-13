@@ -530,7 +530,8 @@ func cmdTest(args []string) error {
 				tool := res.Version
 				if box != nil {
 					// The image can change while the version line stays the same, for example with a new pytest.
-					tool += " image " + box.Images[im.Lang]
+					ref, _ := box.Image(im.Lang)
+					tool += " image " + ref
 				}
 				key = tc.key(tool, n, im, ks)
 				if t, ok := tc.Get(im.Lang, key); ok {

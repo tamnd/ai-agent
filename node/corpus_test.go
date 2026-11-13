@@ -1,6 +1,10 @@
 package node
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestLoad(t *testing.T) {
 	c, err := Load("../testdata/corpus")
@@ -25,6 +29,34 @@ func TestLoad(t *testing.T) {
 	}
 	if c.LangByID["python"] == nil || c.LangByID["go"] == nil {
 		t.Error("the language register is not loaded")
+	}
+	if c.Frameworks || c.LangFile != "registers/languages.yaml" {
+		t.Errorf("a tree with no framework register reads %s", c.LangFile)
+	}
+}
+
+func TestFrameworkRegister(t *testing.T) {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	reg := "- {id: jax, name: JAX, tier: 1, language: python, ext: [py], packages: jax-ref, types: {tool: pyright, mode: basic}, determinism: [x]}\n- {id: c, name: C, tier: 2, ext: [c, h]}\n"
+	if err := os.WriteFile(filepath.Join(root, "registers", "frameworks.yaml"), []byte(reg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.Frameworks || c.LangFile != "registers/frameworks.yaml" || len(c.Langs) != 2 {
+		t.Fatalf("the corpus reads %s with %d entries", c.LangFile, len(c.Langs))
+	}
+	jax := c.LangByID["jax"]
+	if jax == nil || jax.Lang() != "python" || jax.Packages != "jax-ref" || jax.Types.Tool != "pyright" || len(jax.Determinism) != 1 {
+		t.Errorf("the entry of jax is %+v", jax)
+	}
+	if c.LangByID["c"].Lang() != "c" || c.LangByID["python"] != nil {
+		t.Error("the framework register does not replace the language register")
 	}
 }
 

@@ -48,6 +48,23 @@ type Lang struct {
 	Int       string   `yaml:"int" json:"int,omitempty"`
 	List      string   `yaml:"list" json:"list,omitempty"`
 	Since     string   `yaml:"since" json:"since,omitempty"`
+
+	// The fields below are the fields of a framework of registers/frameworks.yaml (spec 08.2).
+	Language     string   `yaml:"language" json:"language,omitempty"` // the language of the code, such as python for pytorch
+	Packages     string   `yaml:"packages" json:"packages,omitempty"` // the pinned package set of spec 08.4
+	Types        LangTool `yaml:"types" json:"types,omitzero"`
+	Mutation     LangTool `yaml:"mutation" json:"mutation,omitzero"`
+	Image        string   `yaml:"image" json:"image,omitempty"`
+	DefaultDType string   `yaml:"default_dtype" json:"default_dtype,omitempty"`
+	Determinism  []string `yaml:"determinism" json:"determinism,omitempty"`
+}
+
+// Lang gives the language of the code of the entry: the language of a framework, or the id of a language.
+func (l *Lang) Lang() string {
+	if l.Language != "" {
+		return l.Language
+	}
+	return l.ID
 }
 
 // LangTool is a tool of a language: the test framework, the formatter or the linter.
@@ -73,10 +90,15 @@ type Corpus struct {
 	ByTag    map[string]*Node
 	Areas    []Area
 	AreaByID map[string]*Area // keyed by Area.Path()
+	// Langs are the entries of the framework register, registers/frameworks.yaml (spec 08.2). A content tree that has no framework register has the language register, registers/languages.yaml, of the algorithm site.
 	Langs    []Lang
 	LangByID map[string]*Lang
-	Reserved map[string]bool
-	Tags     []Tag
+	// LangFile is the path of the register that Langs came from, relative to the root.
+	LangFile string
+	// Frameworks is true when Langs came from the framework register.
+	Frameworks bool
+	Reserved   map[string]bool
+	Tags       []Tag
 	// OldSlugs maps each old slug of registers/aliases.reg to the slug it moved to.
 	OldSlugs map[string]string
 	// Errors are the node directories that could not be read. Package check reports them as T01.
@@ -112,7 +134,11 @@ func Load(root string) (*Corpus, error) {
 			c.AreaByID[sub.Path()] = sub
 		}
 	}
-	if err := readYAML(filepath.Join(root, "registers", "languages.yaml"), &c.Langs); err != nil {
+	c.LangFile = "registers/languages.yaml"
+	if _, err := os.Stat(filepath.Join(root, "registers", "frameworks.yaml")); err == nil {
+		c.LangFile, c.Frameworks = "registers/frameworks.yaml", true
+	}
+	if err := readYAML(filepath.Join(root, filepath.FromSlash(c.LangFile)), &c.Langs); err != nil {
 		return nil, err
 	}
 	sort.SliceStable(c.Langs, func(i, j int) bool { return c.Langs[i].Tier < c.Langs[j].Tier })
