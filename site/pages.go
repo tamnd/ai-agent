@@ -185,7 +185,7 @@ func sortNodes(ns []*node.Node) {
 }
 
 func (b *builder) home() error {
-	p := HomePage{Base: b.base("Algorithm", "Algorithms and data structures, explained in plain words, proved by hand and in Lean, implemented and tested in many languages, and shown step by step.", "/")}
+	p := HomePage{Base: b.base("AI", "Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.", "/")}
 	p.Section = "home"
 	p.Tiles = b.areaTiles()
 	var start []*node.Node
@@ -233,7 +233,7 @@ func (b *builder) sceneTiles(limit int) []Tile {
 }
 
 func (b *builder) areas() error {
-	p := ListPage{Base: b.base("Areas", "The areas of the field of algorithms, from foundations to research topics.", "/areas/")}
+	p := ListPage{Base: b.base("Areas", "The 52 areas of artificial intelligence in 9 groups, from foundations to context.", "/areas/")}
 	p.Section, p.Heading = "areas", "Areas"
 	p.Lead = fmt.Sprintf("The site puts each page in one of %d areas. An area has sub-areas. A grey tile has no pages yet.", len(b.c.Areas))
 	p.Tiles = b.areaTiles()
@@ -335,9 +335,9 @@ func (b *builder) kinds() error {
 }
 
 func (b *builder) gallery() error {
-	p := ListPage{Base: b.base("Visualize", "Every interactive scene of the site. Step through an algorithm, change the input and watch the state change.", "/visualize/")}
+	p := ListPage{Base: b.base("Visualize", "Every interactive scene of the site. Step through a method, change the input and watch the state change.", "/visualize/")}
 	p.Section, p.Heading = "visualize", "Visualize"
-	p.Lead = "Each scene runs the algorithm on an input that you choose. You can step forward and back. The pseudocode shows the current line."
+	p.Lead = "Each scene runs the method on an input that you choose. You can step forward and back. The pseudocode shows the current line."
 	p.Tiles = b.sceneTiles(0)
 	if len(p.Tiles) == 0 {
 		p.Empty = "No scenes exist yet."
@@ -368,7 +368,7 @@ func (b *builder) languages() error {
 		return err
 	}
 	for _, l := range b.c.Langs {
-		lp := ListPage{Base: b.base(l.Name, fmt.Sprintf("Algorithms and data structures in %s, with native tests.", l.Name), "/languages/"+l.ID+"/")}
+		lp := ListPage{Base: b.base(l.Name, fmt.Sprintf("The reference implementations in %s, with their tests.", l.Name), "/languages/"+l.ID+"/")}
 		lp.Section, lp.Heading = "languages", l.Name
 		lp.Crumbs = []Link{{Name: "Languages", URL: "/languages/"}}
 		lp.Lead = fmt.Sprintf("Every implementation in %s on this site.", l.Name)
@@ -467,7 +467,7 @@ var docPages = []struct{ name, title, desc string }{
 	{"about", "About", "What this site is, who writes it and how a page earns its badges."},
 	{"contribute", "Contribute", "How to write a page, add an implementation, add a scene or review a proof."},
 	{"badges", "Badges", "What each level of each ladder means and how the build computes it."},
-	{"learn", "Learn", "A reading path through the site, from the first ideas to the core algorithms."},
+	{"learn", "Learn", "A reading path through the site, from the first ideas to the core methods."},
 }
 
 func (b *builder) pages() error {
@@ -623,7 +623,7 @@ func (b *builder) machine() error {
 	}
 	var all []apiNode
 	var llms strings.Builder
-	fmt.Fprintf(&llms, "# Algorithm\n\n> Algorithms and data structures, explained in plain words, proved by hand and in Lean, implemented and tested in many languages, and shown step by step.\n\nEach written page has a Markdown copy at /<slug>.md. The JSON record of every page is in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
+	fmt.Fprintf(&llms, "# AI\n\n> Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.\n\nEach written page has a Markdown copy at /<slug>.md. The JSON record of every page is in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
 	groups := map[string][]*node.Node{}
 	for _, n := range b.c.Nodes {
 		a := apiNode{Front: n.Front, URL: b.opt.BaseURL + "/" + n.Slug + "/", Path: n.Rel, Status: b.status[n.Slug], Scene: n.Scene != ""}

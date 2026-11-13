@@ -1,4 +1,4 @@
-/* The style of Algorithm. It is made for reading and for code: one column of text, Inter for the words and a monospace font for the code. Space and tints of colour separate the parts of a page. No box has round corners or a border. Each area has a hue, and its tiles and pages share that colour. There is a light and a dark theme, and the pages work on narrow screens. */
+/* The style of AI. It is made for reading and for code: one column of text, Inter for the words and a monospace font for the code. Space and tints of colour separate the parts of a page. No box has round corners or a border. Each area has a hue, and its tiles and pages share that colour. There is a light and a dark theme, and the pages work on narrow screens. */
 
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 400 760; font-display: swap; src: url("fonts/InterVariable.woff2") format("woff2"); }
 @font-face { font-family: "Inter"; font-style: italic; font-weight: 400 760; font-display: swap; src: url("fonts/InterVariable-Italic.woff2") format("woff2"); }
