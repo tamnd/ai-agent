@@ -71,6 +71,10 @@ type Record struct {
 	TermsFound   int      `json:"terms_found"`
 	TermsMissing []string `json:"terms_missing,omitempty"`
 	Pass         bool     `json:"pass"`
+	// The hashes of the claim as it is judged and of the passage and section that the verifier reads (aik cite
+	// passages), so that a verdict outlives a new extractor or checker that leaves both as they were (Carry).
+	Judged  string `json:"judged,omitempty"`
+	Passage string `json:"passage,omitempty"`
 	// The verifier of 15.4 reads the claim and the span and gives supported, unsupported, contradicted or unreadable.
 	Verdict  string `json:"verdict,omitempty"`
 	Verifier string `json:"verifier,omitempty"`
@@ -146,8 +150,60 @@ func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...
 		}
 	}
 	r.Pass = len(r.NumbersMiss) == 0 && (r.Terms == 0 || float64(r.TermsFound) >= MinTerms*float64(r.Terms))
+	r.Judged = Hash([]byte(Judged(c)))[:32]
+	if r.Pass {
+		r.Passage = PassageHash(d, r.Spans)
+	}
 	return r
 }
+
+// PassageHash is the hash of what the verifier reads of the spans: the passage and its section, as Passage gives them.
+func PassageHash(d *Doc, spans []Span) string {
+	p, sec := Passage(d, spans)
+	return Hash([]byte(p + "\x00" + sec))[:32]
+}
+
+// PrevExtractorVersion is the extractor before ExtractorVersion. A record that it wrote has no hashes of the judged
+// text and passage, and Carry reads them from its key and its spans instead.
+const PrevExtractorVersion = "aik-doc-3"
+
+// Carry tells if the verdict of the old record of a source holds for the new one, r, whose key differs: the claim as
+// it is judged, the work, the locator and the snapshot are the same, and so is the passage and section that the
+// verifier read, so that only the extractor or the checker changed and not what was judged. A record written before
+// the hashes were stored is matched by its key under the previous extractor, and its passage is read from its spans
+// on the text of the snapshot, which that extractor bump left as it was.
+func Carry(old, r Record, c *claims.Claim, d *Doc, snap Snapshot) bool {
+	if old.Verdict == "" || !r.Pass || r.Passage == "" || old.Work != r.Work || old.Locator != r.Locator || old.Snapshot != r.Snapshot {
+		return false
+	}
+	judged, passage := old.Judged, old.Passage
+	if judged == "" {
+		prev := strings.Replace(snap.Extractor, "+"+ExtractorVersion, "+"+PrevExtractorVersion, 1)
+		if prev == snap.Extractor || old.Key != Key(Judged(c), snap.Hash, old.Locator, prev) {
+			return false
+		}
+		judged = r.Judged
+	}
+	if passage == "" {
+		// The previous extractor put a heading at the top of a page on the form feed before it: a span from there
+		// starts at the heading, and a span up to there ends at it.
+		spans := slices.Clone(old.Spans)
+		for i := range spans {
+			sp := &spans[i]
+			for sp.Start < sp.End && sp.Start < len(d.Text) && blank(d.Text[sp.Start]) {
+				sp.Start++
+			}
+			for sp.End > sp.Start && sp.End < len(d.Text) && blank(d.Text[sp.End]) {
+				sp.End++
+			}
+		}
+		passage = PassageHash(d, spans)
+	}
+	return judged == r.Judged && passage == r.Passage
+}
+
+// blank tells if the byte is a space, a tab, a new line or a form feed.
+func blank(b byte) bool { return strings.IndexByte(" \t\n\f", b) >= 0 }
 
 // section is the deepest heading whose text holds the offset.
 func (d *Doc) section(off int) *Head {

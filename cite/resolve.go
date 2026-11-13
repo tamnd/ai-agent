@@ -182,17 +182,12 @@ func (d *Doc) pages(r Ref) (Span, string) {
 	return s, ""
 }
 
-// printed finds a page by the number printed on it, in its first or last line, or else by its place in the file.
-// A journal article that starts at page 1929 is cited by its printed numbers.
+// printed finds a page by the number printed on it, or else by its place in the file. A journal article that starts
+// at page 1929 is cited by its printed numbers.
 func (d *Doc) printed(n int) int {
-	want := strconv.Itoa(n)
-	for i := range d.Pages {
-		lines := strings.Split(strings.TrimSpace(d.Text[d.PageSpan(i).Start:d.PageSpan(i).End]), "\n")
-		if len(lines) == 0 {
-			continue
-		}
-		first, last := strings.TrimSpace(lines[0]), strings.TrimSpace(lines[len(lines)-1])
-		if first == want || last == want || strings.HasSuffix(first, " "+want) || strings.HasPrefix(first, want+" ") {
+	nums := d.printedNumbers()
+	for i, p := range nums {
+		if p == n {
 			return i
 		}
 	}
@@ -200,6 +195,86 @@ func (d *Doc) printed(n int) int {
 		return n - 1
 	}
 	return -1
+}
+
+var pageNumRE = regexp.MustCompile(`^[0-9]{1,5}$`)
+
+// edgeLines is how many lines at the top and at the bottom of a page can hold its printed number: a scan puts the
+// number under its running head or under the noise of the margin, and a magazine puts it above its footer.
+const edgeLines = 4
+
+// printedNumbers gives the number printed on each page, or 0. The numbers that a page shows alone on a line near its
+// top or its bottom are candidates; the pages whose candidates step by one with the pages vote for the difference
+// between the printed number and the place, and the difference with the most votes, at least two, gives the number of
+// a page that shows it, or that has a neighbour that shows its own. A scan that prints the numbers of the odd pages
+// only in the margin, or loses them in its noise, still finds 418 between 417 and 419. With no such difference, the
+// number is the one on the first or the last line of the page, as a single number cannot be checked.
+func (d *Doc) printedNumbers() []int {
+	cands := make([][]int, len(d.Pages))
+	nums := make([]int, len(d.Pages))
+	votes := map[int]int{}
+	for i := range d.Pages {
+		span := d.PageSpan(i)
+		var lines []string
+		for _, l := range strings.Split(d.Text[span.Start:span.End], "\n") {
+			if l = strings.TrimSpace(strings.Trim(l, "\f")); l != "" {
+				lines = append(lines, l)
+			}
+		}
+		if len(lines) == 0 {
+			continue
+		}
+		first, last := lines[0], lines[len(lines)-1]
+		// The old rule: the number alone on the first or the last line, or after or before a running head.
+		for _, f := range []string{first, last, lastField(first), firstField(first)} {
+			if pageNumRE.MatchString(f) {
+				nums[i], _ = strconv.Atoi(f)
+				break
+			}
+		}
+		for k, l := range lines {
+			if k >= edgeLines && k < len(lines)-edgeLines {
+				continue
+			}
+			if pageNumRE.MatchString(l) {
+				v, _ := strconv.Atoi(l)
+				if v > 0 && !slices.Contains(cands[i], v) {
+					cands[i] = append(cands[i], v)
+					votes[v-i]++
+				}
+			}
+		}
+	}
+	off, top := 0, 1
+	for o, v := range votes {
+		if v > top || (v == top && top > 1 && o < off) {
+			off, top = o, v
+		}
+	}
+	if top < 2 {
+		return nums
+	}
+	shows := func(i int) bool { return i >= 0 && i < len(cands) && slices.Contains(cands[i], i+off) }
+	for i := range nums {
+		if shows(i) || shows(i-1) || shows(i+1) {
+			nums[i] = i + off
+		}
+	}
+	return nums
+}
+
+func firstField(s string) string {
+	if f := strings.Fields(s); len(f) > 0 {
+		return f[0]
+	}
+	return ""
+}
+
+func lastField(s string) string {
+	if f := strings.Fields(s); len(f) > 0 {
+		return f[len(f)-1]
+	}
+	return ""
 }
 
 func (d *Doc) labelled(r Ref) (Span, string) {
