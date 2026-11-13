@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -399,5 +400,28 @@ func TestMerge(t *testing.T) {
 	got := Merge([]Span{{10, 20}, {0, 5}, {15, 30}, {30, 31}})
 	if want := []Span{{0, 5}, {10, 31}}; !reflect.DeepEqual(got, want) {
 		t.Errorf("Merge = %v, want %v", got, want)
+	}
+}
+
+func TestPassage(t *testing.T) {
+	d := Parse(paper)
+	r := Check(&claims.Claim{ID: "c", Text: "At test time the weights are scaled by p."}, claims.Evidence{Work: "w", Locator: "Section 2.1"}, d, Snapshot{Hash: "h"})
+	if !r.Pass {
+		t.Fatalf("the check fails: %s", r.Why())
+	}
+	p, sec := Passage(d, r.Spans)
+	if !strings.Contains(p, "scaled by p") {
+		t.Errorf("the passage %q does not hold the span", p)
+	}
+	if sec != "" && !strings.Contains(sec, "scaled by p") {
+		t.Errorf("the section %q does not hold the span", sec)
+	}
+	if p, sec := Passage(d, []Span{{Start: -1, End: 5}, {Start: 10, End: len(d.Text) + 1}}); p != "" || sec != "" {
+		t.Errorf("spans outside the text give %q, %q", p, sec)
+	}
+	for _, v := range []string{Supported, Unsupported, Contradicted, Unreadable} {
+		if !slices.Contains(Verdicts, v) {
+			t.Errorf("Verdicts has no %q", v)
+		}
 	}
 }

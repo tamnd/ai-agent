@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/tamnd/ai-agent/claims"
 )
@@ -149,6 +150,45 @@ func (d *Doc) section(off int) *Head {
 	}
 	return best
 }
+
+// MaxSection is how much of the section around a span the verifier reads, in bytes.
+const MaxSection = 12000
+
+// Passage gives the text of the spans of a record and of the sections that hold them, which is what the verifier
+// reads (15.4). A long section is cut around the span.
+func Passage(d *Doc, spans []Span) (passage, section string) {
+	var p, s strings.Builder
+	seen := map[int]bool{}
+	for _, sp := range spans {
+		if sp.Start < 0 || sp.End > len(d.Text) || sp.Start > sp.End {
+			continue
+		}
+		p.WriteString(strings.TrimSpace(d.Text[sp.Start:sp.End]))
+		p.WriteString("\n\n")
+		h := d.section(sp.Start)
+		if h == nil || seen[h.Start] || (h.Start >= sp.Start && h.End <= sp.End) {
+			continue
+		}
+		seen[h.Start] = true
+		a, b := h.Start, h.End
+		if b-a > MaxSection {
+			mid := (sp.Start + sp.End) / 2
+			a, b = max(h.Start, mid-MaxSection/2), min(h.End, mid+MaxSection/2)
+			for a > h.Start && !utf8.RuneStart(d.Text[a]) {
+				a--
+			}
+			for b < h.End && !utf8.RuneStart(d.Text[b]) {
+				b++
+			}
+		}
+		s.WriteString(strings.TrimSpace(d.Text[a:b]))
+		s.WriteString("\n\n")
+	}
+	return strings.TrimSpace(p.String()), strings.TrimSpace(s.String())
+}
+
+// Verdicts are the verdicts that the verifier may give.
+var Verdicts = []string{Supported, Unsupported, Contradicted, Unreadable}
 
 // Why says in one line why a record does not pass.
 func (r Record) Why() string {
