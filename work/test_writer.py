@@ -41,3 +41,27 @@ class GateTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClimbTest(unittest.TestCase):
+    """A climb to a writer of a new family would leave no auditor of another family; it is skipped."""
+    ladder = ["codex:gpt-6-luna", "claude:claude-haiku-5-5", "codex:gpt-6-sol"]
+    st = {"history": [{"role": "write", "backend": "codex", "model": "gpt-6-luna"}]}
+
+    def climb(self, auditor_ok):
+        class M:
+            def auditor_for(self, ws):
+                if not auditor_ok({w.split(":")[0] for w in ws}):
+                    raise Wait("no auditor")
+                return "claude", "claude-sonnet-5-5"
+        with mock.patch.object(writer, "available", lambda b, m: True), mock.patch.object(writer, "models", lambda: M()):
+            return writer.climb(self.ladder, 0, self.st, (0, "codex", "gpt-6-luna"))
+
+    def test_skips_a_new_family(self):
+        self.assertEqual(self.climb(lambda fams: len(fams) < 2), (2, "codex", "gpt-6-sol"))
+
+    def test_stays_when_no_rung_fits(self):
+        self.assertEqual(self.climb(lambda fams: False), (0, "codex", "gpt-6-luna"))
+
+    def test_takes_the_next_rung_when_it_fits(self):
+        self.assertEqual(self.climb(lambda fams: True), (1, "claude", "claude-haiku-5-5"))
