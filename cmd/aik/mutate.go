@@ -85,7 +85,7 @@ func firstFailure(ss *lang.Session, cases []contract.Case, what string) (string,
 const mutantCaseTimeout = 2 * time.Second
 
 // runMutate runs the mutation test of each implementation (spec 09.6). It writes the result of each language to <out>/<lang>.mutate.json. A mutant that the tests do not kill is a survivor; the report names it with its id, as mutants.ignore lists it.
-func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problems func(*node.Node) []*sharedCases, d diffFlags, max int) error {
+func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problems func(*node.Node) []*sharedCases, d diffFlags, max int, tc *testCache, all bool) error {
 	cache, err := newInputCache(d)
 	if err != nil {
 		return err
@@ -131,14 +131,43 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 				res = &status.Results{Lang: im.Lang, Kind: "mutate"}
 				byLang[im.Lang] = res
 			}
+			// A mutation run is the slowest check, so its result is cached as the tests are, under the inputs of the
+			// tests and the sample: the same code, tests and seed give the same mutants and the same kills.
+			var key string
+			if tc != nil {
+				var ks []*contract.Contract
+				for _, p := range ps {
+					ks = append(ks, p.k)
+				}
+				tool := r.ToolVersion(rc)
+				if d.box != nil {
+					ref, _ := d.box.Image(im.Lang)
+					tool += " image " + ref
+				}
+				key = tc.key(fmt.Sprintf("%s mutate max %d classes %s seeds %s", tool, max, d.classes, d.seeds), n, im, ks)
+				if t, ok := tc.Get(mutateCacheDir(im.Lang), key); ok && t.Mutation != nil {
+					m := *t.Mutation
+					fmt.Printf("pass %s/%s mutation run: the tests kill %d of %d mutants (%.1f%%) (cached)\n", n.Slug, im.Lang, m.Killed, m.Mutants-m.Ignored, 100*m.Score())
+					res.Tests = append(res.Tests, t)
+					continue
+				}
+			}
 			m, err := mutateImpl(killer{r: r, n: n, problems: ps, inputs: cache.get}, im, max)
 			if err != nil {
 				return fmt.Errorf("%s/%s: %w", n.Slug, im.Lang, err)
 			}
-			if m.Error != "" || m.Score() < status.MinScoreFor(im.Lang) {
+			pass := m.Error == "" && m.Score() >= status.MinScoreFor(im.Lang)
+			if !pass {
 				failed++
 			}
-			res.Tests = append(res.Tests, status.Test{Slug: n.Slug, Lang: im.Lang, Mutation: &m})
+			t := status.Test{Slug: n.Slug, Lang: im.Lang, Pass: pass, Mutation: &m}
+			if tc != nil {
+				// Put keeps only a result that passes, so a run under the threshold runs again next time.
+				if err := tc.Put(mutateCacheDir(im.Lang), key, t); err != nil {
+					return err
+				}
+			}
+			res.Tests = append(res.Tests, t)
 		}
 	}
 	if d.out != "" {
@@ -154,6 +183,13 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 				return err
 			}
 		}
+	}
+	if tc != nil && all {
+		dirs := make([]string, 0, len(byLang))
+		for l := range byLang {
+			dirs = append(dirs, mutateCacheDir(l))
+		}
+		tc.Prune(dirs)
 	}
 	if failed > 0 {
 		fmt.Fprintf(os.Stderr, "%d implementations have a mutation score under %.0f%% (%.0f%% for a framework version), or the run did not start\n", failed, 100*status.MinScore, 100*status.XMinScore)
@@ -217,3 +253,6 @@ func firstLine(s string) string {
 	l, _, _ := strings.Cut(strings.TrimSpace(s), "\n")
 	return l
 }
+
+// mutateCacheDir is the directory of the cache that holds the mutation runs of a language, apart from its tests.
+func mutateCacheDir(lang string) string { return lang + ".mutate" }

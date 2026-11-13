@@ -479,10 +479,16 @@ func cmdTest(args []string) error {
 		fmt.Fprintf(os.Stderr, "the tests run in %s containers with the images of %s\n", box.Engine, *images)
 	}
 	problems := contractsOf(c)
+	var tc *testCache
+	if *cacheDir != "" {
+		if tc, err = newTestCache(under(*root, *cacheDir), c.Root); err != nil {
+			return err
+		}
+	}
 	if *kind == "diff" || *kind == "mutate" {
 		d.root, d.box, d.out = c.Root, box, under(*root, *out)
 		if *kind == "mutate" {
-			return runMutate(r, nodes, want, problems, d, *maxMutants)
+			return runMutate(r, nodes, want, problems, d, *maxMutants, tc, f.NArg() == 0)
 		}
 		return runDiff(r, nodes, want, problems, d)
 	}
@@ -499,12 +505,6 @@ func cmdTest(args []string) error {
 		case len(aff.Langs) == 0:
 			fmt.Println("no implementation changed")
 			return nil
-		}
-	}
-	var tc *testCache
-	if *cacheDir != "" {
-		if tc, err = newTestCache(under(*root, *cacheDir), c.Root); err != nil {
-			return err
 		}
 	}
 	for _, n := range nodes {

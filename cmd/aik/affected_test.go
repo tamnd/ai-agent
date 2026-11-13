@@ -3,6 +3,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/tamnd/ai-agent/node"
@@ -64,6 +66,16 @@ func TestTestCache(t *testing.T) {
 	changed.Files[0].Content += "\n"
 	if k1 == tc.key("go1.27", bs, changed, nil) {
 		t.Error("the key does not change with a file")
+	}
+	// The contract and the shapes of the node are inputs of the tests too.
+	moved := *bs
+	moved.Dir = t.TempDir()
+	base := tc.key("go1.27", &moved, im, nil)
+	if err := os.WriteFile(filepath.Join(moved.Dir, "contract.yaml"), []byte("entry: score\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if base == tc.key("go1.27", &moved, im, nil) {
+		t.Error("the key does not change with contract.yaml")
 	}
 	if err := tc.Put("go", "bad", status.Test{Slug: "binary-search", Pass: false}); err != nil {
 		t.Fatal(err)
