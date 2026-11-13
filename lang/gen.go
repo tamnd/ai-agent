@@ -141,7 +141,10 @@ func (t Tree) Rewrite(s string) string {
 		dirs = append(dirs, real)
 	}
 	for _, d := range dirs {
-		s = strings.ReplaceAll(s, d+string(filepath.Separator), "")
+		// A tool may write the tree with either separator on Windows, and a container always writes /.
+		for _, p := range []string{d + string(filepath.Separator), d + "/", filepath.ToSlash(d) + "/"} {
+			s = strings.ReplaceAll(s, p, "")
+		}
 	}
 	names := make([]string, 0, len(t.Sources))
 	for g := range t.Sources {

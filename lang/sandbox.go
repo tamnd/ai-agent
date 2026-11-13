@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -116,7 +117,7 @@ func (s *Sandbox) Argv(lang string, interactive bool, mounts []Mount, cmd []stri
 	s.names = append(s.names, name)
 	s.mu.Unlock()
 	work := mounts[0].Dir
-	home := filepath.Join(work, ".algo-home")
+	home := path.Join(filepath.ToSlash(work), ".algo-home") // a path in the Linux container, so always with /
 	a := []string{s.Engine, "run", "--rm", "--name", name, "--label", "aik.sandbox=1"}
 	if interactive {
 		a = append(a, "-i")
@@ -140,7 +141,7 @@ func (s *Sandbox) Argv(lang string, interactive bool, mounts []Mount, cmd []stri
 		}
 		a = append(a, "-v", v)
 	}
-	env := append([]string{"HOME=" + home, "CARGO_HOME=" + filepath.Join(home, "cargo"), "DOTNET_CLI_HOME=" + home, "TMPDIR=/tmp"}, testEnv...)
+	env := append([]string{"HOME=" + home, "CARGO_HOME=" + path.Join(home, "cargo"), "DOTNET_CLI_HOME=" + home, "TMPDIR=/tmp"}, testEnv...)
 	for _, e := range env {
 		a = append(a, "-e", e)
 	}
