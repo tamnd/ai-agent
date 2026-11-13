@@ -193,7 +193,7 @@ func (ck *citer) work(slug string) (cite.Work, string) {
 	cd := ck.c.CardByKey[slug]
 	if cd == nil || cd.Kind != "work" {
 		if n := ck.c.BySlug[slug]; n != nil && n.Kind == "work" {
-			return cite.Work{}, "the work is a node; its card fields are not read yet"
+			return cite.Work{}, "the work is a node whose front matter does not make a card"
 		}
 		return cite.Work{}, "no work card has this slug (G01)"
 	}

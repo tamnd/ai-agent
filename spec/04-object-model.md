@@ -261,6 +261,7 @@ Rules:
 - A card has no prose beyond `summary`, at most 30 words, written by a model from the facts and checked by rule S10 (no claim that the facts do not support).
 - A card's `harvest` record says where each row came from. A card that two sources describe has two `harvest` records, and the fact model of 4.9 merges them.
 - A card that is promoted keeps its tag; its row moves to the node's `facts.yaml` (4.4).
+- A work card that is promoted moves its fields (`type`, `authors`, `year`, `venue`, `standing`, `licence_class`, `cited`) to the front matter of the work's node, and aik reads the node as the work's card, so claims that cite the work keep their source.
 
 ## 4.7 Edges
 
