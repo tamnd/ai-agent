@@ -285,6 +285,11 @@ details.tests summary span { color: var(--muted); font-family: var(--sans); marg
 .exp-verdict.verdict-holds { color: var(--ok); }
 .exp-verdict.verdict-did-not-hold { color: var(--bad); }
 .exp-note { font-size: 0.9rem; color: var(--muted); }
+.shapes-table { width: 100%; font-size: 0.92rem; }
+.shapes-table caption { text-align: left; font-weight: 600; padding-bottom: 0.3rem; }
+.shapes-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.shapes-meaning { font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+.shapes-role { font-size: 0.8rem; color: var(--muted); }
 .exp-figure img { max-width: 100%; height: auto; }
 .claim-ref { padding-left: 0.9rem; border-left: 3px solid var(--surface-2); }
 :target.claim-chip { outline: 2px solid var(--accent); outline-offset: 1px; }

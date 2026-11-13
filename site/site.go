@@ -17,6 +17,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/check"
@@ -271,14 +273,9 @@ var funcs = template.FuncMap{
 		}
 		return fmt.Sprintf("%s %s", comma(n), many)
 	},
-	"comma": comma,
-	"join":  strings.Join,
-	"title": func(s string) string {
-		if s == "" {
-			return s
-		}
-		return strings.ToUpper(s[:1]) + s[1:]
-	},
+	"comma":    comma,
+	"join":     strings.Join,
+	"title":    upperFirst,
 	"kindName": kindName,
 	"add":      func(a, b int) int { return a + b },
 	"pct": func(a, b int) int {
@@ -431,11 +428,16 @@ func (b *builder) links(slugs []string) []Link {
 }
 
 func humanize(slug string) string {
-	s := strings.ReplaceAll(slug, "-", " ")
-	if s == "" {
+	return upperFirst(strings.ReplaceAll(slug, "-", " "))
+}
+
+// upperFirst writes the first letter of s in upper case. It works on the first rune, not the first byte, so that a name such as Łukasz stays whole.
+func upperFirst(s string) string {
+	r, n := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError {
 		return s
 	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	return string(unicode.ToUpper(r)) + s[n:]
 }
 
 func (b *builder) hueOf(area string) int {
@@ -461,12 +463,7 @@ func (b *builder) crumbs(n *node.Node) []Link {
 	return out
 }
 
-func title(s string) string {
-	if s == "" {
-		return s
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
+func title(s string) string { return upperFirst(s) }
 
 func (b *builder) assets() error {
 	err := fs.WalkDir(assetFS, "assets", func(p string, d fs.DirEntry, err error) error {

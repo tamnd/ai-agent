@@ -42,6 +42,7 @@ The body of `node.md` and of each derivation is Markdown read by goldmark, with 
 | claim anchor | a sentence ending in `{#c-inverted-scaling}` | the claim with its evidence chip (07.3) |
 | claim reference | `::claim{ref=dropout#c-inverted-scaling}` | the claim of another page, with its chip and a link |
 | fact | `{fact:llama-3-1-405b/params.total}` | the value, its unit, a source footnote and "as of" when the fact is time-bound (6.7) |
+| shape value | `{shape:params@base}`, `{shape:params}` | the value of a formula of `shapes.yaml` at a config, or the formula as math (08.6, rule X20) |
 | computed table | `::table{results bench=mmlu/original setting=5-shot limit=10}` | a results table from the register with its date (10.7) |
 | citation | `[^srivastava-2014]` with the locator in `sources` | a footnote with the locator |
 | equation citation | `{eq:vaswani-2017-attention#1}` | "Eq. 1 of Vaswani et al. (2017)", linked |

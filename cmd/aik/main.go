@@ -67,6 +67,7 @@ func init() {
 		{"test", "run the native tests and the shared cases", cmdTest},
 		{"lean", "build the Lean package and check its axioms: lean build", cmdLean},
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
+		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
 		{"results", "print the computed results table of a benchmark version: results table benchmark@version", cmdResults},
 		{"bridge", "refresh the bridge cards from a neighbour's index: bridge sync al|m2|pg", cmdBridge},
 		{"viz", "bundle and check the scenes: viz build | check", cmdViz},

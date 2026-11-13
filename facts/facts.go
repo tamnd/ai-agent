@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"go.yaml.in/yaml/v3"
 )
@@ -384,8 +386,9 @@ func Label(id string) string {
 		}
 	}
 	s := strings.NewReplacer(".", " ", "_", " ").Replace(id)
-	if s == "" {
+	r, n := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError {
 		return s
 	}
-	return strings.ToUpper(s[:1]) + s[1:]
+	return string(unicode.ToUpper(r)) + s[n:]
 }

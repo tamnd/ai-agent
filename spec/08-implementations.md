@@ -164,11 +164,11 @@ config:
   n_heads: {meaning: "number of attention heads", example: 8}
   d_head:  {meaning: "width of each head", formula: "d_model / n_heads"}
   d_ff:    {meaning: "width of the MLP hidden layer", example: 2048}
-  n_layers: {example: 6}
-  vocab:   {example: 32000}
+  n_layers: {meaning: "number of blocks", symbol: "L", example: 6}
+  vocab:   {meaning: "size of the vocabulary", example: 32000, sample: [5, 20]}
 axes:
-  B: batch
-  T: sequence length
+  B: {meaning: batch, example: 2}
+  T: {meaning: sequence length, example: 5}
   H: n_heads
   D: d_head
   M: d_model
@@ -188,23 +188,44 @@ blocks:
     outputs: {y: "(B, T, M)"}
     params: "2 * M * F + F + M"
     flops_forward: "4 * B * T * M * F"
+  - id: ln1
+    params: "2 * M"
+  - id: ln2
+    params: "2 * M"
   - id: block
     of: [attn, mlp, ln1, ln2]
     params: "4 * M * M + 2 * M * F + 9 * M + F"
 model:
-  params: "n_layers * (4 * M * M + 2 * M * F + 9 * M + F) + V * M"   # tied embeddings
+  params_non_embedding: {formula: "n_layers * block.params", symbol: "N", meaning: "parameters without the embedding"}
+  params: "params_non_embedding + V * M"   # tied embeddings
   flops_per_token_forward: "2 * params_non_embedding + 2 * n_layers * T * M"
   sources:
     - {work: vaswani-2017-attention, locator: "Section 3.3 and Table 1"}
     - {work: kaplan-2020-scaling-laws, locator: "Section 2.1, Table 1"}
+configs:
+  base: {d_model: 512, n_heads: 8, d_ff: 2048, n_layers: 6, vocab: 37000, source: {work: vaswani-2017-attention, locator: "Table 3"}}
 ```
+
+The parts of the file:
+
+- **`config`** has the size variables. A variable has an `example` (a whole number of at least 1) or a `formula` in the other names, never both. `meaning` is the text of the table, `symbol` is its TeX in the formulas of the page, and `sample: [low, high]` is the range of `aik shapes sample` (by default `[min(2, example), min(example, 8)]`).
+- **`axes`** has the letters of the tensor shapes. An axis whose value names a config variable (`H: n_heads`) is another name for it. Any other axis is free, an input of the forward pass such as the batch or the sequence length, and it needs `{meaning, example}`.
+- **`blocks`** has the parts. `params` and `flops_forward` are formulas. A block with `of` is made of other blocks: when it has no `params` of its own, its count is the sum of its parts; when it has one, the parts must add up to it. A block with no `flops_forward` has no multiply-adds; its minor FLOPs are not counted. `eq` names the equation anchors `{#eq-...}` of `node.md` that the block computes.
+- **`model`** has the totals. Each key other than `sources` and `note` is a formula, as a string or as `{formula, meaning, symbol}`. `params` is required.
+- **`configs`** has named configs, such as the base and big models of a paper, each with an optional `source`. A config sets the size variables and free axes that it names; the others keep their example.
+
+A formula has whole numbers, the names of the file, `block.params` and `block.flops_forward`, the operators `+ - * / ^` and parentheses. The build evaluates it exactly, with rationals, and a size, a count or a dimension that is not a whole number is an error.
+
+`aik shapes sample -w <slug>` writes `fixtures/shapes.json`: the example config, two small random configs from a seed that is the hash of the node's path (so that every machine draws the same ones), and each named config. For each config it gives every size, the shape of every input, output and internal of each block, each block's `params` and `flops_forward`, and each total. The tests of every framework read this file. `aik shapes show <slug>` prints the counts of each config.
 
 The checks (rule X09):
 
-1. **Shapes.** The test harness runs `forward` of each framework on random inputs for three configs (the example config and two small random ones from `aik shapes sample`) and checks the shape of each output and of each internal that the code exposes through `cache`.
-2. **Parameter count.** `param_count(config)` of the code, the count of the actual parameter arrays, and the formula of `shapes.yaml` agree exactly for the three configs.
-3. **FLOPs.** `flops(config, inputs)` of the code and the formula agree exactly. The build also counts the multiply-adds of the NumPy forward with an instrumented array type (`aik flopcount`) on the small configs and checks that it agrees with the formula within the conventions of `schema/flops.md` (a multiply-add is 2 FLOPs; softmax, normalization and activations are counted separately and listed under `flops_minor`).
-4. **The page and the shapes agree.** Every parameter count and FLOP formula that the page prints is rendered from `shapes.yaml`, never typed in the text (rule X20). The calculators of 16.14 use the same formulas.
+1. **The file.** Every name of every formula is defined, nothing depends on itself, the sizes are whole numbers at the example and at the named configs, the parts of each block add up to it, and each `eq` names an anchor of `node.md`. `aik check` runs this on every pull request, and an error blocks.
+2. **Shapes.** The test harness runs `forward` of each framework on random inputs for the example config and the two sampled configs of `fixtures/shapes.json`, and checks the shape of each output and of each internal that the code exposes through `cache`.
+3. **Parameter count.** `param_count(config)` of the code, the count of the actual parameter arrays, and the formula of `shapes.yaml` agree exactly for every config of the fixture.
+4. **FLOPs.** `flops(config, inputs)` of the code and the formula agree exactly. The build also counts the multiply-adds of the NumPy forward with an instrumented array type (`aik flopcount`) on the small configs and checks that it agrees with the formula within the conventions of `schema/flops.md` (a multiply-add is 2 FLOPs; softmax, normalization and activations are counted separately and listed under `flops_minor`).
+5. **The fixture is current.** `fixtures/shapes.json` is what `aik shapes sample` gives from `shapes.yaml`; a node with code and no fixture, or with a stale one, stays below X2.
+6. **The page and the shapes agree.** Every parameter count and FLOP formula that the page prints is rendered from `shapes.yaml`, never typed in the text (rule X20). The generated section "Shapes and parameters" has the sizes, the blocks with their shapes and formulas, and the totals at each config. In the prose, `{shape:params}` prints the formula of `params` as math, and `{shape:params@base}` prints its value at the config `base` (or `example`); a reference that names no formula or no config blocks. The calculators of 16.14 use the same formulas.
 
 ## 8.7 Tests
 
@@ -230,7 +251,7 @@ fixtures/
   manifest.yaml           seeds, configs, the hash of each file, the NumPy version that made it
 ```
 
-Every framework loads the same parameters, runs the same inputs, and compares with `expected-small.npz`. When the NumPy reference changes, `aik fixtures make` rewrites the expected files, and the pull request shows the diff of every number that changed.
+Every framework loads the same parameters, runs the same inputs, and compares with `expected-small.npz`. `aik test` copies `fixtures/` of the node into the tree of each implementation, so a test finds the files at `fixtures/` next to it in the tree and at `../../fixtures/` in the content repository; a change to a fixture runs the tests of every framework of the node again. A parameter tree is stored flat, with the path of each array joined by `/` (`dec/0/cross/W_q`), and each framework rebuilds its own tree from it. When the NumPy reference changes, `aik fixtures make` rewrites the expected files, and the pull request shows the diff of every number that changed.
 
 ### 8.7.3 Differential tests
 

@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/tamnd/ai-agent/contract"
+	"github.com/tamnd/ai-agent/lang"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
 )
@@ -157,12 +158,21 @@ func hashFile(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// key is the hash of the inputs of the tests of one implementation: aik, the toolchain, the files of the implementation, and the contract and cases of each problem that it solves.
+// key is the hash of the inputs of the tests of one implementation: aik, the toolchain, the files of the implementation, the shared fixtures of its node, and the contract and cases of each problem that it solves.
 func (tc *testCache) key(tool string, n *node.Node, im node.Impl, ks []*contract.Contract) string {
 	h := sha256.New()
 	fmt.Fprintf(h, "aik %s\nlang %s\ntool %s\nnode %s\n", tc.salt, im.Lang, tool, n.Slug)
 	for _, f := range im.Files {
 		fmt.Fprintf(h, "file %s %d\n%s\n", f.Name, len(f.Content), f.Content)
+	}
+	shared, _ := lang.Shared(n)
+	for _, rel := range shared {
+		b, err := os.ReadFile(filepath.Join(n.Dir, filepath.FromSlash(rel)))
+		if err != nil {
+			continue
+		}
+		fmt.Fprintf(h, "shared %s %d\n", rel, len(b))
+		h.Write(b)
 	}
 	for _, k := range ks {
 		fmt.Fprintf(h, "problem %s\n", k.Problem)
