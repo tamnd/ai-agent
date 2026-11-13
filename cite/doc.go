@@ -321,6 +321,7 @@ var (
 	capsRE = regexp.MustCompile(`\b([A-Z]) ([A-Z]{2,})\b`)
 	abbrRE = regexp.MustCompile(`\p{L}\. \p{L}`)
 	plurRE = regexp.MustCompile(`\b([A-Z]{2,}) S\b`)
+	vsRE   = regexp.MustCompile(`(?i)\bvs\.`)
 )
 
 // joinCaps mends the small capitals of a title, which the extraction splits after the first letter of each word:
@@ -334,7 +335,7 @@ func joinCaps(t string) string {
 }
 
 // headTitle tells if a number and a title can be a heading. A title that is math ("X = apx") or a row of a table
-// ("Avg. Test RMSE", "CNNs*") is not; a number with no title and a part 0 or a leading zero (1.0, 5.02) is a number
+// ("Avg. Test RMSE", "CNNs*") is not, though "vs." is a word of headings ("Model Averaging vs. Weight Scaling"); a number with no title and a part 0 or a leading zero (1.0, 5.02) is a number
 // of a table.
 func headTitle(num, title string) bool {
 	if title == "" {
@@ -345,7 +346,7 @@ func headTitle(num, title string) bool {
 		}
 		return true
 	}
-	if !wordy(title) || strings.ContainsAny(title, "=*|") || abbrRE.MatchString(title) {
+	if !wordy(title) || strings.ContainsAny(title, "=*|") || abbrRE.MatchString(vsRE.ReplaceAllString(title, "vs")) {
 		return false
 	}
 	for _, r := range title {

@@ -429,13 +429,13 @@ func TestPassage(t *testing.T) {
 func TestParseContents(t *testing.T) {
 	text := "Title\n\nContents\n1 Introduction\n\n3\n\n2 Method\n2.1 Setup . . . . . . 5\n3 Results\n9\n\f" +
 		"1\n\nIntroduction\n\nWe study a thing.\n\n2\n\nMethod\n\nThe method.\n\n2.1\n\nSetup\n\nThe setup.\n\n" +
-		"1.0\n\n5.02\n\n3 Results\n\nAvg. Test RMSE\n\n4 Avg. Test RMSE and Std. Errors\n\n4 X = apx\n\n4 R EGULARIZING RNN S WITH LSTM C ELLS\n"
+		"1.0\n\n5.02\n\n3 Results\n\nAvg. Test RMSE\n\n4 Avg. Test RMSE and Std. Errors\n\n4 X = apx\n\n4 R EGULARIZING RNN S WITH LSTM C ELLS\n\n4.1 Model Averaging vs. Weight Scaling\n"
 	d := Parse(text)
 	var got []string
 	for _, h := range d.Heads {
 		got = append(got, h.Num+" "+h.Title)
 	}
-	want := []string{"1 Introduction", "2 Method", "2.1 Setup", "3 Results", "4 REGULARIZING RNNS WITH LSTM CELLS"}
+	want := []string{"1 Introduction", "2 Method", "2.1 Setup", "3 Results", "4 REGULARIZING RNNS WITH LSTM CELLS", "4.1 Model Averaging vs. Weight Scaling"}
 	if strings.Join(got, "|") != strings.Join(want, "|") {
 		t.Errorf("heads = %q, want %q", got, want)
 	}
