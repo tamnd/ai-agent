@@ -111,3 +111,72 @@ func TestFmt(t *testing.T) {
 		t.Fatalf("aik fmt -check after aik fmt exits with %d", got)
 	}
 }
+
+func TestMintCards(t *testing.T) {
+	tagSource = bytes.NewReader(bytes.Repeat([]byte{9, 4, 120, 33, 70, 14, 230, 5}, 64))
+	t.Cleanup(func() { tagSource = cryptoSource })
+	root := copyCorpus(t)
+	shard := filepath.Join(root, "cards", "model", "_.jsonl")
+	if err := os.MkdirAll(filepath.Dir(shard), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	lines := `{"tag":"NEW-gpt-4","kind":"model","slug":"gpt-4","name":"GPT-4"}` + "\n" +
+		`{"tag": "NEW-llama-2", "kind": "model", "slug": "llama-2", "name": "Llama 2"}` + "\n"
+	if err := os.WriteFile(shard, []byte(lines), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reg := filepath.Join(root, "registers", "universe", "_.jsonl")
+	if err := os.MkdirAll(filepath.Dir(reg), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(reg, []byte(`{"id":"u:epoch:GPT-4","name":"GPT-4","kind":"model","outcome":"card","target":"NEW-gpt-4"}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := run([]string{"mint", "-root", root, "-author", "tester", "llama-2"}); got != 0 {
+		t.Fatalf("aik mint llama-2 exits with %d", got)
+	}
+	b, _ := os.ReadFile(shard)
+	if !strings.Contains(string(b), `"tag":"NEW-gpt-4"`) || strings.Contains(string(b), "NEW-llama-2") {
+		t.Fatalf("aik mint llama-2 minted the wrong card:\n%s", b)
+	}
+	if got := run([]string{"mint", "-root", root}); got != 0 {
+		t.Fatalf("aik mint exits with %d", got)
+	}
+	b, _ = os.ReadFile(shard)
+	re := regexp.MustCompile(`^\{"tag": ?"([0-9A-HJKMNP-TV-Z]{6})",`)
+	got := strings.Split(strings.TrimSpace(string(b)), "\n")
+	tags := map[string]string{}
+	var order []string
+	for _, ln := range got {
+		m := re.FindStringSubmatch(ln)
+		if m == nil {
+			t.Fatalf("the card line has no permanent tag: %s", ln)
+		}
+		slug := "gpt-4"
+		if strings.Contains(ln, "llama-2") {
+			slug = "llama-2"
+			// The other bytes of the line stay as they were.
+			if want := `{"tag": "` + m[1] + `", "kind": "model", "slug": "llama-2", "name": "Llama 2"}`; ln != want {
+				t.Errorf("the line is %s, want %s", ln, want)
+			}
+		}
+		tags[slug] = m[1]
+		order = append(order, m[1])
+	}
+	if len(order) != 2 || order[0] > order[1] {
+		t.Errorf("the shard is not sorted by tag:\n%s", b)
+	}
+	regText, _ := os.ReadFile(filepath.Join(root, "registers", "tags.reg"))
+	for slug, tag := range tags {
+		if !strings.Contains(string(regText), tag+" "+slug+"\n") {
+			t.Errorf("tags.reg has no line %q", tag+" "+slug)
+		}
+	}
+	u, _ := os.ReadFile(reg)
+	if !strings.Contains(string(u), `"target":"ai://`+tags["gpt-4"]+`"`) {
+		t.Errorf("the universe item has not the new tag %s: %s", tags["gpt-4"], u)
+	}
+	if got := run([]string{"check", "-root", root}); got != 0 {
+		t.Fatalf("aik check after mint of the cards exits with %d", got)
+	}
+}

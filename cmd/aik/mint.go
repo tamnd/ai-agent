@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/node"
+	"github.com/tamnd/ai-agent/universe"
 )
 
 // crockford is the alphabet of tags (spec 04.2). It has no I, L, O or U.
@@ -76,9 +79,33 @@ func readTagFile(path string, into map[string]bool) error {
 
 type minted struct {
 	n   *node.Node
+	c   *card.Card
 	tag string
 }
 
+func (m minted) old() string {
+	if m.c != nil {
+		return m.c.Tag
+	}
+	return m.n.Tag
+}
+
+func (m minted) key() string {
+	if m.c != nil {
+		return m.c.Key()
+	}
+	return m.n.Slug
+}
+
+func (m minted) rel() string {
+	if m.c != nil {
+		return m.c.File
+	}
+	return m.n.Rel
+}
+
+// cmdMint gives a permanent tag to each node and card that has a provisional one (NEW-...), writes it into the
+// node or the card line, adds the line of tags.reg and points the universe items at the new tag.
 func cmdMint(args []string) error {
 	f := newFlags("mint", "[slug ...]")
 	root := f.String("root", ".", "the root of the content repository")
@@ -93,8 +120,8 @@ func cmdMint(args []string) error {
 	}
 	only := map[string]bool{}
 	for _, s := range f.Args() {
-		if c.BySlug[s] == nil {
-			return fmt.Errorf("no node has the slug %q", s)
+		if c.BySlug[s] == nil && c.CardByKey[s] == nil {
+			return fmt.Errorf("no node or card has the slug %q", s)
 		}
 		only[s] = true
 	}
@@ -105,27 +132,35 @@ func cmdMint(args []string) error {
 	for _, n := range c.Nodes {
 		used[n.Tag] = true
 	}
+	for _, cd := range c.Cards {
+		used[cd.Tag] = true
+	}
 	if err := readTagFile(filepath.Join(*root, "registers", "retired.reg"), used); err != nil {
 		return err
 	}
 	var todo []minted
 	for _, n := range c.Nodes {
-		if !provisionalRE.MatchString(n.Tag) || (len(only) > 0 && !only[n.Slug]) {
-			continue
+		if provisionalRE.MatchString(n.Tag) && (len(only) == 0 || only[n.Slug]) {
+			todo = append(todo, minted{n: n})
 		}
-		t, err := newTag(used)
-		if err != nil {
+	}
+	for _, cd := range c.Cards {
+		if provisionalRE.MatchString(cd.Tag) && (len(only) == 0 || only[cd.Key()]) {
+			todo = append(todo, minted{c: cd})
+		}
+	}
+	sort.SliceStable(todo, func(i, j int) bool { return todo[i].key() < todo[j].key() })
+	for i := range todo {
+		if todo[i].tag, err = newTag(used); err != nil {
 			return err
 		}
-		todo = append(todo, minted{n, t})
 	}
-	sort.Slice(todo, func(i, j int) bool { return todo[i].n.Slug < todo[j].n.Slug })
 	if len(todo) == 0 {
 		fmt.Println("no provisional ids")
 		return nil
 	}
 	for _, m := range todo {
-		fmt.Printf("%s %s %s\n", m.n.Tag, m.tag, m.n.Rel)
+		fmt.Printf("%s %s %s\n", m.old(), m.tag, m.rel())
 	}
 	if *dry {
 		return nil
@@ -135,13 +170,64 @@ func cmdMint(args []string) error {
 	}
 	reg := filepath.Join(*root, "registers", "tags.reg")
 	var lines strings.Builder
+	cards := map[string]map[string]string{} // the kind, then the old tag and the new one
+	moved := map[string]string{}
 	for _, m := range todo {
-		if err := mintNode(*root, m, *author); err != nil {
+		if m.c != nil {
+			if cards[m.c.Kind] == nil {
+				cards[m.c.Kind] = map[string]string{}
+			}
+			cards[m.c.Kind][m.c.Tag] = m.tag
+		} else if err := mintNode(*root, m, *author); err != nil {
 			return err
 		}
-		fmt.Fprintf(&lines, "%s %s\n", m.tag, m.n.Slug)
+		moved[m.old()] = m.tag
+		fmt.Fprintf(&lines, "%s %s\n", m.tag, m.key())
 	}
-	return appendLines(reg, lines.String())
+	kinds := make([]string, 0, len(cards))
+	for kind := range cards {
+		kinds = append(kinds, kind)
+	}
+	sort.Strings(kinds)
+	for _, kind := range kinds {
+		if err := mintCards(filepath.Join(*root, card.Dir, kind), cards[kind]); err != nil {
+			return err
+		}
+	}
+	if err := appendLines(reg, lines.String()); err != nil {
+		return err
+	}
+	return universe.Retarget(*root, moved)
+}
+
+// mintCards writes the new tags into the card lines of one kind, and moves each line to the shard of its new tag
+// (20.3). Only the tag of a line changes; the other bytes stay as they are.
+func mintCards(dir string, tags map[string]string) error {
+	lines, err := card.ReadKind(dir)
+	if err != nil {
+		return err
+	}
+	for _, l := range lines {
+		t, ok := tags[l.Card.Tag]
+		if !ok {
+			continue
+		}
+		re := regexp.MustCompile(`"tag"(\s*):(\s*)"` + regexp.QuoteMeta(l.Card.Tag) + `"`)
+		done := false
+		raw := re.ReplaceAllFunc(l.Raw, func(m []byte) []byte {
+			if done {
+				return m
+			}
+			done = true
+			return re.ReplaceAll(m, []byte(`"tag"${1}:${2}"`+t+`"`))
+		})
+		if err := l.Card.Set("tag", t); err != nil {
+			return err
+		}
+		l.Changed = l.Changed || bytes.Equal(raw, l.Raw)
+		l.Raw, l.Card.Tag = raw, t
+	}
+	return card.WriteKind(dir, lines, card.MaxShard)
 }
 
 func mintNode(root string, m minted, author string) error {

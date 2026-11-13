@@ -329,6 +329,13 @@ func Compute(in Input) *Report {
 		}
 	}
 	bySlug := map[string]Item{}
+	// A card target is the slug of a NEW- id before aik mint and the tag after it.
+	cardByTag := map[string]*card.Card{}
+	for _, cd := range c.Cards {
+		if _, dup := cardByTag[cd.Tag]; !dup && cd.Tag != "" {
+			cardByTag[cd.Tag] = cd
+		}
+	}
 	add := func(it Item) {
 		it.Label = fmt.Sprintf("C%d", it.Level)
 		r.Items = append(r.Items, it)
@@ -410,6 +417,9 @@ func Compute(in Input) *Report {
 			}
 		case "card":
 			cd := c.CardByKey[targetID(row.Target)]
+			if cd == nil {
+				cd = cardByTag[targetID(row.Target)]
+			}
 			if cd == nil || len(cd.Bad) > 0 {
 				r.Promises = append(r.Promises, Promise{Row: row.ID, Outcome: row.Outcome, Target: row.Target, Core: row.Core, Gap: "missing-card"})
 				r.Gaps["missing-card"] = append(r.Gaps["missing-card"], row.ID)

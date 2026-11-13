@@ -72,7 +72,7 @@ func TestCardLevel(t *testing.T) {
 func TestCompute(t *testing.T) {
 	drop := &node.Node{Front: node.Front{Kind: "method", Slug: "dropout", Area: "deep-learning-training/regularization"}}
 	ov := &node.Node{Front: node.Front{Kind: "concept", Slug: "overfitting", Area: "supervised-learning/basics"}}
-	w := &card.Card{Kind: "work", Slug: "srivastava-2014"}
+	w := &card.Card{Kind: "work", Slug: "srivastava-2014", Tag: "5TQH2W"}
 	c := &node.Corpus{Nodes: []*node.Node{drop, ov}, BySlug: map[string]*node.Node{"dropout": drop, "overfitting": ov},
 		Cards: []*card.Card{w}, CardByKey: map[string]*card.Card{"srivastava-2014": w}}
 	st := map[string]status.Status{
@@ -84,6 +84,7 @@ func TestCompute(t *testing.T) {
 		{ID: "u:2", Outcome: "node", Target: "ai://NEW-batch-norm", Core: true, Sources: []string{"canon:goodfellow-2016-deep-learning:8.7"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:3", Outcome: "card", Target: "srivastava-2014", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:4", Outcome: "card", Target: "hinton-2012", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
+		{ID: "u:6", Outcome: "card", Target: "ai://5TQH2W", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:5", Outcome: "pending", Added: "2026-11-01", Sources: []string{"pwc-dump:methods"}, File: "deep-learning-training.jsonl"},
 	}
 	in := Input{Corpus: c, Status: st, Rows: rows, Canon: []Canon{{ID: "goodfellow-2016-deep-learning"}},
