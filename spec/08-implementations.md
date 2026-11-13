@@ -358,7 +358,7 @@ The build does not read the tests to find out what they check; it reads their na
 | every kind | the native tests pass | |
 | `method`, `architecture`, NumPy reference with a `def backward(` | a passing `test_gradient` (X04) | a passing `test_shared_fixture` (X02) |
 | `method`, `architecture`, other frameworks | | a passing `test_shared_fixture` (X02) and `test_gradient` (X04) |
-| `architecture` | | also `test_shapes` and `test_param_count` (X09) and `test_learns` (8.7.6) |
+| `architecture` | | also `test_shapes` and `test_param_count` (X09), and `test_learns` (8.7.6) except from a NumPy reference with no backward, which cannot train |
 | `metric` | | every vector in `vectors/*.jsonl` passes (X05) |
 
 `aik` itself runs the vectors of a metric, so the node needs no test that reads them. Each line of a file in `vectors/` is one vector: `id`, `predictions`, `references`, `options`, `want` (a map from the outputs of `contract.yaml` to their values), `by` (the official implementation and its version, or `hand`) and `note` (needed for `hand`). The harness calls the `entry` of the contract (`score` by default) with the predictions, the references and the options as keyword arguments, and compares the result with `want` within the tolerance of the contract, as `|got - want| <= atol + rtol |want|`. A vector that fails or raises fails `aik test`.

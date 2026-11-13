@@ -50,7 +50,7 @@ func xTests(n *node.Node, im node.Impl) (x1, x2 []xTest) {
 	switch n.Kind {
 	case "method", "architecture":
 		if ref {
-			if m := im.Main(); m != nil && hasBackward.MatchString(m.Content) {
+			if backward(im) {
 				x1 = append(x1, xTest{"test_gradient", "X04", "the hand-written backward against finite differences (8.7.4)"})
 			}
 			x2 = append(x2, xTest{"test_shared_fixture", "X02", "the shared fixtures that the reference made (8.7.2)"})
@@ -63,10 +63,20 @@ func xTests(n *node.Node, im node.Impl) (x1, x2 []xTest) {
 	if n.Kind == "architecture" {
 		x2 = append(x2,
 			xTest{"test_shapes", "X09", "the shapes of shapes.yaml at each config (8.6)"},
-			xTest{"test_param_count", "X09", "the parameter count of shapes.yaml at each config (8.6)"},
-			xTest{"test_learns", "8.7.6", "the learning smoke test: the model fits a tiny fixed batch on CPU"})
+			xTest{"test_param_count", "X09", "the parameter count of shapes.yaml at each config (8.6)"})
+		// Learning needs gradients: a NumPy reference with no backward cannot train, and the frameworks with autodiff
+		// check that the model learns.
+		if !ref || backward(im) {
+			x2 = append(x2, xTest{"test_learns", "8.7.6", "the learning smoke test: the model fits a tiny fixed batch on CPU"})
+		}
 	}
 	return x1, x2
+}
+
+// backward tells if the main file of the implementation writes a backward pass by hand (8.3.4).
+func backward(im node.Impl) bool {
+	m := im.Main()
+	return m != nil && hasBackward.MatchString(m.Content)
 }
 
 func (x xTest) passed(t Test) bool {

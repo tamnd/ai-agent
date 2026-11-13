@@ -63,6 +63,14 @@ func TestXLadderKinds(t *testing.T) {
 	if got := strings.Join(names, " "); got != "test_shared_fixture test_gradient test_shapes test_param_count test_learns" {
 		t.Errorf("architecture: %s", got)
 	}
+	names = nil
+	_, x2 = xTests(arch, node.Impl{Lang: "numpy", Files: []node.File{{Name: "transformer.py", Content: "def forward(x):\n    pass\n"}}})
+	for _, x := range x2 {
+		names = append(names, x.name)
+	}
+	if got := strings.Join(names, " "); got != "test_shared_fixture test_shapes test_param_count" {
+		t.Errorf("an architecture with no backward in NumPy: %s", got)
+	}
 
 	m := &node.Node{}
 	m.Slug, m.Kind = "bleu", "metric"
