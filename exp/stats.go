@@ -256,7 +256,8 @@ type Bootstrap struct {
 }
 
 func (b Bootstrap) draws(x, y []float64, stat func(x, y []float64) float64) []float64 {
-	r := rand.New(rand.NewPCG(b.Seed, b.Seed^0x9e3779b97f4a7c15))
+	// The bootstrap needs a generator with a seed, so that the same values give the same interval on each run. It is not used for security.
+	r := rand.New(rand.NewPCG(b.Seed, b.Seed^0x9e3779b97f4a7c15)) //nolint:gosec // a seeded generator is the point here
 	out := make([]float64, b.Resamples)
 	sx, sy := make([]float64, len(x)), make([]float64, len(y))
 	for i := range out {

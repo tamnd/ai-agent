@@ -188,10 +188,9 @@ func (r *run) test(e *exp.Experiment, t exp.Test) {
 		r.add("R01", Warn, p, 0, "%s: aik cannot run the test shape yet; the experiment stays inconclusive", t.Metric)
 	}
 	if exp.Comparative[t.Test] {
-		switch {
-		case t.Compare == nil:
+		if t.Compare == nil {
 			r.add("R01", Level, p, 0, "%s: the test %s needs compare: {treatment, control}", t.Metric, t.Test)
-		default:
+		} else {
 			for _, a := range []string{t.Compare.Treatment, t.Compare.Control} {
 				if d.Arm(a) == nil {
 					r.add("R01", Level, p, 0, "%s: the arm %q is not an arm of %s; a comparative claim needs its control arm", t.Metric, a, exp.DesignFile)
