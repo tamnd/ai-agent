@@ -127,6 +127,9 @@ type Front struct {
 	Exercises   []string          `yaml:"exercises,omitempty" json:"exercises,omitempty"`
 	People      []string          `yaml:"people,omitempty" json:"people,omitempty"`
 	SeeAlso     []string          `yaml:"see_also,omitempty" json:"see_also,omitempty"`
+	// Fields are the fields of the node's kind (spec 04.5), as the premises of an argument or the replications of a
+	// finding, by name. KindFields lists them.
+	Fields map[string]any `yaml:"-" json:"fields,omitempty"`
 }
 
 // File is one file of an implementation.
@@ -265,9 +268,21 @@ func Read(root, dir string) (*Node, error) {
 	if err := yaml.Unmarshal(front, &raw); err != nil {
 		return nil, fmt.Errorf("%s: front matter: %w", path, err)
 	}
+	// A forbidden key that is a field of the kind, as the evidence of an open problem (the claims that bear on it),
+	// is written, not computed.
+	kind, _ := raw["kind"].(string)
 	for _, k := range forbiddenKeys {
-		if _, ok := raw[k]; ok {
+		if _, ok := raw[k]; ok && !kindField(kind, k) {
 			n.Forbidden = append(n.Forbidden, k)
+			delete(raw, k)
+		}
+	}
+	for k, v := range raw {
+		if kindField(kind, k) && !commonField(k) {
+			if n.Fields == nil {
+				n.Fields = map[string]any{}
+			}
+			n.Fields[k] = v
 			delete(raw, k)
 		}
 	}
