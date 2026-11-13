@@ -269,6 +269,10 @@ details.tests summary span { color: var(--muted); font-family: var(--sans); marg
 .claim-chip.label-proved, .claim-chip.label-measured-here, .claim-chip.label-replicated { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
 .claim-chip.label-contested { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
 .claim-chip.label-unchecked { color: var(--muted); }
+.result-table { width: 100%; font-size: 0.95rem; }
+.result-table td:first-child { width: 3rem; color: var(--muted); }
+.result-group .contested summary { cursor: pointer; color: var(--muted); }
+.self-reported { font-size: 0.8rem; color: var(--muted); }
 .exp-box { margin: 1.25rem 0; padding: 0.9rem 1rem; border-left: 3px solid var(--surface-2); }
 .exp-box .exp-claim { font-weight: 600; margin-top: 0; }
 .exp-box .claim-id { font-weight: 400; font-size: 0.85rem; }
