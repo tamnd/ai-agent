@@ -124,7 +124,8 @@ aik
   new viz <slug>                            add a scene skeleton (12)
   fmt [paths]                               format front matter, markup, one sentence per line
   check [paths] [-changed] [-rules F,..]    the audit rules of 15.3 on the given files; -changed for the files of the branch
-  gate <slug>                               the writer gate of 14.6: fmt, check, stubs, plain words, characters, claims, tests, cpu-small experiments, cite
+  gate <slug>... [-json] [-cite]           the writer gate of 14.6: fmt, check, stubs, plain words, characters, claims, tests, cpu-small experiments; -cite adds the citation check
+  gate ... -no-tests -no-exp               the cheap steps only, for a fix round of prose
   mint                                      give tags to every NEW- id; update tags.reg
   promote <id>                              turn a card into a node directory, same tag (04.1)
   card sync [-kind K] [-source S]           write and update cards from inventories and universe outcomes; split shards

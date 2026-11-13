@@ -62,6 +62,7 @@ func init() {
 		{"mint", "give each provisional id a permanent tag", cmdMint},
 		{"mv", "rename a node or move it to another area; the old URL redirects", cmdMv},
 		{"check", "run the audit rules, and the scene checks with -viz", cmdCheck},
+		{"gate", "the writer gate of 14.6 on nodes: fmt, check, stubs, plain words, characters, claims, tests, cpu-small experiments", cmdGate},
 		{"status", "show the ladders of a node and what the next level needs", cmdStatus},
 		{"gen", "write the build tree of each language to build/lang", cmdGen},
 		{"test", "run the native tests and the shared cases", cmdTest},
