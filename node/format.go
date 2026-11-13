@@ -17,8 +17,8 @@ import (
 // KeyOrder is the order of the front matter keys (spec 04.4). Keys that are not in the list go after it, in the order of the file.
 var KeyOrder = []string{
 	"tag", "kind", "slug", "name", "aliases", "area", "areas", "level", "summary",
-	"solves", "implements", "techniques", "uses", "variant_of", "generalizes",
-	"model", "complexity", "complexity_in", "properties", "constraints", "history",
+	"purpose", "applies_to", "solves", "implements", "techniques", "uses", "variant_of",
+	"related_to", "generalizes", "hyperparameters", "cost", "model", "complexity", "complexity_in", "properties", "constraints", "history",
 	"prereqs", "see_also", "same_as", "lean", "sources", "exercises", "people",
 }
 

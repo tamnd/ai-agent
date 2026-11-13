@@ -332,7 +332,7 @@ func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
 	if cd := r.c.CardByKey[slug]; !ok && cd != nil {
 		// A slug in a field can name a card (spec 4.5).
 		if len(kinds) > 0 && !slices.Contains(kinds, cd.Kind) {
-			r.add("E01", Block, p, 0, "%s: %q is a %s card, not a %s", field, slug, cd.Kind, strings.Join(kinds, " or "))
+			r.add("E01", Block, p, 0, "%s: %q is %s card, not %s", field, slug, article(cd.Kind), article(strings.Join(kinds, " or ")))
 		}
 		return
 	}
@@ -349,7 +349,7 @@ func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
 		if rule == "" {
 			rule = "E01"
 		}
-		r.add(rule, Block, p, 0, "%s: %q is a %s, not a %s", field, slug, t.Kind, strings.Join(kinds, " or "))
+		r.add(rule, Block, p, 0, "%s: %q is %s, not %s", field, slug, article(t.Kind), article(strings.Join(kinds, " or ")))
 	}
 }
 
@@ -375,6 +375,12 @@ func (r *run) edges(n *node.Node) {
 	if n.VariantOf != "" {
 		r.target(n, "variant_of", n.VariantOf)
 	}
+	for _, s := range n.RelatedTo {
+		r.target(n, "related_to", s)
+	}
+	for _, s := range n.AppliesTo {
+		r.target(n, "applies_to", s, "architecture", "task")
+	}
 	for _, s := range n.SeeAlso {
 		r.target(n, "see_also", s)
 	}
@@ -387,6 +393,14 @@ func (r *run) edges(n *node.Node) {
 	if n.Model != "" {
 		r.target(n, "model", n.Model, "concept")
 	}
+}
+
+// article puts "a" or "an" before a kind.
+func article(kind string) string {
+	if kind != "" && strings.ContainsRune("aeiou", rune(kind[0])) {
+		return "an " + kind
+	}
+	return "a " + kind
 }
 
 // cycles reports each cycle of the edges that next gives, once.

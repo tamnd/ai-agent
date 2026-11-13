@@ -110,3 +110,22 @@ func TestCardEdgeTarget(t *testing.T) {
 		t.Errorf("E01 gives %q", got)
 	}
 }
+
+func TestMethodFields(t *testing.T) {
+	md := strings.Replace(modelNode, "summary:", "purpose: regularization\nrelated_to: [toy-bench, no-such-node]\napplies_to: [toy-bench]\nhyperparameters:\n  - {name: p, meaning: \"the probability\", typical: \"0.1 to 0.5\", default_in: {pytorch: 0.5}}\ncost: {train: \"one mask\", inference: \"none\"}\nsummary:", 1)
+	c := fixture(t, map[string]string{
+		"registers/tags.reg":       cardTags(t, "5TQX4M toy-bench"),
+		"cards/benchmark/5T.jsonl": `{"tag":"5TQX4M","kind":"benchmark","slug":"toy-bench","name":"Toy bench"}` + "\n",
+		modelDir + "node.md":       md,
+	})
+	got := fired(Run(c, Options{}), "E01")
+	want := []string{`related_to: no node has the slug "no-such-node"`, `applies_to: "toy-bench" is a benchmark card, not an architecture or task`}
+	if len(got) != len(want) {
+		t.Fatalf("E01 gives %q", got)
+	}
+	for i, w := range want {
+		if !strings.Contains(got[i], w) {
+			t.Errorf("E01 gives %q, want %q", got[i], w)
+		}
+	}
+}

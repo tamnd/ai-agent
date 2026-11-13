@@ -284,6 +284,11 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 		p.Leads = append(p.Leads, b.link(l.Slug))
 	}
 	rel := slices.Clone(n.SeeAlso)
+	for _, s := range n.RelatedTo {
+		if !slices.Contains(rel, s) {
+			rel = append(rel, s)
+		}
+	}
 	if n.VariantOf != "" {
 		rel = append(rel, n.VariantOf)
 	}
