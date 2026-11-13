@@ -16,7 +16,7 @@ import (
 	"github.com/tamnd/ai-agent/lang"
 )
 
-// cmdOracle runs the oracle of a problem (spec 09.5). Without -in, it runs the oracle on each shared case and checks that it agrees with the case (rule S02). With -in, it reads one object of arguments for each line and prints the output of the oracle for each line.
+// cmdOracle runs the oracle of a problem (spec 09.5). Without -in, it runs the oracle on each shared case and checks that it agrees with the case (rule T01). With -in, it reads one object of arguments for each line and prints the output of the oracle for each line.
 func cmdOracle(args []string) error {
 	f := newFlags("oracle", "[flags] [problem ...]")
 	root := f.String("root", ".", "the root of the content repository")
@@ -96,7 +96,7 @@ func cmdOracle(args []string) error {
 	return nil
 }
 
-// oracleCases checks the oracle on each shared case (S02) and prints one line for the problem and one for each disagreement.
+// oracleCases checks the oracle on each shared case (T01) and prints one line for the problem and one for each disagreement.
 func oracleCases(o *contract.Oracle, k *contract.Contract, cases []contract.Case, box *lang.Sandbox, slug string) (int, error) {
 	var custom *contract.Custom
 	if k.Checker.Kind == "custom" {
@@ -110,11 +110,11 @@ func oracleCases(o *contract.Oracle, k *contract.Contract, cases []contract.Case
 	for _, cs := range cases {
 		reason, out, err := k.Agree(o, cs, custom)
 		if err != nil {
-			msgs = append(msgs, fmt.Sprintf("S02 case %s: %v", cs.ID(), err))
+			msgs = append(msgs, fmt.Sprintf("T01 case %s: %v", cs.ID(), err))
 			continue
 		}
 		if reason != "" {
-			msgs = append(msgs, fmt.Sprintf("S02 case %s: the oracle gives %s: %s", cs.ID(), out, reason))
+			msgs = append(msgs, fmt.Sprintf("T01 case %s: the oracle gives %s: %s", cs.ID(), out, reason))
 		}
 	}
 	state := "pass"
@@ -173,7 +173,7 @@ func oracleLines(o *contract.Oracle, k *contract.Contract, path string) error {
 	return sc.Err()
 }
 
-// oraclesAgree checks that the Python oracles of the problem agree with each other on each tiny and small input of each generator (rule S07). It needs two oracles and cases/generated.yaml; else it does nothing. The output of each other oracle must pass the checker with the output of the first oracle as expect.
+// oraclesAgree checks that the Python oracles of the problem agree with each other on each tiny and small input of each generator (rule M04). It needs two oracles and cases/generated.yaml; else it does nothing. The output of each other oracle must pass the checker with the output of the first oracle as expect.
 func oraclesAgree(k *contract.Contract, box *lang.Sandbox, slug string) (int, error) {
 	files := k.OracleFiles()
 	if len(files) < 2 {
@@ -224,7 +224,7 @@ func oraclesAgree(k *contract.Contract, box *lang.Sandbox, slug string) (int, er
 			}
 			want, err := oracles[0].Run(args, k.OutName())
 			if err != nil {
-				msgs = append(msgs, fmt.Sprintf("S07 case %s: %v", c.Name, err))
+				msgs = append(msgs, fmt.Sprintf("M04 case %s: %v", c.Name, err))
 				continue
 			}
 			c.Expect = want
@@ -237,7 +237,7 @@ func oraclesAgree(k *contract.Contract, box *lang.Sandbox, slug string) (int, er
 					}
 				}
 				if err != nil {
-					msgs = append(msgs, fmt.Sprintf("S07 case %s %s: %v", c.Name, short(argsJSON(c.Args)), err))
+					msgs = append(msgs, fmt.Sprintf("M04 case %s %s: %v", c.Name, short(argsJSON(c.Args)), err))
 				}
 			}
 			if len(msgs) >= 5 {

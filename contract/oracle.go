@@ -193,7 +193,7 @@ func plainInts(t Type, v any) any {
 	return v
 }
 
-// Agree checks the oracle on one case (rule S02). It runs the oracle on the arguments, and gives the verdict of the checker on the oracle output: against expect when the case has it, and for a custom checker with the oracle output as expected. The reason is empty when the oracle agrees.
+// Agree checks the oracle on one case (rule T01). It runs the oracle on the arguments, and gives the verdict of the checker on the oracle output: against expect when the case has it, and for a custom checker with the oracle output as expected. The reason is empty when the oracle agrees.
 func (k *Contract) Agree(o *Oracle, c Case, custom *Custom) (reason string, output json.RawMessage, err error) {
 	args, err := k.OracleArgs(c.Args, c.Type())
 	if err != nil {

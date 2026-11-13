@@ -392,7 +392,7 @@ func readScene(root string, n *Node) error {
 	return nil
 }
 
-// BuildFiles are the names of the files that the generator writes (spec 08.5). Rule I15 refuses them in the content repo.
+// BuildFiles are the names of the files that the generator writes (spec 08.5). Rule X12 refuses them in the content repo.
 var BuildFiles = []string{
 	"go.mod", "go.sum", "go.work", "Cargo.toml", "Cargo.lock", "package.json", "package-lock.json", "tsconfig.json",
 	"pyproject.toml", "setup.py", "setup.cfg", "conftest.py", "pom.xml", "build.gradle", "build.gradle.kts",

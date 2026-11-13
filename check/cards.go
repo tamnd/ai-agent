@@ -40,12 +40,12 @@ func (r *run) cards() {
 			if o := seenTag[c.Tag]; o != nil {
 				r.add("T02", Block, c.File, c.Line, "the tag %s is also the tag of the card on %s:%d", c.Tag, o.File, o.Line)
 			} else if rel, ok := nodeTags[c.Tag]; ok {
-				r.add("T02", Block, c.File, c.Line, "the tag %s is also the tag of the node %s; a promoted card leaves cards/ (4.1)", c.Tag, rel)
+				r.add("T12", Block, c.File, c.Line, "the tag %s is also the tag of the node %s; a promoted card leaves cards/ (4.1)", c.Tag, rel)
 			}
 			seenTag[c.Tag] = c
 			if c.Tag < lastTag[c.File] && !unsorted[c.File] {
 				unsorted[c.File] = true
-				r.add("T01", Block, c.File, c.Line, "the lines are not sorted by tag; %s comes after %s (20.3)", c.Tag, lastTag[c.File])
+				r.add("T11", Block, c.File, c.Line, "the lines are not sorted by tag; %s comes after %s (20.3)", c.Tag, lastTag[c.File])
 			}
 			lastTag[c.File] = c.Tag
 		}
@@ -80,7 +80,7 @@ func (r *run) card(c *card.Card, reg map[string]string) {
 	case c.Tag == "":
 	case provRE.MatchString(c.Tag):
 		if r.opt.Main {
-			r.add("T06", Block, p, l, "the provisional id %s is on main; run aik mint", c.Tag)
+			r.add("T02", Block, p, l, "the provisional id %s is on main; run aik mint", c.Tag)
 		}
 	case !tagRE.MatchString(c.Tag):
 		r.add("T02", Block, p, l, "the tag %q is not 6 characters of Crockford base32", c.Tag)
@@ -91,7 +91,7 @@ func (r *run) card(c *card.Card, reg map[string]string) {
 			r.add("T02", Block, p, l, "registers/tags.reg gives the tag %s to %q, not %q", c.Tag, s, c.Key())
 		}
 		if sh := card.Shard(c.File); !card.InShard(c.Tag, sh) {
-			r.add("T01", Block, p, l, "the tag %s is not in the shard %s; it starts with another prefix (20.3)", c.Tag, sh)
+			r.add("T11", Block, p, l, "the tag %s is not in the shard %s; it starts with another prefix (20.3)", c.Tag, sh)
 		}
 	}
 	if c.Slug != "" && (!slugRE.MatchString(c.Slug) || len(c.Slug) > 60) {
@@ -101,7 +101,7 @@ func (r *run) card(c *card.Card, reg map[string]string) {
 		r.add("E01", Block, p, l, "owner: no node or card has the slug %q", c.Owner)
 	}
 	if w := card.Words(c.Summary); w > card.MaxSummary {
-		r.add("T01", Block, p, l, "the summary of the card %s has %d words; a card summary has at most %d (4.6)", c.Slug, w, card.MaxSummary)
+		r.add("S10", Block, p, l, "the summary of the card %s has %d words; a card summary has at most %d (4.6)", c.Slug, w, card.MaxSummary)
 	}
 	for _, b := range c.Bad {
 		r.add("T01", Block, p, l, "the card %s: %s", c.Slug, b)

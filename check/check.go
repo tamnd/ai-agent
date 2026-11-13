@@ -49,12 +49,13 @@ func (f Finding) String() string {
 
 // Rules lists the rules that this package runs, with their text.
 var Rules = map[string]string{
-	"T01": "node.md front matter is valid for its kind",
-	"T02": "each tag is in registers/tags.reg, once, with its slug",
+	"T01": "node.md front matter, contract.yaml and the shared cases are valid; each complexity variable of each solving algorithm is a size parameter or is defined",
+	"T02": "each tag is in registers/tags.reg, once, with its slug, and no provisional id is left on main",
 	"T03": "each slug is unique, lowercase kebab-case, at most 60 characters, and not an old slug in aliases.reg",
-	"T04": "the path of the node matches its area",
+	"T08": "the path of the node matches its area",
+	"T11": "each card shard is sorted by tag, and each card is in the shard of its tag",
+	"T12": "a tag is a card or a node, never both",
 	"T05": "no status, level or badge is written in front matter",
-	"T06": "no provisional id is left on main",
 	"E01": "each edge target exists, as a node or a card",
 	"E02": "each implements target is an abstract type",
 	"E03": "prereqs edges form a DAG",
@@ -78,32 +79,22 @@ var Rules = map[string]string{
 	"K07": "a forecast claim has the date of the forecast in as_of",
 	"K09": "a superseded claim is not anchored in the main text",
 	"K13": "no claim is past its review_after date",
-	"S10": "each complexity string parses",
-	"S11": "each variable of a complexity claim is defined in vars, and the model exists",
-	"W01": "the section headings of the kind are in order",
-	"W03": "pseudocode line ids are unique, and each @line marker names an existing id",
-	"I10": "each implementation and test file starts with the SPDX header",
-	"I11": "each line id of the main pseudocode has a marker in each tier-1 implementation",
-	"I12": "each implementation language is in the register",
-	"I15": "no generated file under build/ is committed, and no implementation has a build file; aik gen writes them",
-	"S01": "contract.yaml is valid; each complexity variable of each solving algorithm is a size parameter or is defined",
-	"S02": "each case validates against the contract",
-	"S03": "a custom checker has checker cases, valid and invalid, with a note for each invalid output",
-	"S04": "edge.jsonl has at least one case for each class of edge_classes",
-	"S05": "each generator is a Python file under generators/ that uses only the rng it gets",
-	"S06": "the contract of each core problem is reviewed by a person, bound to its hash",
-	"S08": "mutants.ignore of an implementation lists at most 5% of its mutants, each with a reason, and each entry names a mutant of the sample",
-	"S09": "a flaky case names its open issue",
-	"L01": "each Lean name in the front matter exists in decls.jsonl with the expected kind",
-	"L02": "the correctness theorem mentions the spec and the model",
-	"L03": "each declaration uses only propext, Classical.choice and Quot.sound",
-	"L04": "the fidelity review of the spec of a core node is current",
-	"L05": "each time claim of a node with lean.cost has a class lemma of the same class",
-	"L07": "the model is total and computable",
-	"L09": "the module path mirrors the node path",
-	"L10": "each module builds in at most 60 seconds; aik lean build -time reports it, and a module above 300 seconds blocks",
-	"X01": "each link in a node to /<slug>/ names a node, an area or a site page",
-	"X06": "no node slug is a reserved word, a language id or an area id",
+	"S11": "each complexity string parses, and each of its variables is defined in vars, and the model exists",
+	"S04": "the section headings of the kind are in order",
+	"S10": "a card summary is at most 30 words",
+	"X11": "pseudocode line ids are unique, each @line marker names an existing id, and each line id of the main pseudocode has a marker in each tier-1 implementation",
+	"X19": "each implementation and test file starts with the SPDX header",
+	"X12": "each implementation language is in the register, and no implementation has a build file or a generated file under build/; aik gen writes them",
+	"M04": "the task contract is sound: a custom checker has valid and invalid checker cases, edge.jsonl covers each edge class, each generator uses only its rng, a flaky case names its open issue, the oracles agree, and a person reviewed the contract of each core problem",
+	"X10": "mutants.ignore of an implementation lists at most 5% of its mutants, each with a reason, and each entry names a mutant of the sample",
+	"F01": "each Lean name in the front matter exists in decls.jsonl with the expected kind, and each time claim of a node with lean.cost has a class lemma of the same class",
+	"F02": "the correctness theorem mentions the spec and the model, and the fidelity review of the spec of a core node is current",
+	"F03": "each declaration uses only propext, Classical.choice and Quot.sound",
+	"F06": "the model is total and computable",
+	"F07": "the module path mirrors the node path",
+	"F10": "each module builds in at most 60 seconds; aik lean build -time reports it, and a module above 300 seconds blocks",
+	"L01": "each link in a node to /<slug>/ names a node, an area or a site page",
+	"T04": "no node slug is a reserved word, a language id or an area id",
 }
 
 // Options select what to check.
@@ -112,11 +103,11 @@ type Options struct {
 	Only map[string]bool
 	// Rule, when not empty, runs only this rule.
 	Rule string
-	// Main is true on the main branch, where provisional ids are an error (T06).
+	// Main is true on the main branch, where provisional ids are an error (T02).
 	Main bool
-	// Decls are the declarations that aik lean build wrote. When it is nil, the rules L01 to L09 that need them do not run.
+	// Decls are the declarations that aik lean build wrote. When it is nil, the rules F01 to F07 that need them do not run.
 	Decls formal.Decls
-	// Checker, when it is not nil, starts the custom checker of a contract. S03 then runs the checker on each line of checker_cases.jsonl. The caller decides where the checker runs, such as in the sandbox.
+	// Checker, when it is not nil, starts the custom checker of a contract. M04 then runs the checker on each line of checker_cases.jsonl. The caller decides where the checker runs, such as in the sandbox.
 	Checker func(k *contract.Contract) (*contract.Custom, error)
 }
 
@@ -243,33 +234,33 @@ func (r *run) front(n *node.Node) {
 		r.add("T03", Block, p, 0, "the slug %q is not lowercase kebab-case of at most 60 characters", n.Slug)
 	}
 	if filepath.Base(n.Rel) != n.Slug {
-		r.add("T04", Block, p, 0, "the directory is %q but the slug is %q", filepath.Base(n.Rel), n.Slug)
+		r.add("T08", Block, p, 0, "the directory is %q but the slug is %q", filepath.Base(n.Rel), n.Slug)
 	}
 	if n.Area != "" {
 		if _, ok := r.c.AreaByID[n.Area]; !ok {
-			r.add("T04", Block, p, 0, "the area %q is not in topics/areas.yaml", n.Area)
+			r.add("T08", Block, p, 0, "the area %q is not in topics/areas.yaml", n.Area)
 		} else if want := "nodes/" + n.Area + "/" + n.Slug; filepath.ToSlash(n.Rel) != want {
-			r.add("T04", Block, p, 0, "the node is at %s but its area puts it at %s", n.Rel, want)
+			r.add("T08", Block, p, 0, "the node is at %s but its area puts it at %s", n.Rel, want)
 		}
 	}
 	for _, a := range n.Areas {
 		if _, ok := r.c.AreaByID[a]; !ok {
-			r.add("T04", Block, p, 0, "the secondary area %q is not in topics/areas.yaml", a)
+			r.add("T08", Block, p, 0, "the secondary area %q is not in topics/areas.yaml", a)
 		}
 	}
 	if r.c.Reserved[n.Slug] || r.c.LangByID[n.Slug] != nil {
-		r.add("X06", Block, p, 0, "the slug %q is a reserved word or a language id (14.2)", n.Slug)
+		r.add("T04", Block, p, 0, "the slug %q is a reserved word or a language id (14.2)", n.Slug)
 	}
 	for _, a := range r.c.AreaByID {
 		if a.ID == n.Slug {
-			r.add("X06", Block, p, 0, "the slug %q is the id of an area, and the area page uses the same URL (14.2)", n.Slug)
+			r.add("T04", Block, p, 0, "the slug %q is the id of an area, and the area page uses the same URL (14.2)", n.Slug)
 			break
 		}
 	}
 	switch {
 	case provRE.MatchString(n.Tag):
 		if r.opt.Main {
-			r.add("T06", Block, p, 0, "the provisional id %s is on main; run aik mint", n.Tag)
+			r.add("T02", Block, p, 0, "the provisional id %s is on main; run aik mint", n.Tag)
 		}
 	case !tagRE.MatchString(n.Tag):
 		r.add("T02", Block, p, 0, "the tag %q is not 6 characters of Crockford base32", n.Tag)
@@ -434,7 +425,7 @@ func (r *run) complexity(n *node.Node) {
 		for _, k := range sortedKeys(groups[g]) {
 			v := groups[g][k]
 			if err := ParseClaim(v); err != nil {
-				r.add("S10", Block, p, 0, "complexity.%s.%s %q: %v", g, k, v, err)
+				r.add("S11", Block, p, 0, "complexity.%s.%s %q: %v", g, k, v, err)
 				continue
 			}
 			for _, x := range Vars(v) {
@@ -476,14 +467,14 @@ func (r *run) sections(n *node.Node) {
 	for _, h := range status.Sections(n.Body) {
 		i := slices.Index(order, h)
 		if i < 0 {
-			r.add("W01", Warn, p, 0, "the heading %q is not a section of the kind %s (06.3)", h, n.Kind)
+			r.add("S04", Warn, p, 0, "the heading %q is not a section of the kind %s (06.3)", h, n.Kind)
 			continue
 		}
 		if i < last {
-			r.add("W01", Warn, p, 0, "the heading %q must come before %q", h, order[last])
+			r.add("S04", Warn, p, 0, "the heading %q must come before %q", h, order[last])
 		}
 		if status.Section(n.Body, h) == "" && !filled[h] {
-			r.add("W01", Warn, p, 0, "the section %q is empty; leave it out", h)
+			r.add("S04", Warn, p, 0, "the section %q is empty; leave it out", h)
 		}
 		last = max(last, i)
 	}
@@ -510,7 +501,7 @@ func PseudoIDs(body string) (map[string][]string, []Finding) {
 		if in {
 			if m := idLineRE.FindStringSubmatch(l); m != nil {
 				if slices.Contains(out[block], m[1]) {
-					bad = append(bad, Finding{Rule: "W03", Severity: Block, Msg: fmt.Sprintf("the line id %s is twice in the block %s", m[1], block)})
+					bad = append(bad, Finding{Rule: "X11", Severity: Block, Msg: fmt.Sprintf("the line id %s is twice in the block %s", m[1], block)})
 				}
 				out[block] = append(out[block], m[1])
 			}
@@ -537,7 +528,7 @@ func Markers(content string) []string {
 	return out
 }
 
-// mutantsIgnore checks mutants.ignore of the implementation (rule S08): each entry has a reason and names a mutant of the sample, and the list has at most 5% of the mutants.
+// mutantsIgnore checks mutants.ignore of the implementation (rule X10): each entry has a reason and names a mutant of the sample, and the list has at most 5% of the mutants.
 func (r *run) mutantsIgnore(im node.Impl) {
 	var file *node.File
 	for i := range im.Files {
@@ -550,14 +541,14 @@ func (r *run) mutantsIgnore(im node.Impl) {
 	}
 	set, err := mutate.Of(im, mutate.MaxPerFile)
 	if err != nil {
-		r.add("S08", Block, file.Path, 0, "%v", err)
+		r.add("X10", Block, file.Path, 0, "%v", err)
 		return
 	}
 	for _, e := range set.Stale {
-		r.add("S08", Block, file.Path, e.Line, "the entry names no mutant of the sample; the code changed, or the id is not as aik test -kind mutate writes it: %s", e.ID)
+		r.add("X10", Block, file.Path, e.Line, "the entry names no mutant of the sample; the code changed, or the id is not as aik test -kind mutate writes it: %s", e.ID)
 	}
 	if k, all := set.Ignored(), len(set.Mutants); float64(k) > mutate.MaxIgnored*float64(all) {
-		r.add("S08", Block, file.Path, 0, "the list has %d of %d mutants, and at most 5%% can be marked equivalent (09.6); add tests that kill some of them", k, all)
+		r.add("X10", Block, file.Path, 0, "the list has %d of %d mutants, and at most 5%% can be marked equivalent (09.6); add tests that kill some of them", k, all)
 	}
 }
 
@@ -572,19 +563,19 @@ func (r *run) impls(n *node.Node) {
 	for _, im := range n.Impls {
 		lang := r.c.LangByID[im.Lang]
 		if lang == nil {
-			r.add("I12", Block, n.Rel+"/impl/"+im.Lang, 0, "the language %q is not in registers/languages.yaml", im.Lang)
+			r.add("X12", Block, n.Rel+"/impl/"+im.Lang, 0, "the language %q is not in registers/languages.yaml", im.Lang)
 		}
 		r.mutantsIgnore(im)
 		seen := map[string]bool{}
 		for _, f := range im.Files {
 			if node.IsBuildFile(f.Name) {
-				r.add("I15", Block, f.Path, 0, "%s is a build file; aik gen writes it in build/lang (08.5)", path.Base(f.Name))
+				r.add("X12", Block, f.Path, 0, "%s is a build file; aik gen writes it in build/lang (08.5)", path.Base(f.Name))
 			}
 			if f.Name == mutate.IgnoreFile {
 				continue
 			}
 			if !strings.Contains(firstLines(f.Content, 4), "SPDX-License-Identifier: MIT") {
-				r.add("I10", Block, f.Path, 1, "the file does not start with the SPDX header (08.11)")
+				r.add("X19", Block, f.Path, 1, "the file does not start with the SPDX header (08.11)")
 			}
 			if f.Test {
 				continue
@@ -592,7 +583,7 @@ func (r *run) impls(n *node.Node) {
 			for _, id := range Markers(f.Content) {
 				seen[id] = true
 				if !all[id] {
-					r.add("W03", Block, f.Path, 0, "the marker @line %s names no line id of the pseudocode", id)
+					r.add("X11", Block, f.Path, 0, "the marker @line %s names no line id of the pseudocode", id)
 				}
 			}
 		}
@@ -604,7 +595,7 @@ func (r *run) impls(n *node.Node) {
 				}
 			}
 			if len(miss) > 0 {
-				r.add("I11", Warn, n.Rel+"/impl/"+im.Lang, 0, "no @line marker for %s", strings.Join(miss, ", "))
+				r.add("X11", Warn, n.Rel+"/impl/"+im.Lang, 0, "no @line marker for %s", strings.Join(miss, ", "))
 			}
 		}
 	}
@@ -613,7 +604,7 @@ func (r *run) impls(n *node.Node) {
 		if err == nil {
 			for _, m := range regexp.MustCompile(`\.line\(\s*["'](L\d+)["']`).FindAllStringSubmatch(string(b), -1) {
 				if !all[m[1]] {
-					r.add("W03", Block, n.Scene, 0, "v.line(%q) names no line id of the pseudocode", m[1])
+					r.add("X11", Block, n.Scene, 0, "v.line(%q) names no line id of the pseudocode", m[1])
 				}
 			}
 		}
@@ -635,7 +626,7 @@ func firstLines(s string, k int) string {
 // linkRE finds the target of a Markdown link that starts with "/".
 var linkRE = regexp.MustCompile(`\]\((/[^)\s#?]*)`)
 
-// links is the part of X01 that the audit can do without a build: a link to /<x>/ must name a node, an area or a site page. aik site check does the rest.
+// links is the part of L01 that the audit can do without a build: a link to /<x>/ must name a node, an area or a site page. aik site check does the rest.
 func (r *run) links(n *node.Node) {
 	files := []struct {
 		path string
@@ -660,7 +651,7 @@ func (r *run) links(n *node.Node) {
 			if f.line > 0 {
 				line = f.line + strings.Count(f.body[:m[0]], "\n")
 			}
-			r.add("X01", Block, f.path, line, "the link %s names no node, area or site page", target)
+			r.add("L01", Block, f.path, line, "the link %s names no node, area or site page", target)
 		}
 	}
 }
@@ -691,7 +682,7 @@ func (r *run) oldSlugs() {
 	}
 }
 
-// committedBuild finds files under build/ that git tracks (rule I15). The check runs only in a git work tree.
+// committedBuild finds files under build/ that git tracks (rule X12). The check runs only in a git work tree.
 func (r *run) committedBuild() {
 	out, err := exec.Command("git", "-C", r.root, "ls-files", "-z", "--", "build").Output()
 	if err != nil {
@@ -699,7 +690,7 @@ func (r *run) committedBuild() {
 	}
 	for _, p := range strings.Split(string(out), "\x00") {
 		if p != "" {
-			r.add("I15", Block, p, 0, "the file is under build/, which only the build writes; remove it with git rm --cached")
+			r.add("X12", Block, p, 0, "the file is under build/, which only the build writes; remove it with git rm --cached")
 		}
 	}
 }
@@ -716,7 +707,7 @@ func (r *run) groups() {
 		}
 		for _, s := range a.Children {
 			if s.Group != "" {
-				r.add("T06", Block, p, 0, "the sub-area %q has a group; only a top area has one", s.Path())
+				r.add("T02", Block, p, 0, "the sub-area %q has a group; only a top area has one", s.Path())
 			}
 		}
 	}

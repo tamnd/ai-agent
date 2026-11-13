@@ -94,12 +94,12 @@ func TestBuildFile(t *testing.T) {
 	}
 	found := false
 	for _, f := range Run(c, Options{}) {
-		if f.Rule == "I15" && f.Severity == Block && strings.HasSuffix(f.Path, "impl/go/go.mod") {
+		if f.Rule == "X12" && f.Severity == Block && strings.HasSuffix(f.Path, "impl/go/go.mod") {
 			found = true
 		}
 	}
 	if !found {
-		t.Error("no I15 finding for impl/go/go.mod")
+		t.Error("no X12 finding for impl/go/go.mod")
 	}
 }
 

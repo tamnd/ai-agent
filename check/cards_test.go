@@ -62,28 +62,27 @@ not json
 	for rule, want := range map[string][]string{
 		"T01": {
 			"cards/model/5T.jsonl: block: the line is not a card",
-			"the summary of the card family-a has 31 words",
 			`the model card role-a has the role "base"`,
 			"the harvest record 1 of the card fact-a names no source",
 			`the harvest record 1 of the card fact-a has the date "13-11-2026"`,
-			"the tag 6TQX4M is not in the shard 5T",
 			"the card no-name has no name",
 			"the card no-name is a dataset, but it is in cards/model/",
 			`the card robot-a has the kind "robot"`,
-			"the lines are not sorted by tag",
 		},
 		"T02": {
 			`registers/tags.reg gives the tag 5TQX4P to "wrong-slug", not "right-slug"`,
 			"the tag 5TQX4N is not in registers/tags.reg",
-			"the tag 2B7QDX is also the tag of the node",
 			`the tag "5TQX4" is not 6 characters`,
+			"the provisional id NEW-x is on main",
 		},
 		"T03": {
 			`the slug "dup-a" is also the slug of the card on cards/model/5T.jsonl:5`,
 			`the slug "binary-search" is also the slug of the node`,
 			`the slug "Bad_Slug" is not lowercase kebab-case`,
 		},
-		"T06": {"the provisional id NEW-x is on main"},
+		"T11": {"the tag 6TQX4M is not in the shard 5T", "the lines are not sorted by tag"},
+		"T12": {"the tag 2B7QDX is also the tag of the node"},
+		"S10": {"the summary of the card family-a has 31 words"},
 		"E01": {`owner: no node or card has the slug "nobody"`},
 		"D01": {"the fact params.total of the card fact-a has no src"},
 	} {
@@ -94,7 +93,7 @@ not json
 			}
 		}
 	}
-	if n := strings.Count(strings.Join(fired(fs, "T01"), "\n"), "not sorted"); n != 1 {
+	if n := strings.Count(strings.Join(fired(fs, "T11"), "\n"), "not sorted"); n != 1 {
 		t.Errorf("the sort finding fires %d times", n)
 	}
 }

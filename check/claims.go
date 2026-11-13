@@ -55,7 +55,7 @@ func (r *run) claim(p string, c *claims.Claim) {
 		r.add("T01", Block, p, 0, "the mathematical claim %q has no assumes (07.2)", c.ID)
 	}
 	if c.Type != claims.Empirical && !c.Scope.Empty() {
-		r.add("T06", Block, p, 0, "the %s claim %q has a scope; only an empirical claim has one", c.Type, c.ID)
+		r.add("T02", Block, p, 0, "the %s claim %q has a scope; only an empirical claim has one", c.Type, c.ID)
 	}
 	for _, d := range []struct{ name, v string }{{"as_of", c.AsOf}, {"review_after", c.ReviewAfter}} {
 		if d.v != "" && !facts.IsDate(d.v) {
@@ -93,7 +93,7 @@ func (r *run) evidence(p string, c *claims.Claim, i int, e claims.Evidence) {
 	}
 	switch {
 	case e.Reuses != "" && e.Role != "replication":
-		r.add("T06", Block, p, 0, "the source %d of the claim %q has reuses, but only a replication has it", i, c.ID)
+		r.add("T02", Block, p, 0, "the source %d of the claim %q has reuses, but only a replication has it", i, c.ID)
 	case e.Reuses != "" && !slices.Contains(claims.Reuses, e.Reuses):
 		r.add("T01", Block, p, 0, "the source %d of the claim %q has reuses %q; write code, data, weights or none", i, c.ID, e.Reuses)
 	}

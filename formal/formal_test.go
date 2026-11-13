@@ -37,11 +37,11 @@ func TestLoadAndCheck(t *testing.T) {
 		got = append(got, f.String())
 	}
 	want := []string{
-		"L03 AI.M.bad: uses the axiom sorryAx (a sorry)",
-		"L03 AI.M.fast: uses the axiom Lean.ofReduceBool",
-		"L01 m lean.correct: AI.M.missing is not a declaration of the AI package",
-		"L01 m lean.model: AI.M.good is of the kind theorem, want def",
-		"L09 m lean.module: AI.M does not mirror the node path; use a module such as AI.Sorting.M",
+		"F03 AI.M.bad: uses the axiom sorryAx (a sorry)",
+		"F03 AI.M.fast: uses the axiom Lean.ofReduceBool",
+		"F01 m lean.correct: AI.M.missing is not a declaration of the AI package",
+		"F01 m lean.model: AI.M.good is of the kind theorem, want def",
+		"F07 m lean.module: AI.M does not mirror the node path; use a module such as AI.Sorting.M",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("Check =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -78,7 +78,7 @@ func TestCheckClaims(t *testing.T) {
 	for _, f := range CheckClaims(n, ds) {
 		got = append(got, f.String())
 	}
-	want := "L05 m time.best: Θ(n) has no class lemma in AI.M"
+	want := "F01 m time.best: Θ(n) has no class lemma in AI.M"
 	if strings.Join(got, "\n") != want {
 		t.Errorf("CheckClaims = %q, want %q", got, want)
 	}
@@ -120,8 +120,8 @@ func TestStatementAndModel(t *testing.T) {
 		got = append(got, f.String())
 	}
 	want := []string{
-		"L02 m lean.correct: the statement of AI.S.M.correct does not mention the model AI.S.M.run",
-		"L07 m lean.model: AI.S.M.run is not computable, so the oracle cannot run it",
+		"F02 m lean.correct: the statement of AI.S.M.correct does not mention the model AI.S.M.run",
+		"F06 m lean.model: AI.S.M.run is not computable, so the oracle cannot run it",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Errorf("CheckNode =\n%s\nwant\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
@@ -131,7 +131,7 @@ func TestStatementAndModel(t *testing.T) {
 	for _, f := range CheckNode(n, ds) {
 		got = append(got, f.String())
 	}
-	if len(got) != 2 || !strings.Contains(got[0], "is of the kind opaque, want def") || !strings.Contains(got[1], "L07 m lean.model: AI.S.M.run' is opaque") {
+	if len(got) != 2 || !strings.Contains(got[0], "is of the kind opaque, want def") || !strings.Contains(got[1], "F06 m lean.model: AI.S.M.run' is opaque") {
 		t.Errorf("CheckNode with an opaque model = %q", got)
 	}
 }
@@ -152,8 +152,8 @@ func TestCheckTimes(t *testing.T) {
 	if fs[1].Where != "AI/C.lean" || fs[1].Sev() != "block" {
 		t.Errorf("the very slow module: %+v", fs[1])
 	}
-	if (Finding{Rule: "L03"}).Sev() != "block" {
-		t.Error("L03 is not a block rule")
+	if (Finding{Rule: "F03"}).Sev() != "block" {
+		t.Error("F03 is not a block rule")
 	}
 }
 

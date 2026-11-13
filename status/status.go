@@ -366,8 +366,8 @@ func lean(n *node.Node, env Env) (r Rung) {
 	ds := env.Decls
 	var need []string
 	for _, f := range formal.CheckNode(n, ds) {
-		// L02 is the rule of L2, and the rung of L2 below checks it.
-		if f.Rule != "L02" {
+		// F02 is the rule of L2, and the rung of L2 below checks it.
+		if f.Rule != "F02" {
 			need = append(need, f.Where+": "+f.Msg+" ("+f.Rule+")")
 		}
 	}
@@ -395,13 +395,13 @@ func lean(n *node.Node, env Env) (r Rung) {
 		}
 		d := ds[name]
 		if bad := d.Disallowed(); len(bad) > 0 {
-			return d, name + " uses the axiom " + strings.Join(bad, ", ") + " (L03)"
+			return d, name + " uses the axiom " + strings.Join(bad, ", ") + " (F03)"
 		}
 		return d, ""
 	}
 	d, why := proved("correct", "correctness theorem")
 	if why == "" && (!strings.Contains(d.Type, model) || !strings.Contains(d.Type, spec)) {
-		why = d.Decl + " does not state " + spec + " of " + model + " (L02)"
+		why = d.Decl + " does not state " + spec + " of " + model + " (F02)"
 	}
 	if why != "" {
 		r.Next = []string{why}
@@ -413,7 +413,7 @@ func lean(n *node.Node, env Env) (r Rung) {
 		return r
 	}
 	if !hasClassLemma(ds, mod) {
-		r.Next = []string{"a class lemma in " + mod + " that links the cost bound to its class with IsBigO (L05)"}
+		r.Next = []string{"a class lemma in " + mod + " that links the cost bound to its class with IsBigO (F01)"}
 		return r
 	}
 	r.Level = 3

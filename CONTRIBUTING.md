@@ -19,7 +19,7 @@ Thank you for your help. This file tells you how to change the toolchain. To cha
 
 - Format the code with `gofmt`.
 - Write comments, messages, documents and commit messages in plain English. Use short sentences and the active voice. We follow ASD-STE100 where we can.
-- A commit message has a short first line in the imperative mood, for example "Add the X01 link rule".
+- A commit message has a short first line in the imperative mood, for example "Add the L01 link rule".
 - Error messages say what is wrong and what to do.
 
 ## Sign-off
