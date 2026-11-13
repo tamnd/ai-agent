@@ -47,7 +47,7 @@ func TestShapesSection(t *testing.T) {
 		`<td class="num">15</td>`,
 		`<td class="num">1,001,000</td>`,
 		"<code>{shape:params}</code>",
-		"<code>in x (B, I)</code>",
+		`<span class="shapes-role">in</span> <code>x</code> <span class="katex">`,
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("the page does not contain %q", want)

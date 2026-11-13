@@ -34,10 +34,17 @@ type ShapeRow struct {
 type ShapeBlock struct {
 	ID      string
 	Meaning string
-	Shapes  []string
+	Shapes  []ShapeIO
 	Params  template.HTML
 	Value   string // the parameters at the example config
 	Flops   template.HTML
+}
+
+// ShapeIO is an input, an output or an internal of a block, with its shape in the symbols of the formulas.
+type ShapeIO struct {
+	Role  string // in, out or internal
+	Name  string
+	Shape template.HTML
 }
 
 func (b *builder) texHTML(tex string) template.HTML {
@@ -95,11 +102,17 @@ func (b *builder) shapesView(n *node.Node) *ShapesView {
 	ex := f.At(f.Example())
 	for _, bl := range f.Blocks {
 		sb := ShapeBlock{ID: bl.ID, Meaning: bl.Meaning, Params: tex(bl.ID + ".params"), Flops: tex(bl.ID + ".flops_forward")}
-		for _, t := range bl.Inputs {
-			sb.Shapes = append(sb.Shapes, "in "+t.Name+" "+t.Shape)
-		}
-		for _, t := range bl.Outputs {
-			sb.Shapes = append(sb.Shapes, "out "+t.Name+" "+t.Shape)
+		for _, io := range []struct {
+			role string
+			ts   []shapes.Tensor
+		}{{"in", bl.Inputs}, {"out", bl.Outputs}, {"internal", bl.Internals}} {
+			for _, t := range io.ts {
+				st, err := f.ShapeTeX(t.Shape)
+				if err != nil {
+					st = t.Shape
+				}
+				sb.Shapes = append(sb.Shapes, ShapeIO{Role: io.role, Name: t.Name, Shape: b.texHTML(st)})
+			}
 		}
 		if x, err := ex.Int(bl.ID + ".params"); err == nil {
 			sb.Value = shapes.Group(x)

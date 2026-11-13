@@ -224,3 +224,13 @@ func TestParse(t *testing.T) {
 		t.Errorf("scalar shape: %v %v", d, err)
 	}
 }
+
+func TestShapeTeX(t *testing.T) {
+	f := parse(t, strings.Replace(block, `d_model: {meaning: "width of the residual stream", example: 512}`, `d_model: {meaning: "width of the residual stream", symbol: "d_{\\text{model}}", example: 512}`, 1))
+	if got, err := f.ShapeTeX("(B, H, T, D)"); err != nil || got != `(B, H, T, D)` {
+		t.Errorf("ShapeTeX = %q, %v", got, err)
+	}
+	if got, _ := f.ShapeTeX("(B, T, M)"); got != `(B, T, d_{\text{model}})` {
+		t.Errorf("ShapeTeX = %q", got)
+	}
+}

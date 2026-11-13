@@ -240,3 +240,17 @@ func Group(n *big.Int) string {
 	}
 	return sign + b.String()
 }
+
+// ShapeTeX renders a shape such as "(B, S, M)" in the symbols of the formulas, as (B, S, d_{\text{model}}) when M is bound to a variable with that symbol.
+func (f *File) ShapeTeX(shape string) (string, error) {
+	f.bind()
+	dims, err := ParseShape(shape)
+	if err != nil {
+		return "", err
+	}
+	parts := make([]string, len(dims))
+	for i, d := range dims {
+		parts[i] = f.tex(d)
+	}
+	return "(" + strings.Join(parts, ", ") + ")", nil
+}
