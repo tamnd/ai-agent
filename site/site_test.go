@@ -85,3 +85,30 @@ func TestBuildReplacesOutput(t *testing.T) {
 		t.Error("the build left its work directory")
 	}
 }
+
+func TestAreasByGroup(t *testing.T) {
+	out := buildTest(t)
+	page, err := os.ReadFile(filepath.Join(out, "areas/index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(page)
+	a := strings.Index(s, `id="group-a"`)
+	b := strings.Index(s, `id="group-b"`)
+	if a < 0 || b < a {
+		t.Fatalf("the areas page has no group A before group B")
+	}
+	if i := strings.Index(s, `href="/sorting/"`); i < b {
+		t.Errorf("sorting is not under group B")
+	}
+	if strings.Contains(s, "group-other") {
+		t.Errorf("the areas page has a shelf of areas with no group")
+	}
+	sub, err := os.ReadFile(filepath.Join(out, "searching/index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(sub), `href="/areas/#group-b"`) {
+		t.Errorf("the crumbs of the searching area do not link to its group")
+	}
+}

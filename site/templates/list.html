@@ -3,6 +3,7 @@
 <header class="page-head"><h1>{{.Heading}}</h1>{{with .Lead}}<p class="lead">{{.}}</p>{{end}}</header>
 {{with .Facts}}<dl class="facts">{{range .}}<div><dt>{{.Key}}</dt><dd>{{if .Code}}<code>{{.Value}}</code>{{else}}{{.Value}}{{end}}</dd></div>{{end}}</dl>{{end}}
 {{with .Tiles}}{{template "tiles" .}}{{end}}
+{{range .Shelves}}<section class="group" id="{{.ID}}"><h2>{{.Title}}</h2>{{with .Intro}}<p>{{.}}</p>{{end}}{{template "tiles" .Tiles}}</section>{{end}}
 {{with .Body}}<div class="prose">{{.}}</div>{{end}}
 {{template "groups" .Groups}}
 {{with .Empty}}<p class="empty-note">{{.}} <a href="/contribute/">Read how to contribute</a>.</p>{{end}}

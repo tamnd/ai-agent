@@ -97,8 +97,18 @@ type ListPage struct {
 	Facts   []Fact
 	Tiles   []Tile
 	Groups  []Group
+	// Shelves are groups of tiles, such as the top areas of each group of spec 05.2.
+	Shelves []Shelf
 	Empty   string
 	Body    template.HTML
+}
+
+// Shelf is a heading with tiles under it.
+type Shelf struct {
+	ID    string
+	Title string
+	Intro string
+	Tiles []Tile
 }
 
 // HomePage is the data of the home page.
@@ -217,6 +227,40 @@ func (b *builder) areaTiles() []Tile {
 	return out
 }
 
+// areaShelves puts the top areas under the 9 groups of spec 05.2, in the order of the groups. A top area with no known group goes on a last shelf, so the page still lists it.
+func (b *builder) areaShelves() []Shelf {
+	tiles := b.areaTiles()
+	var out []Shelf
+	used := make([]bool, len(tiles))
+	for _, g := range node.Groups {
+		s := Shelf{ID: groupAnchor(g.Letter), Title: g.Letter + ". " + g.Name, Intro: g.Intro}
+		for i, a := range b.c.Areas {
+			if a.Group == g.Letter {
+				s.Tiles = append(s.Tiles, tiles[i])
+				used[i] = true
+			}
+		}
+		if len(s.Tiles) > 0 {
+			out = append(out, s)
+		}
+	}
+	other := Shelf{ID: "group-other", Title: "Other areas"}
+	for i, t := range tiles {
+		if !used[i] {
+			other.Tiles = append(other.Tiles, t)
+		}
+	}
+	if len(other.Tiles) > 0 {
+		out = append(out, other)
+	}
+	return out
+}
+
+// groupAnchor is the fragment of a group on /areas/, such as group-d.
+func groupAnchor(letter string) string {
+	return "group-" + strings.ToLower(letter)
+}
+
 func (b *builder) sceneTiles(limit int) []Tile {
 	var out []Tile
 	for _, n := range b.c.Nodes {
@@ -236,7 +280,7 @@ func (b *builder) areas() error {
 	p := ListPage{Base: b.base("Areas", "The 52 areas of artificial intelligence in 9 groups, from foundations to context.", "/areas/")}
 	p.Section, p.Heading = "areas", "Areas"
 	p.Lead = fmt.Sprintf("The site puts each page in one of %d areas. An area has sub-areas. A grey tile has no pages yet.", len(b.c.Areas))
-	p.Tiles = b.areaTiles()
+	p.Shelves = b.areaShelves()
 	if err := b.page("list", "/areas/", p); err != nil {
 		return err
 	}
@@ -262,11 +306,16 @@ func (b *builder) areaPage(a node.Area, parent *node.Area) error {
 	p := ListPage{Base: b.base(a.Name, a.Summary, "/"+a.ID+"/")}
 	p.Section, p.Heading, p.Lead = "areas", a.Name, a.Summary
 	top := a.ID
+	p.Crumbs = []Link{{Name: "Areas", URL: "/areas/"}}
+	group := a.Group
 	if parent != nil {
-		top = parent.ID
-		p.Crumbs = []Link{{Name: "Areas", URL: "/areas/"}, {Name: parent.Name, URL: "/" + parent.ID + "/"}}
-	} else {
-		p.Crumbs = []Link{{Name: "Areas", URL: "/areas/"}}
+		top, group = parent.ID, parent.Group
+	}
+	if g := node.GroupByLetter(group); g != nil {
+		p.Crumbs = append(p.Crumbs, Link{Name: g.Name, URL: "/areas/#" + groupAnchor(g.Letter)})
+	}
+	if parent != nil {
+		p.Crumbs = append(p.Crumbs, Link{Name: parent.Name, URL: "/" + parent.ID + "/"})
 	}
 	p.Hue = b.hue[top]
 	for _, s := range a.Children {
