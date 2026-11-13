@@ -215,7 +215,7 @@ positions:
     claim: "The abrupt jumps come from discontinuous metrics, and continuous metrics show smooth improvement."
     held_by: [schaeffer-2023-mirage-neurips, lu-2023-emergent-icl, du-2024-loss-perspective]
     relies_on: [c-continuous-metrics-smooth]
-order: by-independent-sources     # 06.9, item 4
+order: by-first-source     # 06.9, item 4, and 16.8
 ```
 
 ## 7.8 Scope and transfer
