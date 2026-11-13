@@ -52,3 +52,39 @@ func TestKindFields(t *testing.T) {
 		}
 	}
 }
+
+func TestWorkNodeCard(t *testing.T) {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "nodes", "w")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	front := "tag: 2W7QDX\nkind: work\nslug: vaswani-2017-attention\nname: Attention Is All You Need\narea: a/b\nlevel: core\nsummary: s\n" +
+		"type: paper\nauthors: [Ashish Vaswani]\nyear: 2017\nstanding: peer-reviewed\nlicence_class: D\n" +
+		"cited: {version: arXiv 1706.03762v7, url: \"https://arxiv.org/pdf/1706.03762v7\", format: pdf}\n"
+	if err := os.WriteFile(filepath.Join(dir, "node.md"), []byte("---\n"+front+"---\n\nBody.\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Errors) != 0 {
+		t.Fatalf("load: %v", c.Errors)
+	}
+	cd := c.CardByKey["vaswani-2017-attention"]
+	if cd == nil || cd.Kind != "work" || cd.Tag != "2W7QDX" || cd.File != "nodes/w/node.md" {
+		t.Fatalf("the work node has the card %+v", cd)
+	}
+	if !strings.Contains(string(cd.Fields["cited"]), "1706.03762v7") || !strings.Contains(string(cd.Fields["authors"]), "Vaswani") {
+		t.Errorf("the card fields are %s", cd.Fields)
+	}
+	for _, x := range c.Cards {
+		if x == cd {
+			t.Error("the work card of the node is in Cards")
+		}
+	}
+}

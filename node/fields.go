@@ -30,6 +30,9 @@ var KindFields = map[string][]string{
 	"hardware":     {"vendor", "type", "released", "specs"},
 	"person":       {"roles"},
 	"organization": {"kind_of"},
+	// A work that is a node keeps the fields of its work card (04.6), which aik cite reads: the cited version, the
+	// authors and the licence class.
+	"work": {"type", "authors", "year", "venue", "standing", "licence_class", "cited", "doi"},
 }
 
 // kindField tells if key is a field of the kind.

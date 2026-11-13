@@ -2,6 +2,7 @@ package node
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -212,6 +213,14 @@ func Load(root string) (*Corpus, error) {
 			c.CardByKey[cd.Key()] = cd
 		}
 	}
+	for _, n := range c.Nodes {
+		if n.Kind != "work" || n.Slug == "" || c.CardByKey[n.Slug] != nil {
+			continue
+		}
+		if cd := n.WorkCard(); cd != nil {
+			c.CardByKey[cd.Key()] = cd
+		}
+	}
 	var bs []*bridge.Card
 	bs, c.BridgeErrors = bridge.Read(root)
 	c.Bridges = bridge.NewSet(bs)
@@ -333,4 +342,27 @@ func readTags(path string) ([]Tag, error) {
 		out = append(out, Tag{Tag: fs[0], Slug: fs[1], Line: line})
 	}
 	return out, s.Err()
+}
+
+// WorkCard is the card of a work that is a node, made from its front matter: a promoted card leaves cards/ (4.6), and
+// its fields move to the node, where aik cite and the checks read them as they read a card. It is in CardByKey and
+// not in Cards, so the card checks do not see it twice.
+func (n *Node) WorkCard() *card.Card {
+	m := map[string]any{"tag": n.Tag, "kind": n.Kind, "slug": n.Slug, "name": n.Name, "summary": n.Summary}
+	if n.SameAs != nil {
+		m["same_as"] = n.SameAs
+	}
+	for k, v := range n.Fields {
+		m[k] = v
+	}
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil
+	}
+	cd, err := card.Parse(b)
+	if err != nil {
+		return nil
+	}
+	cd.File = n.Rel + "/node.md"
+	return cd
 }
