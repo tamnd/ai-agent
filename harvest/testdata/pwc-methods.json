@@ -1,0 +1,7 @@
+[
+ {"url":"https://paperswithcode.com/method/dropout","name":"Dropout","full_name":"Dropout","description":"Prose that the adapter must not keep.","paper":{"title":"Dropout: A Simple Way","url":"https://paperswithcode.com/paper/dropout-a-simple-way-to-prevent-neural"},"introduced_year":2014,"source_url":"http://jmlr.org/papers/v15/srivastava14a.html","num_papers":9000,"collections":[{"collection":"Regularization","area":"General"}]},
+ {"url":"https://paperswithcode.com/method/1x1-convolution","name":"1x1 Convolution","full_name":"1x1 Convolution","paper":{"title":"Network In Network","url":"https://paperswithcode.com/paper/network-in-network"},"introduced_year":2013,"source_url":"http://arxiv.org/abs/1312.4400v3","num_papers":5641,"collections":[{"collection":"Convolutions","area":"Computer Vision"}]},
+ {"url":"https://paperswithcode.com/method/old-thing","name":"Old Thing","full_name":"An Old Thing","paper":null,"introduced_year":2000,"source_url":"","num_papers":3,"collections":[]},
+ {"url":"https://paperswithcode.com/method/call-now","name":"How do I contact Expedia? {{1-800-555-0100}}","full_name":"","paper":null,"introduced_year":2000,"num_papers":0,"collections":[]},
+ {"url":"https://paperswithcode.com/method/travel","name":"Can I cancel my flight","full_name":"","paper":null,"introduced_year":2000,"num_papers":0,"collections":[]}
+]

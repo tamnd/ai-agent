@@ -1,0 +1,5 @@
+Model,Domain,Organization,Publication date,Parameters,Training compute (FLOP),Training dataset size (total),Training time (hours),Hardware quantity,Training compute cost (2023 USD),Training hardware,Confidence,Base model,Notability criteria,Frontier model,Citations,Country (of organization),Model accessibility,Link,Abstract
+Llama 3.1-405B,Language,Meta AI,2024-07-23,405000000000,3.8e+25,15600000000000,,16384,,NVIDIA H100 SXM5 80GB,Confident,,"SOTA improvement,Training cost",True,1200,United States of America,Open weights (restricted use),https://ai.meta.com/research/publications/the-llama-3-herd-of-models/,"An abstract that the adapter must not keep."
+AlexNet,Vision,"University of Toronto",2012-09-30,60000000,4.7e+17,,,2,,NVIDIA GTX 580,Confident,,Highly cited,,100000,Canada,Unreleased,https://papers.nips.cc/paper/4824 https://example.org/second,
+,Language,Nobody,2020-01-01,,,,,,,,,,,,,,,,
+Tiny fine-tune,Language,Someone,2025-01-02,7000000000,,,,,,,Speculative,Llama 3.1-405B,,,,,Open weights (unrestricted),,

@@ -1,0 +1,3 @@
+﻿Hardware name,Manufacturer,Type,Release date,Release price (USD),FP32 (single precision) performance (FLOP/s),Tensor-FP16/BF16 performance (FLOP/s),Memory (bytes),TDP (W),Link to datasheet
+NVIDIA H100 SXM5 80GB,NVIDIA,GPU,2022-03-22,,6.7e+13,9.89e+14,85899345920,700,https://www.nvidia.com/en-us/data-center/h100/
+Google TPU v4,Google,TPU,2021-05-18,,,2.75e+14,34359738368,192,not a link

@@ -1,0 +1,4 @@
+_id,incident_id,date,reports,Alleged deployer of AI system,Alleged developer of AI system,Alleged harmed or nearly harmed parties,description,title
+abc,2,2018-12-05,"[2,3]","[""amazon""]","[""amazon""]","[""warehouse-workers""]",A description that the adapter must not keep.,Warehouse robot ruptures can of bear spray
+abd,1,2015-05-19,[1],"[""youtube""]","[""youtube""]","[""children""]",Another description.,Google’s YouTube Kids App Presents Inappropriate Content
+abe,x,2015-05-19,[1],[],[],[],,Not a number

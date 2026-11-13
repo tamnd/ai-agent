@@ -11,7 +11,7 @@ It follows 2150/11 (algorithm) and 2150p/13 (programming).
 2. **Every fact has a snapshot.** The harvester stores the raw bytes of every response in R2 `ai-raw`, keyed by BLAKE3 (13.6). A card's `harvest` record (04.6) names the snapshot. The citation check reads the snapshot, not the live web.
 3. **Primary sources win.** For each fact the harvester records whether the source is primary (the developer's paper, model card, documentation, the official text of a law) or secondary (Epoch AI, the AI Index, Wikipedia, news). The fact model of 04.9 merges them.
 4. **Licence decides what we keep.** Each source has a licence class (13.5, 19.2). A class D source gives names, ids, numbers and dates only, never text.
-5. **Be a good citizen.** Adapters use official APIs and dumps first, respect `robots.txt`, rate limits and machine-readable text and data mining reservations (19.4), identify themselves with a generic project User-Agent (`ai.tamnd.com-harvester/<version>`) and the project's contact page, never a personal address, and cache. A source that blocks automated access is class E and is not scraped around.
+5. **Be a good citizen.** Adapters use official APIs and dumps first, respect `robots.txt`, rate limits and machine-readable text and data mining reservations (19.4), identify themselves with a generic project User-Agent (`aik/<version> (+https://github.com/tamnd/ai-agent)`) that names the project page, never a personal address, and cache. A source that blocks automated access is class E and is not scraped around.
 6. **Self-reported is a label, not a defect.** Most AI numbers are reported by the people who made the artifact. The harvester keeps them and marks them `self-reported`; the evidence labels of 07 and the comparability rules of 10.6 decide how they are shown.
 
 ## 13.2 Sources and adapters
@@ -23,7 +23,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 
 | Source | Gives | Access (adapter) | Class | Schedule |
 |---|---|---|---|---|
-| arXiv | new and updated papers in the categories of 5.8, versions (`v1`, `v2`), abstracts, licences, PDFs and source for cited papers | OAI-PMH and the listing API (`arxiv-cli`); bulk metadata dump | metadata A; full text per paper licence, default D (19.3) | daily |
+| arXiv | new and updated papers in the categories of 5.8, versions (`v1`, `v2`), abstracts, licences, PDFs and source for cited papers | OAI-PMH at `oaipmh.arxiv.org` (the `arXiv` metadata format, one set per category; `export.arxiv.org` disallows robots); bulk metadata dump | metadata A; full text per paper licence, default D (19.3) | daily |
 | OpenAlex | works, authors, institutions, venues, topics, citation counts, subfield 1702 and neighbours | API and snapshot (`openalex-cli`) | A | weekly; snapshot monthly |
 | Semantic Scholar | works, citation contexts, influential citations, TLDR flags (not text), author ids | API and datasets (`semanticscholar-cli`) | facts; datasets ODC-BY (checked at M1) | weekly |
 | DBLP | venues, proceedings, authors, keys; the cleanest venue record | dumps and API (`dblp-cli`) | A | weekly |
@@ -54,7 +54,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 
 | Source | Gives | Access (adapter) | Class | Schedule |
 |---|---|---|---|---|
-| Wikidata | QIDs and statements for concepts, models, software, people, organizations, events, awards | SPARQL and dumps (`wikidata-cli`) | A | weekly |
+| Wikidata | QIDs and statements for concepts, models, software, people, organizations, events, awards | dumps; for a limited run, SPARQL on a public mirror whose `robots.txt` allows it (QLever), since `query.wikidata.org` disallows robots | A | weekly |
 | Wikipedia (English) | outlines, glossaries, timelines, category trees, article titles, infobox facts, redirects (aliases) | API and dumps (`wikipedia-cli`) | B: titles, ids and facts only; never text into cards or code | weekly |
 | Wikimedia Commons | photos of people and historical systems with free licences | API (`commons-cli`) | per file: CC0, CC BY, CC BY-SA, public domain only | on demand |
 | Britannica, Stanford Encyclopedia of Philosophy, PhilPapers | names, categories and citations for history and philosophy | sites (`britannica-cli`, `philpapers-cli`) | D: names, ids and citations only | monthly |
@@ -69,7 +69,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 
 | Source | Gives | Access (adapter) | Class | Schedule |
 |---|---|---|---|---|
-| AI Incident Database | incidents, dates, reports (links to articles), classifications | snapshot exports and the API | facts; text per its terms (checked at M1, Q-23) | daily |
+| AI Incident Database | incidents, dates, reports (links to articles), classifications | snapshot exports (the backups listed on its research snapshots page); for a limited run, the page-data JSON of each incident | facts; text per its terms (checked at M1, Q-23) | daily |
 | OECD.AI | policy initiatives by country, the AI incidents monitor, principles | site and data downloads | per dataset (checked at M1) | weekly |
 | MIT AI Risk Repository | risks with causal and domain taxonomies, source documents | spreadsheet download | C (CC BY 4.0, checked at M1) | monthly |
 | MITRE ATLAS | tactics, techniques, mitigations, case studies of attacks on AI | data repository | C (checked at M1) | monthly |
@@ -116,7 +116,8 @@ Rule: a canon or survey entry needs an editor's reason. The canon is a checklist
 
 ## 13.4 Harvest runs, schedules and politeness
 
-- **Runs.** `aik harvest <source>` runs one adapter. A run is a function of the source's state on that date: it writes snapshots, inventory rows and card updates, and a run record (`reports/harvest/<source>/<date>.json`) with counts of new, changed and removed rows.
+- **Runs.** `aik harvest <source>` runs one adapter. A run is a function of the source's state on that date: it writes snapshots, inventory rows and card updates, and a run record (`reports/harvest/<source>/<date>.json`) with counts of new, changed, removed, unchanged and skipped rows, the requests and the snapshots.
+  A run with `-limit` or `-since` is partial: it adds and updates rows but removes none, so a sample never deletes the inventory.
 - **Pull requests.** One pull request per source per run, as in programming. A run whose changes pass the D and M rules (15.3) and touch only cards may merge without a person (Default); a run that removes cards or changes more than 5% of a source's cards waits for a person.
 - **Schedules.** As in the tables of 13.2. The daily job (14.9) runs the daily sources in one batch at 02:00 UTC.
 - **Limits.** Each adapter has a rate limit in `registers/sources.yaml`, at or below the source's published limit, and a monthly request budget. Bulk dumps are preferred whenever they exist (OpenAlex, DBLP, Wikidata, arXiv metadata, Papers with Code).
