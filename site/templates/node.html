@@ -21,6 +21,7 @@
 <table class="ladders"><thead><tr><th scope="col">Ladder</th><th scope="col">Level</th><th scope="col">What the next level needs</th></tr></thead><tbody>
 {{range .Rungs}}<tr><th scope="row">{{.Ladder}}{{with .Lang}} ({{.}}){{end}}</th><td>{{template "rung" .Rung}} {{.Name}}</td><td>{{if .Next}}<ul>{{range .Next}}<li>{{.}}</li>{{end}}</ul>{{else}}This is the top level.{{end}}</td></tr>{{end}}
 </tbody></table>
+{{with .Share}}<p>{{.}}</p>{{end}}
 {{with .Tests}}<p>{{.}}</p>{{end}}
 <p class="page-links"><span>Tag <code>{{.N.Tag}}</code></span> <a href="{{.Edit}}">Edit this page</a> <a href="{{.History}}">History</a> <a href="{{.Report}}">Report an error</a> {{if .Copies}}<a href="/{{.N.Slug}}.md">Markdown</a>{{end}}</p>
 </section>
@@ -93,3 +94,11 @@
 <div class="table-wrap"><table class="fact-table"><thead><tr><th scope="col">Fact</th><th scope="col">Value</th><th scope="col">Status</th><th scope="col">As of</th><th scope="col">Sources</th></tr></thead><tbody>
 {{range .}}<tr id="fact-{{.ID}}"><th scope="row">{{.Label}}</th><td>{{.Value}}{{with .Note}}<p class="fact-note">{{.}}</p>{{end}}</td><td><span class="chip status-{{.Status}}">{{.Status}}</span></td><td>{{.AsOf}}</td><td><ul>{{$disputed := eq .Status "disputed"}}{{range .Sources}}<li><code>{{.Src}}</code> ({{.Kind}}){{with .Loc}}, {{.}}{{end}}{{if $disputed}}: {{.Value}}{{end}}{{with .AsOf}}, as of {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
 </tbody></table></div></section>{{end}}
+
+{{define "evidence-section"}}<h2 id="evidence">Evidence</h2>
+{{template "claim-table" .}}{{end}}
+
+{{define "claim-table"}}<p>Each claim of this page has a type and its sources. The build computes the label of a claim from its sources: proved, measured here, replicated, reported or contested. <a href="/badges/#evidence-labels">Read what the labels mean</a>.</p>
+<div class="table-wrap"><table class="claim-table"><thead><tr><th scope="col">Claim</th><th scope="col">Type</th><th scope="col">Label</th><th scope="col">For</th><th scope="col">Against</th><th scope="col">Scope</th><th scope="col">Sources</th></tr></thead><tbody>
+{{range .Claims}}<tr id="ev-{{.ID}}"{{if .SupersededBy}} class="superseded"{{end}}><td>{{.Text}}{{with .SupersededBy}}<p class="claim-note">Superseded by <a href="#ev-{{.}}">{{.}}</a>.</p>{{end}}</td><td>{{.Type}}</td><td><span class="chip claim-chip {{.Class}}">{{.Chip}}</span></td><td>{{.IndependentFor}}</td><td>{{.Against}}</td><td>{{.Scope}}</td><td><ul>{{range .Sources}}<li><code>{{.Work}}</code> ({{.Role}}{{if ne .Stance "for"}}, {{.Stance}}{{end}}){{with .Locator}}, {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
+</tbody></table></div>{{end}}

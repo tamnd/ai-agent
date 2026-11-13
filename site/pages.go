@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/tamnd/ai-agent/claims"
 	"html/template"
 	"io/fs"
 	"os"
@@ -664,20 +665,21 @@ func splitTitle(src string) (string, string) {
 func (b *builder) machine() error {
 	type apiNode struct {
 		node.Front
-		URL    string        `json:"url"`
-		Path   string        `json:"path"`
-		Status status.Status `json:"status"`
-		Langs  []string      `json:"langs,omitempty"`
-		Proofs []string      `json:"proofs,omitempty"`
-		Scene  bool          `json:"scene"`
-		Facts  []facts.Fact  `json:"facts,omitempty"`
+		URL    string         `json:"url"`
+		Path   string         `json:"path"`
+		Status status.Status  `json:"status"`
+		Langs  []string       `json:"langs,omitempty"`
+		Proofs []string       `json:"proofs,omitempty"`
+		Scene  bool           `json:"scene"`
+		Facts  []facts.Fact   `json:"facts,omitempty"`
+		Claims []claims.Claim `json:"claims,omitempty"`
 	}
 	var all []apiNode
 	var llms strings.Builder
 	fmt.Fprintf(&llms, "# AI\n\n> Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.\n\nEach written page has a Markdown copy at /<slug>.md. The JSON record of every page is in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
 	groups := map[string][]*node.Node{}
 	for _, n := range b.c.Nodes {
-		a := apiNode{Front: n.Front, URL: b.opt.BaseURL + "/" + n.Slug + "/", Path: n.Rel, Status: b.status[n.Slug], Scene: n.Scene != "", Facts: n.Facts}
+		a := apiNode{Front: n.Front, URL: b.opt.BaseURL + "/" + n.Slug + "/", Path: n.Rel, Status: b.status[n.Slug], Scene: n.Scene != "", Facts: n.Facts, Claims: n.Claims}
 		for _, im := range n.Impls {
 			a.Langs = append(a.Langs, im.Lang)
 		}

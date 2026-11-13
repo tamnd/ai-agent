@@ -154,3 +154,59 @@ func TestFactTable(t *testing.T) {
 		t.Error("nodes.json does not hold the facts with their status")
 	}
 }
+
+func TestClaimChips(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "corpus")
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "nodes", "foundations", "models-of-computation", "toy-model")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	md := "---\ntag: 7TQYMD\nkind: model\nslug: toy-model\nname: Toy model\narea: foundations/models-of-computation\nlevel: intro\nsummary: A small model.\n---\n\n## Overview\n\nThe toy model fits the data {#c-fits}. A toy is a small model {#c-toy}.\n\n`{#c-fits}` in code stays.\n\n::claim{ref=toy-model#c-fits}\n\n## References\n\nThe paper.\n"
+	cy := "- id: c-fits\n  type: empirical\n  text: The toy model fits the data.\n  scope: {models: toy, data: [toy-set]}\n  evidence:\n    - {work: paper, role: original, stance: for, locator: \"Table 2\"}\n- id: c-toy\n  type: definitional\n  text: A toy is a small model.\n  evidence:\n    - {work: paper, role: original, stance: for}\n"
+	for name, s := range map[string]string{"node.md": md, "claims.yaml": cy} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	if _, err := Build(c, Options{Out: out}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(out, "toy-model", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := string(b)
+	for _, want := range []string{
+		`fits the data <a class="chip claim-chip label-unchecked" id="c-fits" href="#ev-c-fits"`,
+		`id="c-toy" href="#ev-c-toy" title="definitional claim; see the evidence">source</a>`,
+		"<code>{#c-fits}</code>",
+		`<p class="claim-ref">The toy model fits the data. <a class="chip claim-chip label-unchecked" href="/toy-model/#c-fits"`,
+		`<h2 id="evidence">Evidence</h2>`,
+		`<tr id="ev-c-fits">`,
+		"models: toy; data: toy-set",
+		"<code>paper</code> (original), Table 2",
+		"Claims: 1, not checked yet.",
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the page does not contain %q", want)
+		}
+	}
+	if strings.Index(page, `id="evidence"`) > strings.Index(page, `id="references"`) {
+		t.Error("the Evidence section is not before the References")
+	}
+	api, err := os.ReadFile(filepath.Join(out, "api", "nodes.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(api), `"claims":[{"id":"c-fits","type":"empirical"`) || !strings.Contains(string(api), `"labels":[]`) {
+		t.Error("nodes.json does not hold the claims with their labels")
+	}
+}

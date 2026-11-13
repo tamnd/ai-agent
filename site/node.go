@@ -38,6 +38,8 @@ type NodePage struct {
 	Player   *PlayerView
 	Sources  []SourceView
 	Facts    []FactView
+	Claims   []ClaimView
+	Share    string // the claim share line of "About this page"
 	Edit     string
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
 	History  string
@@ -297,7 +299,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	p.Related = b.links(rel)
 
 	r := b.render(n.Body)
-	html := r.HTML
+	html := b.claimMarks(n, r.HTML)
 	p.Impls = b.implViews(n)
 	p.Proofs = b.proofViews(n)
 	if n.Scene != "" {
@@ -334,6 +336,15 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 		}
 	}
 	p.Facts = factViews(n.Facts)
+	p.Claims = claimViews(n)
+	p.Share = claimShare(n)
+	if len(p.Claims) > 0 {
+		if hasH2(html, "evidence") {
+			html = insertAfterSection(html, b.snippet("claim-table", p), "evidence")
+		} else {
+			html = insertBefore(html, b.snippet("evidence-section", p), "history", "exercises", "references")
+		}
+	}
 	p.Sources = b.sourceViews(n)
 	if len(p.Sources) > 0 {
 		if hasH2(html, "references") {

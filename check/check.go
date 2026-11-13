@@ -144,6 +144,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		}
 		r.front(n)
 		r.facts(n)
+		r.claims(n)
 		if len(slugs[n.Slug]) > 1 {
 			r.add("T03", Block, n.Rel+"/node.md", 0, "the slug %q is used by %d nodes", n.Slug, len(slugs[n.Slug]))
 		}
