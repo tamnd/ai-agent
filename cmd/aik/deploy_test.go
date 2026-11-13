@@ -42,16 +42,31 @@ func TestAlias(t *testing.T) {
 	}
 }
 
+func TestWorkerConfig(t *testing.T) {
+	b, err := workerConfig(deployOptions{Worker: "ai-site", Domain: "ai.tamnd.com"}, "/w/site")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"name": "ai-site"`, `"directory": "/w/site"`, `"not_found_handling": "404-page"`, `"pattern": "ai.tamnd.com"`, `"custom_domain": true`} {
+		if !strings.Contains(string(b), want) {
+			t.Errorf("the config has no %s:\n%s", want, b)
+		}
+	}
+	if b, _ := workerConfig(deployOptions{Worker: "w"}, "/s"); strings.Contains(string(b), "routes") {
+		t.Errorf("a config with no domain has routes:\n%s", b)
+	}
+}
+
 func TestDeployNeedsCredentials(t *testing.T) {
 	t.Setenv("CLOUDFLARE_API_TOKEN", "")
 	t.Setenv("CLOUDFLARE_ACCOUNT_ID", "")
-	err := deploy(deployOptions{Dir: t.TempDir(), Project: "p", Branch: "main"})
+	err := deploy(deployOptions{Dir: t.TempDir(), Worker: "p", Branch: "main"})
 	if err == nil || !strings.Contains(err.Error(), "CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID") {
 		t.Errorf("deploy without credentials = %v", err)
 	}
 	t.Setenv("CLOUDFLARE_API_TOKEN", "x")
 	t.Setenv("CLOUDFLARE_ACCOUNT_ID", "y")
-	if err := deploy(deployOptions{Dir: t.TempDir(), Project: "p", Branch: "dev"}); err == nil || !strings.Contains(err.Error(), "-preview") {
+	if err := deploy(deployOptions{Dir: t.TempDir(), Worker: "p", Branch: "dev"}); err == nil || !strings.Contains(err.Error(), "-preview") {
 		t.Errorf("a production deploy of a branch = %v", err)
 	}
 }

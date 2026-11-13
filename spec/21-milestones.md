@@ -50,7 +50,7 @@ Deliverables:
 
 Plus gold cards, one for each card-only kind and for the card forms of the main kinds: a definition card (`logit`), a model card (Llama 3.1 405B), a result card (a Llama 3.1 405B score on MMLU with its setting), a benchmark card (MMLU), a dataset card (FineWeb), a work card, an incident card from the AI Incident Database, a provision card (EU AI Act Article 50), an event card, and an exercise card. And `q-learning` as the first page written by the pipeline (not by hand), as the test of the whole loop.
 
-9. **The site.** The Worker `ai` with R2 `ai-site`, serving the gold set, the area pages, the collection pages of the M0 cards, search, the `.md` and `.json` twins, and `/about/coverage/`. The live check of `deploy.sh` passes.
+9. **The site.** The Worker `ai-site` with R2 `ai-site`, serving the gold set, the area pages, the collection pages of the M0 cards, search, the `.md` and `.json` twins, and `/about/coverage/`. The live check of `deploy.sh` passes.
 
 **Exit criteria.**
 

@@ -48,7 +48,7 @@ Porting a script to Go is allowed when the Go version passes the same tests; it 
                      └──────────────────┬───────────────────┘
                                         ▼
                      ┌──────────────────────────────────────┐
-                     │ site: HTML, .md, .json, llms.txt,    │──▶ Cloudflare Worker `ai` + R2 `ai-site`
+                     │ site: HTML, .md, .json, llms.txt,    │──▶ Cloudflare Worker `ai-site` + R2 `ai-site`
                      │ feeds, datasets, MCP                 │──▶ datasets in R2 `ai-data`
                      └──────────────────────────────────────┘
 ```
@@ -166,7 +166,7 @@ The daily job (14.9) runs F1 on the fast sources (arXiv listings, the Hugging Fa
 
 | Part | Where | Cost (Estimate) |
 |---|---|---|
-| main site | Cloudflare Worker `ai` with static assets for the shell and the hot pages, and R2 `ai-site` for the rest; Workers and R2 from day one, because GitHub Pages failed for algorithm at about 3,500 nodes and 19,500 files (01.6) | Workers Paid $5/month; R2 storage and operations under $15/month at M5 |
+| main site | Cloudflare Worker `ai-site` with static assets for the shell and the hot pages, and R2 `ai-site` for the rest; Workers and R2 from day one, because GitHub Pages failed for algorithm at about 3,500 nodes and 19,500 files (01.6) | Workers Paid $5/month; R2 storage and operations under $15/month at M5 |
 | mirror | none in v1; the release archive is the offline copy (Q-12) | |
 | CI | GitHub Actions for pull requests, with `cpu-small` experiments; a self-hosted build server for the nightly full build, as for math2 and algorithm | the server exists |
 | GPU pool | on-demand rented GPUs for `gpu-small` (one 24 GB GPU) and `gpu-medium` (one 80 GB GPU) experiments, started by F6 and stopped after the batch (09.4) | a monthly cap of 09.10, Default $400/month at M3 |

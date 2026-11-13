@@ -50,7 +50,7 @@ Then read 05 and 06 (where a page sits and what it is), 07 (the central idea: cl
 10. **Neutral on contested questions.** Safety, policy, philosophy and open scientific debates are written as positions with their sources, never in the site's own voice (06.9, N01).
 11. **Four wings, one library.** algorithm, math2 and programming own their items. This site shows them as bridge cards and writes the AI view only when it adds facts (5.9).
 12. **Lean v4.35.0 and Mathlib, pinned as in algorithm.** The `AI` package formalizes learning theory, probability for ML, RL theory and logic for AI (11).
-13. **Workers and R2 from day one.** The site is served by the Cloudflare Worker `ai` with R2 buckets `ai-site`, `ai-raw`, `ai-data` and `ai-runs` (03.7, 16.20).
+13. **Workers and R2 from day one.** The site is served by the Cloudflare Worker `ai-site` with R2 buckets `ai-site`, `ai-raw`, `ai-data` and `ai-runs` (03.7, 16.20).
 14. **Agents write, checks gate, people review.** Agents write most of the text and code under the gate and a cross-family audit; every page shows what an agent wrote, what checks passed and what a person reviewed (14, 15.5).
 15. **No copying.** Prose, code and figures are written fresh and cite their sources. The copy check compares each change with the source corpora (13.7, 19).
 16. **"No missing" is measured.** Every item that a trusted source names has an outcome in the universe register, and the coverage report shows each gap (18).
@@ -70,7 +70,7 @@ These names are fixed for all documents.
 | Thing | Names |
 |---|---|
 | Site, repos, binary | ai.tamnd.com; `tamnd/ai`; `tamnd/ai-agent`; `aik` (Q-01); `work/` |
-| Stores | Worker `ai`; R2 `ai-site`, `ai-raw`, `ai-data`, `ai-runs`; D1 `ai-search` for full-text search from M3 (17.11) |
+| Stores | Worker `ai-site` (the name `ai` is taken by another Worker on the account); R2 `ai-site`, `ai-raw`, `ai-data`, `ai-runs`; D1 `ai-search` for full-text search from M3 (17.11) |
 | Lean | package `AI`, modules `AI.<Area>.<Name>` |
 | Ladders | W0–W5 writing; G0–G3 grounding; X0–X4 execution per framework; R0–R4 reproduction; F0–F3 formal; V0–V3 visualization; D0–D3 data facts; C0–C6 coverage |
 | Evidence labels | `proved`, `measured-here`, `replicated`, `reported`, `contested` (07) |
