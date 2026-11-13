@@ -1,7 +1,7 @@
 {{define "main"}}<div class="home">
 <section class="hero">
-<h1>Algorithms, explained, proved and run.</h1>
-<p class="lead">Each page explains one algorithm or idea in plain words. It gives the pseudocode, a proof that you can check, the cost, code with tests in many languages and a picture that you can step through.</p>
+<h1>Artificial intelligence, explained, sourced and run.</h1>
+<p class="lead">Each page explains one idea, method, architecture or task of AI in plain words. It derives the equations, gives code in NumPy, PyTorch and JAX with tests, and labels each claim with its evidence and its date.</p>
 <a class="hero-search" href="/search/" data-palette><span>Search {{plural .Meta.Counts.Nodes "page" "pages"}}</span><kbd>⌘K</kbd></a>
 <ul class="stats">
 <li><b>{{comma .Meta.Counts.Methods}}</b> methods</li>
@@ -19,9 +19,10 @@
 <section class="band how">
 <h2>How a page earns trust</h2>
 <ol class="how-list">
-<li><b>Plain words.</b> The text uses short sentences and simple words. A reader who knows some code can follow it.</li>
-<li><b>Proof.</b> A human proof shows why the algorithm is correct. A Lean proof lets a computer check it.</li>
-<li><b>Tests.</b> Each implementation has native tests. The build runs them in a pinned toolchain.</li>
+<li><b>Plain words.</b> The text uses short sentences and simple words. A reader who knows some code and some algebra can follow it.</li>
+<li><b>Sources.</b> Each claim has a source and a date. The build computes its evidence label: proved, measured here, replicated, reported or contested.</li>
+<li><b>Derivations.</b> Each equation is derived on the page or cited to the exact equation of its source. A Lean proof lets a computer check a theorem.</li>
+<li><b>Tests.</b> Each reference implementation has tests. The PyTorch and JAX versions must agree with the NumPy version. The build runs them in a pinned image.</li>
 <li><b>Honest badges.</b> The build computes each badge from evidence. Nobody writes a badge by hand. <a href="/badges/">Read about the badges</a>.</li>
 </ol>
 </section>

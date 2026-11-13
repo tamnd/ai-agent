@@ -47,10 +47,10 @@
 {{define "proofs-inline"}}<div class="proofs" id="proofs">{{range $i, $p := .Proofs}}<details class="proof" id="proof-{{.ID}}"{{if eq $i 0}} open{{end}}><summary><span class="proof-title">Proof: {{.Title}}</span>{{with .Status}}<span class="chip">{{.}}</span>{{end}}</summary><div class="proof-body">{{.HTML}}</div></details>{{end}}</div>
 {{end}}
 
-{{define "known-algorithms"}}<h2 id="known-algorithms">Known algorithms</h2>
+{{define "approaches"}}<h2 id="approaches">Approaches</h2>
 {{template "solver-table" .}}{{end}}
 
-{{define "solver-table"}}<div class="table-wrap"><table class="solvers"><thead><tr><th scope="col">Algorithm</th><th scope="col">Time</th><th scope="col">Space</th><th scope="col">Properties</th><th scope="col">Code</th></tr></thead><tbody>
+{{define "solver-table"}}<div class="table-wrap"><table class="solvers"><thead><tr><th scope="col">Method</th><th scope="col">Time</th><th scope="col">Space</th><th scope="col">Properties</th><th scope="col">Code</th></tr></thead><tbody>
 {{range .Solvers}}<tr><th scope="row">{{template "link" .Link}}</th><td>{{.Time}}</td><td>{{.Space}}</td><td>{{range .Props}}<span class="chip{{if .On}} on{{end}}">{{.Text}}</span>{{end}}</td><td>{{if .Langs}}{{plural .Langs "language" "languages"}}{{end}}</td></tr>{{end}}
 </tbody></table></div>
 {{end}}

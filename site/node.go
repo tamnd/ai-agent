@@ -50,7 +50,7 @@ type RungView struct {
 	status.Rung
 }
 
-// Card is the summary card of an algorithm, a data structure or a problem (spec 14.7.4).
+// Card is the summary card of a method, an architecture, a metric or a task (spec 16.6).
 type Card struct {
 	Solves     []Link
 	Techniques []Link
@@ -86,7 +86,7 @@ type Badge struct {
 	Hint string
 }
 
-// SolverRow is one row of the "Known algorithms" table of a problem.
+// SolverRow is one row of the table of the methods that solve a task.
 type SolverRow struct {
 	Link
 	Time  string
@@ -281,7 +281,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	if n.Scene != "" {
 		p.Player = b.playerView(n, r)
 		p.Scripts = []string{p.Player.Script, "/assets/player.js"}
-		html = insertAfterSection(html, b.snippet("player-section", p), "in-plain-words", "the-problem", "the-algorithm", "definition")
+		html = insertAfterSection(html, b.snippet("player-section", p), "in-plain-words", "the-method", "overview", "definition")
 	}
 	if len(p.Proofs) > 0 {
 		html = insertAfterSection(html, b.snippet("proofs-inline", p), "correctness", "complexity", "history", "references")
@@ -289,10 +289,10 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	if n.Kind == "task" {
 		p.Solvers = b.solverRows(n)
 		if len(p.Solvers) > 0 {
-			if hasH2(html, "known-algorithms") {
-				html = insertAfterSection(html, b.snippet("solver-table", p), "known-algorithms")
+			if hasH2(html, "approaches") {
+				html = insertAfterSection(html, b.snippet("solver-table", p), "approaches")
 			} else {
-				html = insertBefore(html, b.snippet("known-algorithms", p), "bounds", "reductions", "applications", "references")
+				html = insertBefore(html, b.snippet("approaches", p), "results", "difficulties", "applications", "history", "references")
 			}
 		}
 	}
@@ -319,7 +319,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 			html += b.snippet("refs-section", p)
 		}
 	}
-	for _, id := range []string{"implementations", "known-algorithms", "references"} {
+	for _, id := range []string{"implementations", "approaches", "references"} {
 		html = dropEmptyH2(html, id)
 	}
 	p.Body = template.HTML(html)
@@ -678,7 +678,7 @@ func jsonLD(b *builder, n *node.Node) template.JS {
 		"url":         b.opt.BaseURL + "/" + n.Slug + "/",
 		"identifier":  "ai://" + n.Tag,
 		"license":     "https://creativecommons.org/licenses/by-sa/4.0/",
-		"isPartOf":    map[string]string{"@type": "WebSite", "name": "Algorithm", "url": b.opt.BaseURL + "/"},
+		"isPartOf":    map[string]string{"@type": "WebSite", "name": "AI", "url": b.opt.BaseURL + "/"},
 	}
 	if len(n.Aliases) > 0 {
 		m["alternateName"] = n.Aliases

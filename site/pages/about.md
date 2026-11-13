@@ -1,15 +1,29 @@
 ## What this site is
 
-This site explains algorithms and data structures. Each page is about one idea: an algorithm, a data structure, a problem, a technique, a concept or a theorem.
+This site is an open encyclopedia of artificial intelligence. It covers each idea, method, architecture, model, task, benchmark, dataset, result, system, risk, law, argument, person and event of AI. An item with a lot to say gets a page. Each other item gets a card with checked facts and sources.
 
-A full page about an algorithm has these parts:
+A full page about a method has these parts:
 
 - An explanation in plain words.
-- The pseudocode, with a number for each line.
-- A proof that the algorithm is correct, and a proof of its cost.
-- A formal proof in Lean, when one exists.
-- Code in many languages. Each implementation has native tests.
-- A scene that shows the algorithm step by step on an input that you choose.
+- The setting and the method, with the equations.
+- A derivation of each equation, or a citation of the exact equation in its source.
+- A worked example with numbers.
+- The hyperparameters and the cost.
+- A reference implementation in NumPy, with PyTorch and JAX versions that must agree with it.
+- An experiment that reproduces the claim at small scale, when that is cheap.
+- The evidence for each claim, with its source and its date.
+
+## How the site labels a claim
+
+A sentence that states a fact about AI is a claim. The build gives each claim one of five labels:
+
+- **proved**: a theorem, with a proof on the page or in Lean.
+- **measured here**: an experiment in this repository reproduces it.
+- **replicated**: independent published replications exist.
+- **reported**: one source says it.
+- **contested**: the sources disagree, and the page gives each position with its sources.
+
+Nobody writes a label by hand. A number that changes, such as a parameter count or a benchmark score, has a source and an "as of" date. The text never says "state of the art" or "currently". Those words come only from computed tables with their dates.
 
 ## How the pages are written
 
@@ -19,7 +33,7 @@ A page says what it does not know. If a proof is only a sketch, the page says so
 
 ## How the build checks a page
 
-The build reads every page and checks it against the content standard. It checks the links, the front matter, the order of the sections, the pseudocode line ids and the markers in the code. It runs the native tests of each language in a pinned toolchain. It runs each scene on its presets and checks that the trace is the same each time.
+The build reads every page and checks it against the content standard. It checks the links, the front matter, the order of the sections, the claims and their sources. It runs the tests of each reference implementation in a pinned image with no network. It runs each scene on its presets and checks that the trace is the same each time.
 
 The build then computes the levels of each page. Nobody writes a level by hand. The section "About this page" at the end of each page shows the levels and what the next level needs. Read [the badges page](/badges/) for the details.
 
@@ -29,7 +43,7 @@ The site is an open project. The content is in [tamnd/ai](https://github.com/tam
 
 ## Licences
 
-The text and the pictures are CC BY-SA 4.0. The code of the implementations and the scenes is MIT. The toolchain is Apache 2.0. The fonts and the KaTeX files keep their own licences.
+The text and the pictures are CC BY-SA 4.0. The code of the implementations and the scenes is MIT. The Lean proofs and the toolchain are Apache 2.0. The facts and the registers are CC0. The fonts and the KaTeX files keep their own licences.
 
 ## Contact
 

@@ -538,8 +538,8 @@ func (b *builder) finish() error {
 		"_headers":       headers,
 		"opensearch.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-  <ShortName>Algorithm</ShortName>
-  <Description>Search algorithms, data structures and problems.</Description>
+  <ShortName>AI</ShortName>
+  <Description>Search the methods, models, tasks and ideas of artificial intelligence.</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/svg+xml">` + b.opt.BaseURL + `/assets/icon.svg</Image>
   <Url type="text/html" template="` + b.opt.BaseURL + `/search/?q={searchTerms}"/>
