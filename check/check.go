@@ -61,6 +61,23 @@ var Rules = map[string]string{
 	"E04": "variant_of and generalizes edges have no cycle",
 	"E05": "each solves target is a problem node",
 	"E08": "no edge points to its own node; see_also has at most 8 targets",
+	"D01": "every fact has a value, a unit and at least one source, and its value is the value of its best source",
+	"D02": "every model, dataset, benchmark, hardware item, policy and system has at least one source",
+	"D03": "the required facts of the kind are present (10.11)",
+	"D04": "a primary source is cited where one exists, with a locator",
+	"D05": "sources that differ beyond the tolerance make the fact disputed, and the page shows both values",
+	"D06": "an estimated fact names its estimator and method",
+	"D07": "a time-bound fact has as_of",
+	"D09": "units are in the unit list of 04.9",
+	"G01": "every source of a claim names a work",
+	"G02": "every claim has at least one source, unless it is a mathematical claim with a derivation or a Lean proof",
+	"G03": "every evidence entry has a locator",
+	"K01": "every {#c-...} anchor names a claim of claims.yaml once, a sentence has at most two anchors, and every ::claim reference names a claim that exists",
+	"K03": "the evidence of each claim has a role that its type allows (07.2)",
+	"K04": "no \"state of the art\", \"SOTA\", \"currently\", \"leading\", \"frontier\" as a rank, or superlative about a model, a lab, a score or a dataset in the site voice",
+	"K07": "a forecast claim has the date of the forecast in as_of",
+	"K09": "a superseded claim is not anchored in the main text",
+	"K13": "no claim is past its review_after date",
 	"S10": "each complexity string parses",
 	"S11": "each variable of a complexity claim is defined in vars, and the model exists",
 	"W01": "the section headings of the kind are in order",
@@ -145,6 +162,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.front(n)
 		r.facts(n)
 		r.claims(n)
+		r.voice(n)
 		if len(slugs[n.Slug]) > 1 {
 			r.add("T03", Block, n.Rel+"/node.md", 0, "the slug %q is used by %d nodes", n.Slug, len(slugs[n.Slug]))
 		}
