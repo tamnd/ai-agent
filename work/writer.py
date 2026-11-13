@@ -293,6 +293,19 @@ def pick(ladder, i):
     return None
 
 
+def climb(ladder, rung, st, sel):
+    """The next writer above rung that is available and keeps an auditor of another family for the node: a model of a
+    new family would leave no auditor that wrote none of it (spec 15.4, Q-08). The current writer when there is none."""
+    i = rung + 1
+    while (nxt := pick(ladder, i)) is not None:
+        try:
+            models().auditor_for(sorted(set(writers(st)) | {f"{nxt[1]}:{nxt[2]}"}))
+            return nxt
+        except Wait:
+            i = nxt[0] + 1
+    return sel
+
+
 def writers(st):
     """Every model that wrote a file of the node, as backend:model."""
     return sorted({f"{h['backend']}:{h['model']}" for h in st["history"] if h["role"] in WRITE_ROLES})
@@ -370,8 +383,8 @@ def _process(item, ladder, max_rounds=6):
             gate_fails += 1
             if gate_fails > 4:
                 break
-            if gate_fails >= 3 and rung + 1 < len(ladder):  # two failed gate fixes: climb
-                sel = pick(ladder, rung + 1) or sel
+            if gate_fails >= 3:  # two failed gate fixes: climb
+                sel = climb(ladder, rung, st, sel)
                 rung, backend, model = sel
                 gate_fails = 1
             call(item, st, "fix-gate", backend, model, fix_prompt(item, "\n".join(f"- {p}" for p in probs), wfile))
@@ -412,8 +425,8 @@ def _process(item, ladder, max_rounds=6):
             return "done"
         st["last_audit"] = v
         save(st)
-        if audits >= 2 and rung + 1 < len(ladder):  # two failed audits: climb
-            sel = pick(ladder, rung + 1) or sel
+        if audits >= 2:  # two failed audits: climb
+            sel = climb(ladder, rung, st, sel)
             rung, backend, model = sel
         if audits >= 4:
             break
