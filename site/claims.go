@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
@@ -37,20 +38,28 @@ type ClaimSourceView struct {
 	Stance  string
 }
 
-// computeClaims sets the computed fields of each claim of the corpus. The citation check (13.6) is not in aik yet, so no source is grounded, and only the experiments of the node give a label (measured here).
-func computeClaims(c *node.Corpus) {
+// computeClaims sets the computed fields of each claim of the corpus: a source counts when the citation check found
+// the claim in it (13.6), and the experiments of the node give measured here.
+func computeClaims(c *node.Corpus, ix *cite.Index) {
 	for _, n := range c.Nodes {
-		env := measuredEnv{m: status.Measured(n, status.Env{Corpus: c})}
+		env := measuredEnv{m: status.Measured(n, status.Env{Corpus: c}), ix: ix, tag: n.Tag}
 		for i := range n.Claims {
 			claims.Compute(&n.Claims[i], env)
 		}
 	}
 }
 
-// measuredEnv is the claims.Env of the build: it knows the experiments of the node, and has none of the other checks yet.
+// measuredEnv is the claims.Env of the build: it knows the citation check and the experiments of the node, and has
+// none of the other checks yet.
 type measuredEnv struct {
 	claims.NoChecks
-	m map[string][2]bool
+	m   map[string][2]bool
+	ix  *cite.Index
+	tag string
+}
+
+func (e measuredEnv) Grounded(c *claims.Claim, ev claims.Evidence) bool {
+	return e.ix.Grounded(e.tag, c, ev)
 }
 
 func (e measuredEnv) Measured(c *claims.Claim) (bool, bool) {

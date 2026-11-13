@@ -83,7 +83,7 @@ const claimFile = `- id: c-fits
   text: It will scale.
   review_after: 2020-01-01
   evidence:
-    - {work: blog, role: official-text, stance: for, locator: "p. 1"}
+    - {work: blog, role: official-text, stance: for, locator: "the blog, near the end"}
 - id: c-gone
   type: empirical
   text: Gone.
@@ -118,7 +118,7 @@ func TestClaimRules(t *testing.T) {
 		"T02": {`the definitional claim "c-new" has a scope`, `the source 1 of the claim "c-new" has reuses`},
 		"G01": {`the source 1 of the claim "c-wide" names no work`},
 		"G02": {`the claim "c-theorem" has no source`, `the claim "Bad" has no source`},
-		"G03": {`the source 1 of the claim "c-old" has no locator`},
+		"G03": {`the source 1 of the claim "c-old" has no locator`, `the locator "the blog, near the end" of the source 1 of the claim "c-guess" is not in the grammar`},
 		"K01": {
 			"the claim c-fits is anchored twice",
 			"the anchor {#c-missing} names no claim",

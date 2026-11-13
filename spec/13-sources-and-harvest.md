@@ -143,7 +143,7 @@ Every adapter writes the class into each snapshot and into each card's `harvest`
 - The repository keeps only the manifests (`harvest/manifests/<source>.jsonl`: URL, time, hash), never the raw bytes.
 - When a node cites a work, the citation check fetches the cited version once and keeps it: the arXiv version named by the citation (`2307.09288v2`, never the moving latest), the PDF from the venue or an open-access location found by Unpaywall, the model card at a Hub commit hash, the web page as captured, the legal text by its CELEX number and consolidated version date.
 - **Extracted text.** Each PDF snapshot gets a text extraction with layout: pages, section headings, numbered equations, tables (cells with row and column labels), figure captions and footnotes, stored next to the PDF as `<blake3>.doc.json` with the extractor's name and version. The LaTeX source from arXiv is used when it is available, because it gives exact equations and table cells. Equations are kept as LaTeX for the derivation check of 06.5.
-- **Locators.** A citation's `locator` names a place that the extraction can find: `Section 3.2`, `Eq. 4`, `Table 3, row "Llama 3.1 405B", column "MMLU (5-shot)"`, `p. 12`, `Article 50(4)`, `Appendix B.1`. The schema of locators is in `schema/locator.v1.json`.
+- **Locators.** A citation's `locator` names a place that the extraction can find: `Section 3.2`, `Eq. 4`, `Table 3, row "Llama 3.1 405B", column "MMLU (5-shot)"`, `p. 12`, `Article 50(4)`, `Appendix B.1`. The grammar of locators is in 13.6.1.
 - Snapshots of class D sources are kept for checking only, and they are never published. Their size is the main cost of `ai-raw` (03.3). Whether to store the PDFs of all work cards or only of cited works is Q-21.
 
 **The citation check.** This is the check behind G05 (15.3) and the verifier (15.4):
@@ -157,6 +157,44 @@ Every adapter writes the class into each snapshot and into each card's `harvest`
 
 A citation that fails any step fails G05 and goes to the fixer (14.2).
 The outcome of each step is stored with the claim (07.5), so that a page can show "checked against the source on <date>".
+
+**Where the check keeps its work.**
+
+- **What to fetch.** The work card says it, in the field `cited`: `{version, url, format}`, where `version` is the version that the page cites (`arXiv 1706.03762v7`, `JMLR 15(56)`), `url` is where that exact version is, and `format` is `pdf`, `html` or `none` (a work that the check cannot fetch, as in step 6). The card's `authors` are not key terms of a claim, so that "Srivastava et al. recommend" does not need the source to hold the names.
+- **Snapshots.** `aik cite` fetches each cited version once, with the user agent `aik/<version> (+https://github.com/tamnd/ai-agent)` and at most one request each three seconds to arXiv, and keeps it in the raw store under its BLAKE3 hash (`ai-raw`; locally `$AIK_RAW`). `manifests/works.jsonl` in the content repository has one line per work: the work, the version, the URL, the hash, the size, the fetch time and the extractor.
+- **Records.** `prov/cite/<tag>.jsonl` has one line per source of each claim of the node: the claim, the work, the locator, the cache key of 7.5, the snapshot hash, the spans as offsets, the outcome of each step, and the verifier's verdict when there is one. The records are committed, so the build computes G2 and G3 without the raw store. A record whose key does not match the claim, the locator and the snapshot as they are now is stale and counts for nothing.
+- **Key terms.** A source passes step 5 when its span or the section of its span holds at least 75% of the key terms of the claim (Default). The key terms are the content words of the claim outside its math, after stemming, without the names of the authors of the work. The check finds a passage about the claim; the verifier decides whether the passage supports it.
+- **Writers** read the places that the extraction found with `aik cite show <work>`, and the text of a place with `aik cite show <work> "<locator>"`.
+
+### 13.6.1 The locator grammar
+
+A locator is a list of places separated by commas, semicolons or "and".
+Each place is a kind and a number.
+
+| Kind | Written | Number |
+|---|---|---|
+| section, chapter | `Section 3.2`, `Sections 2 to 7`, `§ 4`, `Chapter 5` | `3`, `3.2`, `3.2.1` |
+| appendix | `Appendix A.4` | `A`, `A.4` |
+| equation | `Eq. 4`, `Eqs. 5 to 7`, `Equation 3.1` | `4`, `3.1`, `4a`, `A.2` |
+| table, figure, algorithm | `Table 3`, `Fig. 2`, `Figure 11`, `Algorithm 1` | `3`, `A2` |
+| theorem, lemma, definition, proposition, corollary | `Theorem 2.1` | `2`, `2.1` |
+| footnote | `Footnote 3` | `3` |
+| page | `p. 12`, `pp. 12 to 14` | the number printed on the page |
+| article, recital, annex | `Article 50(4)`, `Recital 27`, `Annex III` | `50`, `50(4)`, `50(4)(a)`, `III` |
+| abstract, title page | `the abstract`, `the title page` | none |
+
+- A plural kind takes a range with "to". A bare number continues the kind before it: `Sections 3 and 4`, `Tables 2, 3`.
+- A table takes the qualifiers `row "<label>"` and `column "<label>"`, which must appear on the located pages.
+- A quoted heading after a place names it, and the place must hold it: `Section 5.4 "Residual Dropout"`. It guards against a renumbered version.
+- The venue, the arXiv id and the version are not part of a locator; they belong to the work card. `NeurIPS 26, the sections on GLMs` and `arXiv 1409.2329, Section 3` are not locators.
+
+How a place resolves in the extraction:
+
+- **Sections, chapters and appendices** resolve to the text from their heading to the next heading at their depth or above, or to the list of references. A range runs from the start of its first place to the end of its last. Headings are found in order (3.2 after 3.1, 4 after 3.2.1), so that a number at the start of a line of a table or of a list of references is not taken for one.
+- **Tables, figures and algorithms** resolve to the pages that hold their caption, because the extraction does not keep the cells of a table next to its caption.
+- **Equations, footnotes and labelled statements** resolve to the text around their mark within its page, so that an equation is read with the sentences that introduce it.
+- **Pages** resolve by the number printed on the page, so that an article that starts at page 1929 is cited by its printed numbers, and otherwise by their place in the file.
+- **Articles** resolve to the text up to the next article; a paragraph, to the text from its number to the next one.
 
 ## 13.7 The copy check
 

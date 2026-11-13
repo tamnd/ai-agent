@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/facts"
 	"github.com/tamnd/ai-agent/node"
@@ -105,6 +106,8 @@ func (r *run) evidence(p string, c *claims.Claim, i int, e claims.Evidence) {
 	}
 	if e.Locator == "" {
 		r.add("G03", Level, p, 0, "the source %d of the claim %q has no locator", i, c.ID)
+	} else if _, err := cite.ParseLocator(e.Locator); err != nil {
+		r.add("G03", Level, p, 0, "the locator %q of the source %d of the claim %q is not in the grammar of 13.6: %v", e.Locator, i, c.ID, err)
 	}
 }
 

@@ -165,10 +165,11 @@ The citation check proves that a source says what the page says it says.
 The mechanism is in 13.6; this section says how its results become levels and labels.
 
 - **Snapshots.** Each source of each claim resolves to a snapshot in `ai-raw` with a BLAKE3 hash (`snap:`). arXiv citations pin the version (G09). A source cited without a version gets the version that was current when the citation was written, and the build records it.
-- **Locators.** Each evidence entry has a locator in the grammar of `schema/locator.v1.json`. The check resolves the locator to a text span of the extraction (`span: [start, end]` in characters). A locator that does not resolve fails G03.
+- **Locators.** Each evidence entry has a locator in the grammar of 13.6.1. The check resolves the locator to a text span of the extraction (`span: [start, end]` in characters). A locator that does not resolve fails G03.
 - **Numbers.** Numbers in the claim are normalized (thousands separators, percent and fraction forms, scientific notation, "B" and "billion", "k" and "thousand") and must be found in the span at the stated precision. Rounding: the page may round the source's number but never state more digits than the source has (K11).
-- **Key terms.** The content words of the claim, after the notation map of 06.4, must appear in the span or its section (G2 on this step).
+- **Key terms.** The content words of the claim, after the notation map of 06.4, must appear in the span or its section: at least 75% of them, without the names of the authors of the work (Default, 13.6). This is the step that finds the passage; the verifier judges it.
 - **The verifier** (15.4) reads only the claim and the span with its section, and gives `supported`, `unsupported`, `contradicted` or `unreadable`. G3 needs `supported` for every claim of the page.
+- **Records.** The outcome of each step is in `prov/cite/<tag>.jsonl`, and the snapshots are in `manifests/works.jsonl` (13.6).
 - **Cache.** The result of each check is cached by the hash of the claim text, the snapshot hash, the locator and the versions of the text extractor (13.6) and the checker. A claim whose cache key is unchanged is not checked again.
 - **No copied text.** The build stores spans as offsets into the snapshot, never as copied text, so `build/claims.json` holds no source text (C01). The verifier's short quote is kept in the run record only (14.7).
 - **Sources we cannot snapshot.** A source behind a paywall, or a class D source that we may not store, is `toc-checked` at best (13.6). Such a citation counts for G2 only with a reviewer's attestation in a review record that the reviewer read the passage and that it supports the claim (Default, Q-28). Without it, the citation is shown but the claim needs another source to reach G2.
@@ -276,7 +277,7 @@ These rules are listed in 15.3 with their severities.
 |---|---|---|
 | G01 | every source is in the right form: a work card slug, or a source id of `registers/sources.yaml` | block |
 | G02 | every claim and every fact has at least one source | level (W1) |
-| G03 | every evidence entry has a locator in the grammar of `schema/locator.v1.json`, and the locator resolves in the snapshot | level (W2) |
+| G03 | every evidence entry has a locator in the grammar of 13.6.1, and the locator resolves in the snapshot | level (W2) |
 | G04 | the cited work exists: its DOI, arXiv id, CELEX number, Hub commit or URL resolves, and its title and authors match the card (an invented source is a blocker in the audit, 14.6) | block |
 | G05 | the citation check passes for at least one source of each claim (7.5) | level (W3) |
 | G06 | a `secondary-reference` or `developer` source is not the only source of a claim that a primary or independent source exists for | level (W3) |
