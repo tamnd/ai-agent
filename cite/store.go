@@ -129,8 +129,9 @@ func writeAtomic(path string, b []byte) error {
 	return os.Rename(tmp.Name(), path)
 }
 
-// MaxObject is the largest object that Fetch keeps.
-const MaxObject = 64 << 20
+// MaxObject is the largest object that Fetch keeps. A whole textbook is a source: the authors' PDF of Sutton and
+// Barto's Reinforcement Learning is 73 MB.
+const MaxObject = 128 << 20
 
 // Fetch gets a URL with the User-Agent of aik and returns the body and its media type. It follows redirects and
 // fails on a status other than 200.
