@@ -5,9 +5,9 @@
 Usage: python3 stub.py [--dry-run]
 
 For a node outcome with no node yet, `aik new -area <top/sub> -name <name> -level <level> <kind> <slug>` writes the directory with the sections of its kind. stub.py then puts the catalog note in the summary and adds the aliases.
-For a card outcome, `aik card sync` writes or updates the card. aik does not have this command yet, so stub.py stops before it writes anything when there is a card outcome.
+For a card outcome, `aik card sync` writes the card, or updates the facts, the ids and the aliases of the card that exists. It finds the card by the universe item, the slug or a same_as id, and gives a new card a provisional tag.
 A bridge outcome needs no file here: the bridge card is already in cards/bridge/.
-Then `aik fmt` and `aik mint` run in the content checkout. Set AI_AUTHOR to pass -author to aik mint.
+Then `aik fmt` and `aik mint` run in the content checkout when there are new stubs or synced cards; aik mint tags both. Set AI_AUTHOR to pass -author to aik mint.
 Writes catalog/slugs.tsv: slug, kind, area and name of each node, card and bridge card.
 """
 import argparse
@@ -95,7 +95,9 @@ def main():
                 f.write(json.dumps(it, ensure_ascii=False) + "\n")
         rc, out = aik("card", "sync", str(path))
         print(out.strip()[-1000:])
-    if made:
+        if rc != 0:
+            raise SystemExit(f"aik card sync failed:\n{out[-2000:]}")
+    if made or cards:
         rc, out = aik("fmt")
         if rc != 0:
             raise SystemExit(f"aik fmt failed:\n{out[-2000:]}")
