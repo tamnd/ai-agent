@@ -2,6 +2,7 @@
 # A change to this file is its own pull request, with a note on what the area holds and what it does not.
 - id: foundations
   name: Foundations
+  group: A
   summary: The models, the measures and the proof methods that the rest of the site uses.
   children:
     - id: models-of-computation
@@ -20,6 +21,7 @@
       name: Lower bounds
 - id: techniques
   name: Techniques
+  group: A
   summary: The general methods of algorithm design, such as divide and conquer and dynamic programming.
   children:
     - id: divide-and-conquer
@@ -48,6 +50,7 @@
       name: Bit tricks
 - id: data-structures
   name: Data structures
+  group: B
   summary: The ways to store data so that the operations on it are fast.
   children:
     - id: linear-structures
@@ -80,6 +83,7 @@
       name: Concurrent structures
 - id: sorting
   name: Sorting
+  group: B
   summary: Algorithms that put items in order, and the problems near sorting.
   children:
     - id: comparison-sorts
@@ -96,6 +100,7 @@
       name: Parallel sorting
 - id: searching
   name: Searching
+  group: B
   summary: Algorithms that find an item, or a value with a property, in a collection.
   children:
     - id: sequential-and-binary-search
@@ -110,6 +115,7 @@
       name: Similarity search
 - id: sequences
   name: Sequences
+  group: B
   summary: Problems on arrays and sequences, such as sums, subarrays, subsequences and intervals.
   children:
     - id: prefix-sums-and-differences
@@ -124,6 +130,7 @@
       name: Interval problems
 - id: graphs
   name: Graphs
+  group: B
   summary: Algorithms on graphs and trees, such as traversal, paths, flows and matching.
   children:
     - id: graph-representation
@@ -156,6 +163,7 @@
       name: Network analysis
 - id: strings
   name: Strings
+  group: B
   summary: Algorithms that match, index and compare strings.
   children:
     - id: exact-matching
@@ -174,6 +182,7 @@
       name: String combinatorics
 - id: automata-and-parsing
   name: Automata and parsing
+  group: B
   summary: Finite automata, regular expressions and parsers.
   children:
     - id: finite-automata
@@ -188,6 +197,7 @@
       name: Term rewriting
 - id: number-theory
   name: Number theory
+  group: A
   summary: Algorithms on integers, such as divisibility, primes, modular arithmetic and factoring.
   children:
     - id: divisibility-and-gcd
@@ -206,6 +216,7 @@
       name: Lattice reduction
 - id: algebra
   name: Algebra
+  group: A
   summary: Exact arithmetic on numbers, polynomials and matrices, and fast transforms.
   children:
     - id: integer-arithmetic
@@ -222,6 +233,7 @@
       name: Computer algebra
 - id: numerical
   name: Numerical
+  group: D
   summary: Algorithms on real numbers in floating point.
   children:
     - id: floating-point
@@ -242,6 +254,7 @@
       name: Random number generation
 - id: geometry
   name: Geometry
+  group: B
   summary: Algorithms on points, lines and shapes in the plane and in space.
   children:
     - id: convex-hulls
@@ -264,6 +277,7 @@
       name: Geometric optimization
 - id: combinatorics
   name: Combinatorics
+  group: A
   summary: Algorithms that generate and count combinatorial objects.
   children:
     - id: generating-permutations
@@ -280,6 +294,7 @@
       name: Exhaustive search
 - id: optimization
   name: Optimization
+  group: C
   summary: Algorithms that find the best solution under constraints.
   children:
     - id: linear-programming
@@ -298,6 +313,7 @@
       name: Multi objective
 - id: logic-and-constraints
   name: Logic and constraints
+  group: B
   summary: Solvers for logic formulas and constraint problems.
   children:
     - id: sat-solving
@@ -314,6 +330,7 @@
       name: Model checking
 - id: randomized
   name: Randomized
+  group: C
   summary: Algorithms that use random choices, and how to analyse them.
   children:
     - id: sampling
@@ -330,6 +347,7 @@
       name: Derandomization
 - id: approximation
   name: Approximation
+  group: C
   summary: Algorithms that find a near-best solution with a proved bound.
   children:
     - id: covering-and-packing
@@ -346,6 +364,7 @@
       name: Hardness of approximation
 - id: online-and-streaming
   name: Online and streaming
+  group: C
   summary: Algorithms that get the input one item at a time.
   children:
     - id: paging-and-caching-online
@@ -360,6 +379,7 @@
       name: Sliding windows
 - id: parallel
   name: Parallel
+  group: G
   summary: Algorithms for many processors that share memory or work in bulk steps.
   children:
     - id: work-span-models
@@ -374,6 +394,7 @@
       name: MapReduce and BSP
 - id: distributed
   name: Distributed
+  group: G
   summary: Algorithms for many machines that send messages to each other.
   children:
     - id: consensus
@@ -392,6 +413,7 @@
       name: Gossip
 - id: concurrency
   name: Concurrency
+  group: G
   summary: Algorithms for threads that share memory at the same time.
   children:
     - id: mutual-exclusion
@@ -404,6 +426,7 @@
       name: Transactional memory
 - id: cryptography
   name: Cryptography
+  group: H
   summary: Algorithms that keep data secret and prove who sent it.
   children:
     - id: symmetric-ciphers
@@ -422,6 +445,7 @@
       name: Protocols
 - id: compression-and-coding
   name: Compression and coding
+  group: E
   summary: Algorithms that make data smaller, or protect it from errors.
   children:
     - id: entropy-coding
@@ -436,6 +460,7 @@
       name: Checksums
 - id: machine-learning
   name: Machine learning
+  group: C
   summary: Algorithms that learn a model from data.
   children:
     - id: supervised-learning
@@ -452,6 +477,7 @@
       name: Reinforcement learning
 - id: systems
   name: Systems
+  group: G
   summary: Algorithms inside operating systems, databases and networks.
   children:
     - id: caching-policies
@@ -472,6 +498,7 @@
       name: Rate limiting
 - id: biology
   name: Biology
+  group: F
   summary: Algorithms for sequences and structures in biology.
   children:
     - id: sequence-alignment
@@ -484,6 +511,7 @@
       name: Structure prediction
 - id: graphics-and-signals
   name: Graphics and signals
+  group: E
   summary: Algorithms for images, curves, rendering and signals.
   children:
     - id: rasterization
@@ -500,6 +528,7 @@
       name: Signal processing
 - id: games-and-search
   name: Games and search
+  group: B
   summary: Algorithms that play games, plan and solve puzzles.
   children:
     - id: game-tree-search
@@ -512,6 +541,7 @@
       name: Puzzles
 - id: quantum
   name: Quantum
+  group: F
   summary: Algorithms for quantum computers.
   children:
     - id: quantum-primitives
@@ -524,6 +554,7 @@
       name: Quantum simulation
 - id: complexity
   name: Complexity
+  group: A
   summary: What each problem needs, with classes, reductions and lower bounds.
   children:
     - id: complexity-classes

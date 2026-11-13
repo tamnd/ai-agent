@@ -102,3 +102,30 @@ func TestBuildFile(t *testing.T) {
 		t.Error("no I15 finding for impl/go/go.mod")
 	}
 }
+
+func TestGroups(t *testing.T) {
+	c := &node.Corpus{Areas: []node.Area{
+		{ID: "good", Group: "D", Children: []node.Area{{ID: "fine", Parent: "good"}}},
+		{ID: "none"},
+		{ID: "bad", Group: "Z"},
+		{ID: "top", Group: "A", Children: []node.Area{{ID: "sub", Parent: "top", Group: "A"}}},
+	}}
+	r := &run{c: c}
+	r.groups()
+	want := map[string]bool{`"none" has no group`: false, `"bad" has the group "Z"`: false, `"top/sub" has a group`: false}
+	for _, f := range r.out {
+		for w := range want {
+			if strings.Contains(f.Msg, w) {
+				want[w] = true
+			}
+		}
+	}
+	for w, ok := range want {
+		if !ok {
+			t.Errorf("no finding says %s; got %v", w, r.out)
+		}
+	}
+	if len(r.out) != 3 {
+		t.Errorf("got %d findings, want 3: %v", len(r.out), r.out)
+	}
+}

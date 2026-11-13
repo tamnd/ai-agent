@@ -131,6 +131,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.add("T01", Block, rel(c.Root, err.Error()), 0, "%v", err)
 	}
 	r.tags()
+	r.groups()
 	r.oldSlugs()
 	r.committedBuild()
 	slugs := map[string][]*node.Node{}
@@ -671,6 +672,24 @@ func (r *run) committedBuild() {
 	for _, p := range strings.Split(string(out), "\x00") {
 		if p != "" {
 			r.add("I15", Block, p, 0, "the file is under build/, which only the build writes; remove it with git rm --cached")
+		}
+	}
+}
+
+// groups checks that each top area has one of the 9 groups of spec 05.2 and that no sub-area has a group.
+func (r *run) groups() {
+	const p = "topics/areas.yaml"
+	for _, a := range r.c.Areas {
+		switch {
+		case a.Group == "":
+			r.add("T01", Block, p, 0, "the top area %q has no group; give it a letter from A to I (spec 05.2)", a.ID)
+		case node.GroupByLetter(a.Group) == nil:
+			r.add("T01", Block, p, 0, "the top area %q has the group %q; the groups are the letters A to I (spec 05.2)", a.ID, a.Group)
+		}
+		for _, s := range a.Children {
+			if s.Group != "" {
+				r.add("T06", Block, p, 0, "the sub-area %q has a group; only a top area has one", s.Path())
+			}
 		}
 	}
 }

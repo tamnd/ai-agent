@@ -12,10 +12,11 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-// Area is one entry of topics/areas.yaml (spec 05.2).
+// Area is one entry of topics/areas.yaml (spec 05.2). A top area has the letter of its group; a sub-area has none.
 type Area struct {
 	ID       string `yaml:"id" json:"id"`
 	Name     string `yaml:"name" json:"name"`
+	Group    string `yaml:"group,omitempty" json:"group,omitempty"`
 	Summary  string `yaml:"summary,omitempty" json:"summary,omitempty"`
 	Children []Area `yaml:"children,omitempty" json:"children,omitempty"`
 	Parent   string `yaml:"-" json:"parent,omitempty"`
