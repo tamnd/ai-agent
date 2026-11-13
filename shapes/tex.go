@@ -10,7 +10,7 @@ import (
 )
 
 // Symbol is the TeX of a name in the formulas of the page.
-// A config variable shows its symbol, else the letter of its axis, else its name; a block's params is P with the block id; its FLOPs is C with the block id.
+// A config variable shows its symbol, else the letter of its axis, else its name; a bound axis shows the symbol of its variable when it has one; a block's params is P with the block id; its FLOPs is C with the block id.
 func (f *File) Symbol(name string) string {
 	f.bind()
 	if id, part, ok := strings.Cut(name, "."); ok {
@@ -30,6 +30,11 @@ func (f *File) Symbol(name string) string {
 			}
 		}
 		return texName(name)
+	}
+	if a := f.Axis(name); a != nil && a.Var != "" {
+		if v := f.Var(a.Var); v != nil && v.Symbol != "" {
+			return v.Symbol
+		}
 	}
 	if m := f.Formula(name); m != nil && m.Symbol != "" {
 		return m.Symbol

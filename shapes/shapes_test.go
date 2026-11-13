@@ -170,6 +170,10 @@ func TestSample(t *testing.T) {
 }
 
 func TestTeX(t *testing.T) {
+	g := parse(t, strings.Replace(block, `d_ff:    {meaning: "width of the MLP hidden layer", example: 2048}`, `d_ff:    {meaning: "width of the MLP hidden layer", symbol: "d_{\\text{ff}}", example: 2048}`, 1))
+	if got, _ := g.TeX("mlp.params"); got != `2 M d_{\text{ff}} + d_{\text{ff}} + M` {
+		t.Errorf("a bound axis with a symbol: %q", got)
+	}
 	f := parse(t, block)
 	for name, want := range map[string]string{
 		"attn.params":             `4 M^{2} + 4 M`,
