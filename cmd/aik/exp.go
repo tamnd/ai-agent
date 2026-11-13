@@ -273,7 +273,7 @@ func fetchData(ctx context.Context, url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		cancel()
 		return nil, fmt.Errorf("GET %s: %s", url, resp.Status)
 	}
