@@ -131,6 +131,8 @@ aik
   claims extract <slug>                     find claim sentences and match them with claims.yaml (07.3)
   cite <slug..|-all> [-offline]             the citation check against ai-raw snapshots; writes prov/cite and manifests/works.jsonl (07.5, 13.6)
   cite show <work> ["<locator>"]            the places that the extraction of a work found, or the text of one place (13.6)
+  cite passages <slug>... [-redo]           the passages of the records that passed and have no verdict, as JSON, for the verifier (15.4)
+  cite verdict -file F -verifier B:M -run R the verifier's verdicts [{tag, key, verdict}] into the records (15.4)
   facts compute [-kind K]                   merge fact sources, compute status, as_of and computed facts (04.9)
   test <slug> [-framework F]                run the tests of a node in their pinned images (08)
   vectors make <slug>                       compute metric test vectors with the official implementation (08)

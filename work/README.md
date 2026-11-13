@@ -16,6 +16,7 @@ The agent pipeline scripts of ai.tamnd.com (spec 14). They make the catalog, wri
 | `writer.py` | Writes the pages with the writer ladder, the gate, the fix loop and the cross-family audit, and writes the provenance (spec 14.6). | `python3 writer.py --slugs <slug> ...` or `python3 writer.py --queue --limit 50 --jobs 6 [--writers <ref>,<ref>]` |
 | `gate.py` | Runs the gate on nodes: the local checks, then `aik gate -json`. | `python3 gate.py [--final] <slug> ...` |
 | `audit.py` | Audits pages with a model of another family. A page waits when no such model is available. | `python3 audit.py [--model <ref>] [--jobs 4] <slug> ...` |
+| `verify.py` | Judges each claim that the citation check found against its passage, with a model of another family (G3, spec 15.4). Writes the verdicts with `aik cite verdict` and the quotes and notes to `prov/runs/`. | `python3 verify.py [--model <ref>] [--writers <ids>] [--redo] [--dry-run] <slug> ...` |
 | `prov.py` | Appends a provenance line for each file of a node, for interactive sessions (spec 14.7). | `python3 prov.py [--models <ref>,...] [--audit <ref>] [--reviewer <login>] [--prompt writer/v1] [--note <text>] <slug> ...` |
 | `pr.py` | Opens a pull request in tamnd/ai from files of the content checkout, merges it on request and deploys (spec 14.10). | `python3 pr.py --branch <b> --title <t> --body-file <f> (--paths <p> ... \| --slugs <slug> ...) [--labels <l>] [--milestone <m>] [--merge]` |
 | `report.py` | Ticks checklist lines in an issue, posts a comment, cuts a release or prints the next patch version. | `python3 report.py tick <issue> <text> ...`, `comment <issue> --body-file <f>`, `release <YYYY.MM> --notes-file <f> [--latest]`, `next-patch` |
@@ -24,7 +25,7 @@ The agent pipeline scripts of ai.tamnd.com (spec 14). They make the catalog, wri
 | `ship.sh` | Ships one group of pages: provenance, `pr.py --merge` with up to 3 tries, `deploy.sh` when the deploy failed, then ticks the issue. | `bash ship.sh <issue> <branch> <title> <bodyfile> <prov:0\|1> <slug> ...` |
 | `deploy.sh` | Deploys origin/main of tamnd/ai with `aik site deploy`, then checks that the live page /dropout/ shows the commit. | `bash deploy.sh` |
 | `test_lib.py` | Tests of `lib.py`, `kinds.py` and `report.py`. They call no model and no network. | `python3 -m unittest discover -s work -p 'test_*.py'` |
-| `prompts/` | The prompts: `writer/v1.md`, `fix/v1.md` and `audit/v1.md`. Set `AI_PROMPT_VERSION` to use another version. | (read by `writer.py` and `audit.py`) |
+| `prompts/` | The prompts: `writer/v1.md`, `fix/v1.md`, `audit/v1.md` and `verify/v1.md`. Set `AI_PROMPT_VERSION` to use another version. | (read by `writer.py` and `audit.py`) |
 
 ## Before you run
 

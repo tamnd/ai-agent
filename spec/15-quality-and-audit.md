@@ -209,6 +209,8 @@ It does not see the page, so it cannot be persuaded by it.
 - `contradicted`: the span says the opposite, or a different number. This is a blocker; the node goes back to `fix-audit` with the note as the issue (14.6).
 - `unreadable`: the span is garbled by extraction (a broken table, a scanned page). The claim needs a person's attestation or another source.
 - The verifier's verdicts feed G3 and the citation records; they never set an evidence label by themselves (07.4).
+- **How it runs.** `work/verify.py <slug>` takes the claims whose record passed the citation check and has no verdict (`aik cite passages`), sends them with their passages to the verifier in one prompt (`work/prompts/verify/v1.md`), and writes each verdict into the record with `aik cite verdict`, with the verifier and the run id. The verifier is `verifier` of `registers/models.yaml`, or `auditor_for` the writers when that model is of a writer's family; with no writer known, the node waits. A record's verdict counts only while its key is current: a change of the claim, the locator, the snapshot or the extractor drops it (13.6).
+- **What is kept.** The citation record keeps the verdict, the verifier and the run. The verifier's quote (at most 25 words of the span) and its note go to the run record `prov/runs/<run>.yaml` (14.7), not to the repository's pages, so no text of a source is published beyond a short quote (C01).
 
 ### The audit of the audit
 

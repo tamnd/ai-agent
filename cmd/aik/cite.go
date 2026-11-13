@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"slices"
@@ -20,10 +21,17 @@ import (
 
 // cmdCite is the citation check of spec 7.5: aik cite <slug>... | -all, and aik cite show <work> [<locator>].
 func cmdCite(args []string) error {
-	if len(args) > 0 && args[0] == "show" {
-		return citeShow(args[1:])
+	if len(args) > 0 {
+		switch args[0] {
+		case "show":
+			return citeShow(args[1:])
+		case "passages":
+			return citePassages(args[1:])
+		case "verdict":
+			return citeVerdict(args[1:])
+		}
 	}
-	f := newFlags("cite", "[flags] <slug>... | -all | show <work> [<locator>]")
+	f := newFlags("cite", "[flags] <slug>... | -all | show <work> [<locator>] | passages <slug>... | verdict -file F")
 	root := f.String("root", ".", "the root of the content repository")
 	all := f.Bool("all", false, "check every node that has claims")
 	offline := f.Bool("offline", false, "do not fetch; use only the snapshots in the store")
@@ -343,5 +351,145 @@ func citeShow(args []string) error {
 			fmt.Printf("  %s %s\n", k, strings.Join(kinds[k], ", "))
 		}
 	}
+	return nil
+}
+
+// passage is what the verifier of 15.4 reads for one source of a claim: the claim, its type and scope, and the
+// located span with its section. It does not see the page.
+type passage struct {
+	Tag     string        `json:"tag"`
+	Slug    string        `json:"slug"`
+	Claim   string        `json:"claim"`
+	Type    string        `json:"type"`
+	Scope   *claims.Scope `json:"scope,omitempty"`
+	Text    string        `json:"text"`
+	Work    string        `json:"work"`
+	Version string        `json:"version"`
+	Locator string        `json:"locator"`
+	Key     string        `json:"key"`
+	Spans   []cite.Span   `json:"spans"`
+	Passage string        `json:"passage"`
+	Section string        `json:"section,omitempty"`
+	Verdict string        `json:"verdict,omitempty"`
+}
+
+// citePassages prints, as JSON, the passages of the sources that passed the citation check, for the verifier
+// (work/verify.py). The text goes to the verifier and to no file of the repository (C01).
+func citePassages(args []string) error {
+	f := newFlags("cite passages", "[flags] <slug>...")
+	root := f.String("root", ".", "the root of the content repository")
+	store := f.String("store", "", "the raw store; the default is $AIK_RAW or the user cache")
+	redo := f.Bool("redo", false, "give the passages that have a verdict too")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if f.NArg() == 0 {
+		return usageError{"give a slug"}
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	ix, err := cite.Load(*root)
+	if err != nil {
+		return err
+	}
+	st := cite.DefaultStore()
+	if *store != "" {
+		st = cite.Store{Dir: *store}
+	}
+	out := []passage{}
+	for _, slug := range f.Args() {
+		n := c.BySlug[slug]
+		if n == nil {
+			return usageError{fmt.Sprintf("no node has the slug %q", slug)}
+		}
+		for i := range n.Claims {
+			cl := &n.Claims[i]
+			for _, e := range cl.Evidence {
+				r, ok := ix.Current(n.Tag, cl, e)
+				if !ok || !r.Pass || (r.Verdict != "" && !*redo) {
+					continue
+				}
+				d := st.Doc(r.Snapshot)
+				if d == nil {
+					return fmt.Errorf("the store %s has no current extraction of the snapshot %s of %s; run aik cite %s", st.Dir, r.Snapshot[:12], e.Work, slug)
+				}
+				p, sec := cite.Passage(d, r.Spans)
+				out = append(out, passage{Tag: n.Tag, Slug: slug, Claim: cl.ID, Type: cl.Type, Scope: cl.Scope, Text: cl.Text,
+					Work: e.Work, Version: ix.Snapshots[e.Work].Version, Locator: e.Locator, Key: r.Key, Spans: r.Spans,
+					Passage: p, Section: sec, Verdict: r.Verdict})
+			}
+		}
+	}
+	return printJSON(out)
+}
+
+// citeVerdict writes the verdicts of the verifier into the records: a JSON list of {tag, key, verdict}. A verdict for
+// a key that no record has any more is skipped, because the claim, the locator or the snapshot changed since.
+func citeVerdict(args []string) error {
+	f := newFlags("cite verdict", "[flags] -file F -verifier backend:model -run RUN")
+	root := f.String("root", ".", "the root of the content repository")
+	file := f.String("file", "", "the verdicts, as a JSON list of {tag, key, verdict}; - for stdin")
+	verifier := f.String("verifier", "", "the model that gave the verdicts, as backend:model")
+	run := f.String("run", "", "the id of the run record (14.7)")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if *file == "" || *verifier == "" || *run == "" {
+		return usageError{"give -file, -verifier and -run"}
+	}
+	var b []byte
+	var err error
+	if *file == "-" {
+		b, err = io.ReadAll(os.Stdin)
+	} else {
+		b, err = os.ReadFile(*file)
+	}
+	if err != nil {
+		return err
+	}
+	var vs []struct{ Tag, Key, Verdict string }
+	if err := json.Unmarshal(b, &vs); err != nil {
+		return fmt.Errorf("%s: %w", *file, err)
+	}
+	ix, err := cite.Load(*root)
+	if err != nil {
+		return err
+	}
+	changed := map[string]bool{}
+	set, stale := 0, 0
+	for _, v := range vs {
+		if !slices.Contains(cite.Verdicts, v.Verdict) {
+			return usageError{fmt.Sprintf("the verdict %q is not one of %s", v.Verdict, strings.Join(cite.Verdicts, ", "))}
+		}
+		found := false
+		for id, r := range ix.Records[v.Tag] {
+			if r.Key == v.Key {
+				r.Verdict, r.Verifier, r.Run = v.Verdict, *verifier, *run
+				ix.Records[v.Tag][id] = r
+				changed[v.Tag], found = true, true
+			}
+		}
+		if found {
+			set++
+		} else {
+			stale++
+		}
+	}
+	for tag := range changed {
+		rs := make([]cite.Record, 0, len(ix.Records[tag]))
+		for _, r := range ix.Records[tag] {
+			rs = append(rs, r)
+		}
+		if err := cite.WriteRecords(*root, tag, rs); err != nil {
+			return err
+		}
+	}
+	fmt.Printf("%d verdicts written", set)
+	if stale > 0 {
+		fmt.Printf(", %d skipped because no record has their key", stale)
+	}
+	fmt.Println()
 	return nil
 }
