@@ -12,7 +12,7 @@ import (
 // Norm writes text in the form that the checks compare: lower case, one space between words, and the dashes and
 // minus signs of PDFs as "-".
 func Norm(s string) string {
-	s = strings.NewReplacer("−", "-", "–", "-", "—", "-", "­", "", "’", "'", "“", `"`, "”", `"`).Replace(s)
+	s = strings.NewReplacer("−", "-", "–", "-", "—", "-", "\u00ad", "", "’", "'", "“", `"`, "”", `"`).Replace(s)
 	return strings.Join(strings.Fields(strings.ToLower(s)), " ")
 }
 

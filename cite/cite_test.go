@@ -4,6 +4,7 @@ package cite
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -379,7 +380,7 @@ func TestStore(t *testing.T) {
 	if _, err := s.Get(h); err == nil {
 		t.Error("Get gives an object whose bytes do not have its hash")
 	}
-	if _, err := Extract(t.Context(), []byte("<html>login</html>"), "pdf"); err != ErrNotPDF {
+	if _, err := Extract(t.Context(), []byte("<html>login</html>"), "pdf"); !errors.Is(err, ErrNotPDF) {
 		t.Errorf("Extract of HTML as a PDF = %v", err)
 	}
 }

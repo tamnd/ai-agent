@@ -66,7 +66,7 @@ func ExtractPDF(ctx context.Context, pdf []byte) (*Doc, error) {
 	var out, errb bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errb
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("pdftotext: %v: %s", err, strings.TrimSpace(errb.String()))
+		return nil, fmt.Errorf("pdftotext: %w: %s", err, strings.TrimSpace(errb.String()))
 	}
 	ver := "pdftotext"
 	if v, err := exec.CommandContext(ctx, tool, "-v").CombinedOutput(); err == nil {
