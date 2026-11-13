@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/tamnd/ai-agent/cite"
+	"github.com/tamnd/ai-agent/claims"
 )
 
 func TestCiteVerdict(t *testing.T) {
@@ -51,5 +52,26 @@ func TestCiteVerdict(t *testing.T) {
 	}
 	if b := ix.Records["T"][cite.RecordID("c-b", "w", "Section 2")]; b.Verdict != "" {
 		t.Errorf("c-b has the verdict %q of an invalid file", b.Verdict)
+	}
+}
+
+// aik cite keeps the verdict of a record whose key a new extractor changed when the passage is the same.
+func TestCiteCarry(t *testing.T) {
+	d := cite.Parse("1 Introduction\nDropout is a technique for addressing overfitting in neural networks.\n\n2 Method\nUnits are dropped at random.\n")
+	cl := &claims.Claim{ID: "c", Text: "Dropout addresses overfitting in neural networks."}
+	snap := cite.Snapshot{Work: "w", Hash: "h", Extractor: "x+" + cite.ExtractorVersion}
+	r := cite.Check(cl, claims.Evidence{Work: "w", Locator: "Section 1"}, d, snap)
+	if !r.Pass {
+		t.Fatalf("the check fails: %s", r.Why())
+	}
+	old := r
+	old.Key, old.Verdict = "old", cite.Supported
+	ck := &citer{ix: &cite.Index{Snapshots: map[string]cite.Snapshot{"w": snap}}, docs: map[string]*cite.Doc{}}
+	if ck.carry(old, r, cl) {
+		t.Errorf("a verdict is carried with no text of the snapshot to read")
+	}
+	ck.docs["h"] = d
+	if !ck.carry(old, r, cl) {
+		t.Errorf("the verdict of the same passage is not carried")
 	}
 }

@@ -104,12 +104,21 @@ type citer struct {
 	docs    map[string]*cite.Doc
 	failed  map[string]string // works that could not be read, with why
 	last    time.Time         // the last request to arXiv
+	carried int               // the verdicts of the node that a new key kept, as what was judged is the same
+}
+
+// carry tells if the verdict of the old record o of a source holds for its new record r (cite.Carry).
+func (ck *citer) carry(o, r cite.Record, cl *claims.Claim) bool {
+	snap, ok := ck.ix.Snapshots[r.Work]
+	d := ck.docs[snap.Hash]
+	return ok && d != nil && cite.Carry(o, r, cl, d, snap)
 }
 
 // node checks every source of every claim of n. It prints a line for each claim and returns the records and the
 // number of labelled claims with no source that passes (G05).
 func (ck *citer) node(ctx context.Context, n *node.Node) ([]cite.Record, int) {
 	old := ck.ix.Records[n.Tag]
+	ck.carried = 0
 	var rs []cite.Record
 	pass, ungrounded := 0, 0
 	fmt.Printf("%s (%s)\n", n.Slug, n.Tag)
@@ -123,8 +132,12 @@ func (ck *citer) node(ctx context.Context, n *node.Node) ([]cite.Record, int) {
 				lines = append(lines, fmt.Sprintf("      %s %s: %s", e.Work, e.Locator, why))
 				continue
 			}
-			// The verdict of the verifier stays while the key is the same.
-			if o, has := old[cite.RecordID(r.Claim, r.Work, r.Locator)]; has && o.Key == r.Key {
+			// The verdict of the verifier stays while the key is the same, and while what it judged is the same: the
+			// claim, the work, the locator, the snapshot and the passage with its section (spec 7.5, 15.4).
+			if o, has := old[cite.RecordID(r.Claim, r.Work, r.Locator)]; has && (o.Key == r.Key || ck.carry(o, r, cl)) {
+				if o.Key != r.Key && o.Verdict != "" {
+					ck.carried++
+				}
 				r.Verdict, r.Verifier, r.Run = o.Verdict, o.Verifier, o.Run
 			}
 			rs = append(rs, r)
@@ -152,7 +165,11 @@ func (ck *citer) node(ctx context.Context, n *node.Node) ([]cite.Record, int) {
 			fmt.Println(l)
 		}
 	}
-	fmt.Printf("  %d of %d claims found in their sources\n\n", pass, len(n.Claims))
+	fmt.Printf("  %d of %d claims found in their sources\n", pass, len(n.Claims))
+	if ck.carried > 0 {
+		fmt.Printf("  %d verdicts carried over: the passage the verifier judged is the same\n", ck.carried)
+	}
+	fmt.Println()
 	return rs, ungrounded
 }
 

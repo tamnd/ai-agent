@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"math"
 	"os/exec"
 	"regexp"
 	"slices"
@@ -18,7 +19,7 @@ import (
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-3"
+const ExtractorVersion = "aik-doc-4"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
@@ -85,28 +86,74 @@ var (
 	blockRE = regexp.MustCompile(`(?i)</(p|div|h[1-6]|li|tr|table|section|pre|blockquote)>|<br\s*/?>`)
 )
 
-// ExtractHTML reads the text of a web page, with one line for each heading and block.
+// ExtractHTML reads the text of a web page, with one line for each heading and block. Its headings are those of its
+// markup: a line of a table of contents, as "Bibliography" in the contents of an entry of the Stanford Encyclopedia,
+// looks like a heading in the text, and a page has no later page to tell the contents from the body.
 func ExtractHTML(page []byte) *Doc {
-	s := hOpenRE.ReplaceAllString(string(page), "\n")
+	d := Parse(htmlText(string(page)))
+	d.Extractor = "html+" + ExtractorVersion
+	var cands []cand
+	var stops []int
+	done, at := 0, 0 // the text before the byte done of the page is at bytes of the text
+	for _, m := range hTagRE.FindAllStringSubmatchIndex(string(page), -1) {
+		// The heading starts where the text of the page before it ends, give or take the blank lines. The conversion is
+		// local, so the text of the page before it is the text before the last heading and the text in between.
+		at += len(clean(htmlText(string(page[done:m[0]]))))
+		done = m[0]
+		title := strings.Join(strings.Fields(html.UnescapeString(tagRE.ReplaceAllString(string(page[m[4]:m[5]]), " "))), " ")
+		if title == "" {
+			continue
+		}
+		start := min(at, len(d.Text))
+		if i := strings.Index(d.Text[start:], title); i >= 0 && i < 200 {
+			start += i
+		}
+		h := headRE.FindStringSubmatch(title)
+		if refsRE.MatchString(title) || (h == nil && page[m[2]] <= '2') {
+			// The references end the body, and so does a heading of the top level with no number, as "Conclusion".
+			stops = append(stops, start)
+			continue
+		}
+		if h == nil || h[2] == "" {
+			continue
+		}
+		if n := tuple(h[1]); n != nil {
+			cands = append(cands, cand{Head{Num: h[1], Title: h[2], Start: start}, n, 3})
+		}
+	}
+	if heads := chain(cands); len(heads) > 0 {
+		d.Heads = heads
+		d.ends(stops)
+	}
+	return d
+}
+
+var hTagRE = regexp.MustCompile(`(?is)<h([1-6])\b[^>]*>(.*?)</h[1-6]>`)
+
+func htmlText(s string) string {
+	s = hOpenRE.ReplaceAllString(s, "\n")
 	s = blockRE.ReplaceAllString(s, "\n")
 	s = tagRE.ReplaceAllString(s, " ")
-	s = html.UnescapeString(s)
-	d := Parse(s)
-	d.Extractor = "html+" + ExtractorVersion
-	return d
+	return html.UnescapeString(s)
 }
 
 var (
 	// A heading line: a number, then a title that starts with a capital letter. "3.2 Attention", "6. Results", "A.4 Dropout Rate".
 	headRE = regexp.MustCompile(`^((?:[0-9]+|[A-Z])(?:\.[0-9]+)*)\.?(?:\s+([A-Z][^\n]{0,100}))?$`)
 	// "Appendix A. A Practical Guide", "Appendix B: Details".
-	appRE     = regexp.MustCompile(`^Appendix\s+([A-Z])\b[.:]?\s*([^\n]{0,100})$`)
-	captionRE = regexp.MustCompile(`^(Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+)\s*[:.|]`)
+	appRE = regexp.MustCompile(`^Appendix\s+([A-Z])\b[.:]?\s*([^\n]{0,100})$`)
+	// "Table 1: Results" and "Figure 2. The model"; also "Table 1 Parameter counts", with no colon, where a word with
+	// a capital follows the number. "Table 1 shows" is a mention, not a caption.
+	captionRE = regexp.MustCompile(`^(Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+)(?:\s*[:.|]|\s+[A-Z][a-z]+\s)`)
 	// A caption that two-column text put in the middle of a line has a colon after its number: "error Figure 11:
 	// Monte-Carlo". "Figure 11 shows" is a mention, not a caption.
 	midCaptionRE = regexp.MustCompile(`\s(Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+):\s`)
 	eqRE         = regexp.MustCompile(`\(((?:[0-9]+|[A-Z]\.[0-9]+)(?:\.[0-9]+)?[a-z]?)\)\s*$`)
 	footRE       = regexp.MustCompile(`^([0-9]{1,2})\s?[A-Za-z]`)
+	bareRE       = regexp.MustCompile(`^[0-9]{1,2}$`)
+	bareHeadRE   = regexp.MustCompile(`^[0-9]+(?:\.[0-9]+)*\.?$`)
+	urlRE        = regexp.MustCompile(`https?://|www\.`)
+	listRE       = regexp.MustCompile(`^[0-9]+\.\s`)
 	abstRE       = regexp.MustCompile(`(?i)^abstract\b`)
 	refsRE       = regexp.MustCompile(`(?i)^(references( and notes)?|bibliography|literature cited)$`)
 	// citedRE is a line of a list of references: initials first, or a year in brackets or at the end.
@@ -127,7 +174,6 @@ func Parse(text string) *Doc {
 	if n := len(d.Pages); n > 1 && strings.TrimSpace(text[d.Pages[n-1]:]) == "" {
 		d.Pages = d.Pages[:n-1]
 	}
-	var last []int // the number of the last heading, with letters as 1000+index
 	var lines []line
 	page := 0
 	for off := 0; off < len(text); {
@@ -139,15 +185,14 @@ func Parse(text string) *Doc {
 		}
 		raw := text[off:end]
 		page += strings.Count(raw, "\f")
-		lines = append(lines, line{off, strings.TrimSpace(strings.Trim(raw, "\f")), strings.HasPrefix(raw, "\f"), page})
+		// A line that starts a page starts after its form feeds, which end the page before: a caption or a heading at
+		// the top of a page is on that page.
+		lead := len(raw) - len(strings.TrimLeft(raw, "\f"))
+		lines = append(lines, line{off + lead, strings.TrimSpace(strings.Trim(raw, "\f")), lead > 0, page})
 		off = end + 1
 	}
 	inApp, inRefs := false, false
-	type seenHead struct {
-		h   Head
-		pno int
-	}
-	var heads []seenHead
+	var cands []cand
 	var stops []int // the starts of the lists of references, which end the heading before them
 	for i, l := range lines {
 		s := l.s
@@ -174,6 +219,11 @@ func Parse(text string) *Doc {
 		}
 		if d.Abstract == nil && abstRE.MatchString(s) && len(s) < 120 {
 			d.Abstract = &Span{Start: l.off}
+			// A heading comes after the abstract: a number before it on the first pages is in the address of an
+			// author, as "1 Microsoft Way".
+			if l.pno < 2 {
+				cands = cands[:0]
+			}
 		}
 		if refsRE.MatchString(s) {
 			inRefs = true
@@ -181,14 +231,17 @@ func Parse(text string) *Doc {
 			continue
 		}
 		title, num := "", ""
+		at := i // the line of the title
 		if m := appRE.FindStringSubmatch(s); m != nil {
 			num, title, inApp, inRefs = m[1], strings.TrimSpace(m[2]), true, false
 		} else if m := headRE.FindStringSubmatch(s); m != nil && !inRefs {
 			num, title = m[1], m[2]
 			if title == "" {
 				// The number is alone on its line and the title is on the next line that is not empty.
-				// A cell of a table can come between them, so a line that is not words is skipped.
-				for j := i + 1; j < len(lines) && j <= i+5; j++ {
+				// A cell of a table, a formula or a web address can come between them, so up to three lines that are
+				// not words are skipped; more is a table, whose cells are not the title.
+				skipped := 0
+				for j := i + 1; j < len(lines) && j <= i+8 && skipped <= 3; j++ {
 					t := lines[j].s
 					if t == "" {
 						continue
@@ -196,11 +249,15 @@ func Parse(text string) *Doc {
 					if lines[j].page || captionRE.MatchString(t) {
 						break // a page number above a caption or the first line of the next page is not a heading
 					}
-					if !wordy(t) {
-						continue
+					if bareHeadRE.MatchString(t) {
+						break // another number alone, as the 2.2 after a footnote mark 4: the title is its own
+					}
+					if !wordy(t) || len([]rune(t)) < 3 {
+						skipped++
+						continue // as the K above "Experiments"
 					}
 					if len(t) <= 100 && unicode.IsUpper(firstRune(t)) && !strings.HasSuffix(t, ".") {
-						title = t
+						title, at = t, j
 					}
 					break
 				}
@@ -214,6 +271,12 @@ func Parse(text string) *Doc {
 			if title == "" && !strings.Contains(num, ".") {
 				continue
 			}
+			if listRE.MatchString(s) && (i > 0 && listRE.MatchString(lines[i-1].s) || i+1 < len(lines) && listRE.MatchString(lines[i+1].s)) {
+				continue // an item of a numbered list, next to another: "1. Smoothing helps", "2. No single method"
+			}
+			if title != "" && sentence(title, lines, at) {
+				continue // a footnote or a numbered sentence: "3 As a guide to the eye, we have underlined the"
+			}
 		} else {
 			continue
 		}
@@ -226,20 +289,37 @@ func Parse(text string) *Doc {
 		if title != "" && (len(strings.Fields(title)) > 14 || citedRE.MatchString(title)) {
 			continue
 		}
-		// The first heading again, on a later page, after a table of contents: the headings so far were its lines.
-		if len(n) == 1 && n[0] == 1 && len(heads) > 0 && title != "" && strings.EqualFold(heads[0].h.Title, title) && heads[0].pno < l.pno {
-			d.Heads, heads, last = nil, nil, nil
+		// The first heading again, after a table of contents: the candidates so far were its lines.
+		// The page may be the same, as when the contents end above the introduction, so it is the title that tells.
+		if len(n) == 1 && n[0] == 1 && title != "" && len(cands) > 0 && slices.Equal(cands[0].n, n) && strings.EqualFold(cands[0].h.Title, title) {
+			cands = nil
 		}
-		if !follows(last, n) {
-			continue
+		if bareHeadRE.MatchString(s) && axis(lines, i, at, num) {
+			continue // a tick of the axis of a plot and its label: "3.5", "Human Score", then "3.5", "3", "2.5"
 		}
-		last = n
-		d.Heads = append(d.Heads, Head{Num: num, Title: title, Start: l.off})
-		heads = append(heads, seenHead{d.Heads[len(d.Heads)-1], l.pno})
+		// A number with its title weighs more than a number alone, which may be a cell of a table, and a title that
+		// goes on in lower case, which may be a sentence, weighs less than one that does not.
+		w := 3
+		switch {
+		case title == "":
+			w = 1
+		case runOn(lines, at):
+			w = 2
+		}
+		cands = append(cands, cand{Head{Num: num, Title: title, Start: l.off}, n, w})
 	}
+	d.Heads = chain(cands)
+	d.ends(stops)
+	d.footnotes(lines)
+	return d
+}
+
+// ends sets the end of each heading, at the next heading at its depth or above or at a list of references, and the
+// end of the abstract, at the first heading after it.
+func (d *Doc) ends(stops []int) {
 	for i := range d.Heads {
 		h := &d.Heads[i]
-		h.End = len(text)
+		h.End = len(d.Text)
 		depth := strings.Count(h.Num, ".")
 		for _, o := range d.Heads[i+1:] {
 			if strings.Count(o.Num, ".") <= depth {
@@ -255,7 +335,7 @@ func Parse(text string) *Doc {
 		}
 	}
 	if d.Abstract != nil {
-		d.Abstract.End = len(text)
+		d.Abstract.End = len(d.Text)
 		for _, h := range d.Heads {
 			if h.Start > d.Abstract.Start {
 				d.Abstract.End = h.Start
@@ -263,8 +343,99 @@ func Parse(text string) *Doc {
 			}
 		}
 	}
-	d.footnotes(lines)
-	return d
+}
+
+// cand is a line that can be a heading, with its number as a tuple and its weight.
+type cand struct {
+	h Head
+	n []int
+	w int
+}
+
+// chain keeps the candidates that make the heaviest run in which each number follows the one before. A footnote or a
+// list item that looks like a heading ("3 As a guide to the eye") is left out when keeping it would cut the run of the
+// headings after it, which a greedy reading, keeping each number that follows the last one kept, does not see.
+func chain(cs []cand) []Head {
+	best := make([]int, len(cs))
+	prev := make([]int, len(cs))
+	top := -1
+	for i, c := range cs {
+		best[i], prev[i] = -1, -1
+		if follows(nil, c.n) {
+			best[i] = c.w
+		}
+		for j := range i {
+			if best[j] >= 0 && best[j]+c.w > best[i] && follows(cs[j].n, c.n) {
+				best[i], prev[i] = best[j]+c.w, j
+			}
+		}
+		if best[i] >= 0 && (top < 0 || best[i] > best[top]) {
+			top = i
+		}
+	}
+	var out []Head
+	for i := top; i >= 0; i = prev[i] {
+		out = append(out, cs[i].h)
+	}
+	slices.Reverse(out)
+	return out
+}
+
+// sentence tells if the title of a heading candidate, on the line at, starts a sentence, as a footnote or a numbered
+// item does: it holds a web address, it ends with a comma, or it is long and the next line goes on in lower case with
+// no blank line between them. A title of up to seven words can wrap: "5.1 Which metric is best suited for pairwise",
+// "comparison?"; a footnote fills the width of its column, eight words or more. An item "3. Publish your system
+// outputs" that goes on in lower case is a sentence from four words.
+func sentence(title string, lines []line, at int) bool {
+	if urlRE.MatchString(title) || strings.HasSuffix(title, ",") || strings.HasSuffix(title, ";") {
+		return true
+	}
+	long := 8
+	if listRE.MatchString(lines[at].s) {
+		long = 4
+	}
+	return len(strings.Fields(title)) >= long && runOn(lines, at)
+}
+
+// runOn tells if the line after the line at goes on in lower case, with no blank line between them.
+func runOn(lines []line, at int) bool {
+	return at+1 < len(lines) && lines[at+1].s != "" && !lines[at+1].page && unicode.IsLower(firstRune(lines[at+1].s))
+}
+
+// axis tells if a number alone on the line i, with its title on the line at, is a tick of the axis of a plot: the
+// numbers alone on the four lines after the title that are not empty go on from it in equal steps, or repeat it, as
+// "3.5", "Human Score", "3.5", "3", "2.5", or the line before it is a tick at most 1 from it with a fraction. A
+// heading above a plot, "4.1", its title, then the ticks "21.0", "20.5", is not one: its number is not in their steps.
+func axis(lines []line, i, at int, num string) bool {
+	x, err := strconv.ParseFloat(num, 64)
+	if err != nil {
+		return false
+	}
+	// The tick before it, as "4.5" above "4", "Human Score".
+	for j := i - 1; j >= 0 && j >= i-3; j-- {
+		if lines[j].s == "" {
+			continue
+		}
+		if v, err := strconv.ParseFloat(lines[j].s, 64); err == nil && v != x && math.Abs(v-x) <= 1 && (v != math.Trunc(v) || x != math.Trunc(x)) {
+			return true
+		}
+		break
+	}
+	var ticks []float64
+	seen := 0
+	for j := at + 1; j < len(lines) && seen < 4; j++ {
+		if lines[j].s == "" {
+			continue
+		}
+		seen++
+		if v, err := strconv.ParseFloat(lines[j].s, 64); err == nil {
+			ticks = append(ticks, v)
+		}
+	}
+	if len(ticks) > 0 && ticks[0] == x {
+		return len(ticks) >= 2
+	}
+	return len(ticks) >= 2 && ticks[0]-ticks[1] != 0 && math.Abs((x-ticks[0])-(ticks[0]-ticks[1])) < 1e-9
 }
 
 type line struct {
@@ -287,6 +458,27 @@ func (d *Doc) footnotes(lines []line) {
 		}
 		if m := footRE.FindStringSubmatch(l.s); m != nil && !headRE.MatchString(l.s) {
 			d.Marks = append(d.Marks, Mark{Kind: "footnote", Num: m[1], Start: l.off})
+		}
+	}
+	// A footnote whose number is alone on its line, in the lower half of a page, with its text on the next line that
+	// is not empty: a sentence of eight words or more ("4", then "To illustrate why the dot products get large").
+	for i, l := range lines {
+		if !bareRE.MatchString(l.s) || l.s == "0" {
+			continue
+		}
+		span := d.PageSpan(d.Page(l.off))
+		if l.off < span.Start+(span.End-span.Start)/2 {
+			continue
+		}
+		for j := i + 1; j < len(lines) && j <= i+2; j++ {
+			t := lines[j].s
+			if t == "" {
+				continue
+			}
+			if !lines[j].page && unicode.IsUpper(firstRune(t)) && len(strings.Fields(t)) >= 8 {
+				d.Marks = append(d.Marks, Mark{Kind: "footnote", Num: l.s, Start: l.off})
+			}
+			break
 		}
 	}
 }
@@ -399,7 +591,7 @@ func follows(last, n []int) bool {
 	}
 	if len(n) > len(last) {
 		// A child: last followed by 1 or 2 (a 1 may be lost).
-		return slices.Equal(n[:len(last)], last) && len(n) == len(last)+1 && n[len(n)-1] <= 2
+		return slices.Equal(n[:len(last)], last) && len(n) == len(last)+1 && n[len(n)-1] >= 1 && n[len(n)-1] <= 2
 	}
 	// The next one at the depth of n, which is the depth of last or above it.
 	k := len(n) - 1
