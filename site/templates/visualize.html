@@ -1,0 +1,6 @@
+{{define "main"}}<div class="page viz-page">
+{{template "crumbs" .Crumbs}}
+<header class="page-head"><h1>See {{.N.Name}} run</h1><p class="lead">{{.N.Summary}} Use the buttons or the keys: Space plays and pauses, the arrow keys step, Home and End jump.</p></header>
+{{template "player" .Player}}
+<p><a href="/{{.N.Slug}}/">Read the full page about {{.N.Name}}</a>. To put this player on your site, use <code>&lt;iframe src="{{.Meta.BaseURL}}/embed/{{.N.Slug}}/" width="100%" height="520"&gt;&lt;/iframe&gt;</code>.</p>
+</div>{{end}}

@@ -1,0 +1,279 @@
+package node
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
+	"go.yaml.in/yaml/v3"
+)
+
+// Area is one entry of topics/areas.yaml (spec 05.2).
+type Area struct {
+	ID       string `yaml:"id" json:"id"`
+	Name     string `yaml:"name" json:"name"`
+	Summary  string `yaml:"summary,omitempty" json:"summary,omitempty"`
+	Children []Area `yaml:"children,omitempty" json:"children,omitempty"`
+	Parent   string `yaml:"-" json:"parent,omitempty"`
+}
+
+// Path is "top/sub" for a sub-area and "top" for a top area.
+func (a Area) Path() string {
+	if a.Parent == "" {
+		return a.ID
+	}
+	return a.Parent + "/" + a.ID
+}
+
+// Lang is one entry of registers/languages.yaml (spec 08.2).
+type Lang struct {
+	ID        string   `yaml:"id" json:"id"`
+	Name      string   `yaml:"name" json:"name"`
+	Tier      int      `yaml:"tier" json:"tier"`
+	Ext       []string `yaml:"ext" json:"ext"`
+	FileCase  string   `yaml:"file_case" json:"file_case,omitempty"`
+	Test      LangTool `yaml:"test" json:"test"`
+	Format    LangTool `yaml:"format" json:"format"`
+	Lint      LangTool `yaml:"lint" json:"lint"`
+	Toolchain string   `yaml:"toolchain" json:"toolchain,omitempty"` // the pinned version, for the language page
+	Run       string   `yaml:"run" json:"run,omitempty"`             // how a reader runs the tests without aik
+	Comment   string   `yaml:"comment" json:"comment,omitempty"`
+	Highlight string   `yaml:"highlight" json:"highlight"` // the Chroma lexer
+	Int       string   `yaml:"int" json:"int,omitempty"`
+	List      string   `yaml:"list" json:"list,omitempty"`
+	Since     string   `yaml:"since" json:"since,omitempty"`
+}
+
+// LangTool is a tool of a language: the test framework, the formatter or the linter.
+type LangTool struct {
+	Tool      string   `yaml:"tool,omitempty" json:"tool,omitempty"`
+	Framework string   `yaml:"framework,omitempty" json:"framework,omitempty"`
+	File      string   `yaml:"file,omitempty" json:"file,omitempty"`
+	Args      []string `yaml:"args,omitempty" json:"args,omitempty"`
+}
+
+// Tag is one line of registers/tags.reg.
+type Tag struct {
+	Tag  string
+	Slug string
+	Line int
+}
+
+// Corpus is the content tree.
+type Corpus struct {
+	Root     string
+	Nodes    []*Node
+	BySlug   map[string]*Node
+	ByTag    map[string]*Node
+	Areas    []Area
+	AreaByID map[string]*Area // keyed by Area.Path()
+	Langs    []Lang
+	LangByID map[string]*Lang
+	Reserved map[string]bool
+	Tags     []Tag
+	// OldSlugs maps each old slug of registers/aliases.reg to the slug it moved to.
+	OldSlugs map[string]string
+	// Errors are the node directories that could not be read. Package check reports them as T01.
+	Errors []error
+}
+
+// Load reads the whole content tree at root.
+func Load(root string) (*Corpus, error) {
+	c := &Corpus{
+		Root:     root,
+		BySlug:   map[string]*Node{},
+		ByTag:    map[string]*Node{},
+		AreaByID: map[string]*Area{},
+		LangByID: map[string]*Lang{},
+		Reserved: map[string]bool{},
+	}
+	if err := readYAML(filepath.Join(root, "topics", "areas.yaml"), &c.Areas); err != nil {
+		return nil, err
+	}
+	for i := range c.Areas {
+		top := &c.Areas[i]
+		c.AreaByID[top.Path()] = top
+		for j := range top.Children {
+			sub := &top.Children[j]
+			sub.Parent = top.ID
+			c.AreaByID[sub.Path()] = sub
+		}
+	}
+	if err := readYAML(filepath.Join(root, "registers", "languages.yaml"), &c.Langs); err != nil {
+		return nil, err
+	}
+	sort.SliceStable(c.Langs, func(i, j int) bool { return c.Langs[i].Tier < c.Langs[j].Tier })
+	for i := range c.Langs {
+		c.LangByID[c.Langs[i].ID] = &c.Langs[i]
+	}
+	var reserved []string
+	if err := readYAML(filepath.Join(root, "registers", "reserved.yaml"), &reserved); err != nil {
+		return nil, err
+	}
+	for _, w := range reserved {
+		c.Reserved[w] = true
+	}
+	tags, err := readTags(filepath.Join(root, "registers", "tags.reg"))
+	if err != nil {
+		return nil, err
+	}
+	c.Tags = tags
+	if c.OldSlugs, err = ReadAliases(filepath.Join(root, "registers", "aliases.reg")); err != nil {
+		return nil, err
+	}
+
+	nodes := filepath.Join(root, "nodes")
+	err = filepath.WalkDir(nodes, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || d.Name() != "node.md" {
+			return nil
+		}
+		n, err := Read(root, filepath.Dir(p))
+		if err != nil {
+			c.Errors = append(c.Errors, err)
+			return nil
+		}
+		c.Nodes = append(c.Nodes, n)
+		return nil
+	})
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	sort.Slice(c.Nodes, func(i, j int) bool { return c.Nodes[i].Slug < c.Nodes[j].Slug })
+	for _, n := range c.Nodes {
+		if n.Slug != "" {
+			if _, dup := c.BySlug[n.Slug]; !dup {
+				c.BySlug[n.Slug] = n
+			}
+		}
+		if n.Tag != "" {
+			if _, dup := c.ByTag[n.Tag]; !dup {
+				c.ByTag[n.Tag] = n
+			}
+		}
+	}
+	return c, nil
+}
+
+// InArea returns the nodes whose primary area is path or is under path.
+func (c *Corpus) InArea(path string) []*Node {
+	var out []*Node
+	for _, n := range c.Nodes {
+		if n.Area == path || strings.HasPrefix(n.Area, path+"/") {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// Kind returns the nodes of one kind.
+func (c *Corpus) Kind(kind string) []*Node {
+	var out []*Node
+	for _, n := range c.Nodes {
+		if n.Kind == kind {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// Solvers returns the nodes with a `solves` edge to the problem.
+func (c *Corpus) Solvers(problem string) []*Node {
+	var out []*Node
+	for _, n := range c.Nodes {
+		for _, s := range n.Solves {
+			if s.Problem == problem {
+				out = append(out, n)
+				break
+			}
+		}
+	}
+	return out
+}
+
+// Leads returns the nodes that list slug in prereqs or uses.
+func (c *Corpus) Leads(slug string) []*Node {
+	var out []*Node
+	for _, n := range c.Nodes {
+		for _, p := range append(append([]string{}, n.Prereqs...), n.Uses...) {
+			if p == slug {
+				out = append(out, n)
+				break
+			}
+		}
+	}
+	return out
+}
+
+func readYAML(path string, v any) error {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := yaml.Unmarshal(b, v); err != nil {
+		return fmt.Errorf("%s: %w", path, err)
+	}
+	return nil
+}
+
+// readTags reads registers/tags.reg. Each line is "TAG slug". A line that starts with # is a comment.
+// ReadAliases reads registers/aliases.reg. Each line is an old slug and the slug it moved to.
+func ReadAliases(path string) (map[string]string, error) {
+	out := map[string]string{}
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	s := bufio.NewScanner(f)
+	line := 0
+	for s.Scan() {
+		line++
+		t := strings.TrimSpace(s.Text())
+		if t == "" || strings.HasPrefix(t, "#") {
+			continue
+		}
+		fs := strings.Fields(t)
+		if len(fs) != 2 {
+			return nil, fmt.Errorf("%s:%d: a line needs an old slug and a new slug", path, line)
+		}
+		out[fs[0]] = fs[1]
+	}
+	return out, s.Err()
+}
+
+func readTags(path string) ([]Tag, error) {
+	f, err := os.Open(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var out []Tag
+	s := bufio.NewScanner(f)
+	line := 0
+	for s.Scan() {
+		line++
+		t := strings.TrimSpace(s.Text())
+		if t == "" || strings.HasPrefix(t, "#") {
+			continue
+		}
+		fs := strings.Fields(t)
+		if len(fs) < 2 {
+			return nil, fmt.Errorf("%s:%d: a line needs a tag and a slug", path, line)
+		}
+		out = append(out, Tag{Tag: fs[0], Slug: fs[1], Line: line})
+	}
+	return out, s.Err()
+}

@@ -1,0 +1,9 @@
+{{define "main"}}<div class="page">
+<header class="page-head"><h1>{{.Heading}}</h1><p class="lead">{{.Lead}}</p></header>
+<form class="search-page" role="search" action="/search/" method="get">
+<input type="search" name="q" id="search-q" placeholder="For example: merge sort, shortest path, invariant" autocomplete="off" aria-label="Search" aria-controls="search-results">
+</form>
+<p class="search-count" id="search-count" aria-live="polite"></p>
+<ul class="items" id="search-results"></ul>
+<div id="search-all">{{template "groups" .Groups}}</div>
+</div>{{end}}

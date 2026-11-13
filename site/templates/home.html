@@ -1,0 +1,28 @@
+{{define "main"}}<div class="home">
+<section class="hero">
+<h1>Algorithms, explained, proved and run.</h1>
+<p class="lead">Each page explains one algorithm or idea in plain words. It gives the pseudocode, a proof that you can check, the cost, code with tests in many languages and a picture that you can step through.</p>
+<a class="hero-search" href="/search/" data-palette><span>Search {{plural .Meta.Counts.Nodes "page" "pages"}}</span><kbd>⌘K</kbd></a>
+<ul class="stats">
+<li><b>{{comma .Meta.Counts.Algorithms}}</b> algorithms</li>
+<li><b>{{comma .Meta.Counts.Structures}}</b> data structures</li>
+<li><b>{{comma .Meta.Counts.Problems}}</b> problems</li>
+<li><b>{{comma .Meta.Counts.Proofs}}</b> proofs</li>
+<li><b>{{comma .Meta.Counts.Impls}}</b> implementations in {{.Meta.Counts.Langs}} languages</li>
+<li><b>{{comma .Meta.Counts.Scenes}}</b> scenes</li>
+</ul>
+</section>
+{{with .Start}}<section class="band"><div class="band-head"><h2>Start here</h2><a href="/learn/">The full reading path</a></div>{{template "items" .}}</section>{{end}}
+{{with .Scenes}}<section class="band"><div class="band-head"><h2>See it run</h2><a href="/visualize/">All scenes</a></div>{{template "tiles" .}}</section>{{end}}
+<section class="band"><div class="band-head"><h2>Areas</h2><a href="/areas/">All areas</a></div>{{template "tiles" .Tiles}}</section>
+{{with .Langs}}<section class="band"><div class="band-head"><h2>Languages</h2><a href="/languages/">All languages</a></div>{{template "tiles" .}}</section>{{end}}
+<section class="band how">
+<h2>How a page earns trust</h2>
+<ol class="how-list">
+<li><b>Plain words.</b> The text uses short sentences and simple words. A reader who knows some code can follow it.</li>
+<li><b>Proof.</b> A human proof shows why the algorithm is correct. A Lean proof lets a computer check it.</li>
+<li><b>Tests.</b> Each implementation has native tests. The build runs them in a pinned toolchain.</li>
+<li><b>Honest badges.</b> The build computes each badge from evidence. Nobody writes a badge by hand. <a href="/badges/">Read about the badges</a>.</li>
+</ol>
+</section>
+</div>{{end}}

@@ -1,0 +1,87 @@
+package site
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/tamnd/ai-agent/node"
+)
+
+func buildTest(t *testing.T) string {
+	t.Helper()
+	c, err := node.Load("../testdata/corpus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	r, err := Build(c, Options{Out: out, Commit: "0123456789abcdef", Version: "test", Now: time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r.MathErrors) != 0 {
+		t.Errorf("math errors: %v", r.MathErrors)
+	}
+	if r.Pages == 0 || r.Files < r.Pages {
+		t.Errorf("the report is wrong: %d pages, %d files", r.Pages, r.Files)
+	}
+	return out
+}
+
+func TestBuild(t *testing.T) {
+	out := buildTest(t)
+	for _, f := range []string{
+		"index.html", "404.html", "binary-search/index.html", "search-in-sorted-array/index.html",
+		"searching/index.html", "spec/index.html", "search.json", "sitemap.xml", "robots.txt",
+		"opensearch.xml", "assets/site.css", "assets/player.js",
+	} {
+		if _, err := os.Stat(filepath.Join(out, f)); err != nil {
+			t.Errorf("%s is missing", f)
+		}
+	}
+	page, err := os.ReadFile(filepath.Join(out, "binary-search/index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(page)
+	for _, want := range []string{
+		"<title>Binary search",
+		`id="see-it-run"`,
+		`data-scene="binary-search"`,
+		`id="references"`,
+		"https://ai.tamnd.com/binary-search/",
+	} {
+		if !strings.Contains(s, want) {
+			t.Errorf("the binary search page does not contain %q", want)
+		}
+	}
+	if strings.Count(s, `id="references"`) != 1 {
+		t.Error("the binary search page has more than one References section")
+	}
+}
+
+func TestBuildReplacesOutput(t *testing.T) {
+	c, err := node.Load("../testdata/corpus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	if err := os.MkdirAll(out, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	stale := filepath.Join(out, "stale.html")
+	if err := os.WriteFile(stale, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Build(c, Options{Out: out}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Error("the build kept a file from the last build")
+	}
+	if _, err := os.Stat(out + ".next"); !os.IsNotExist(err) {
+		t.Error("the build left its work directory")
+	}
+}

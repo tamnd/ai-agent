@@ -1,0 +1,16 @@
+name: Feature
+description: Ask for a new command, rule or page.
+labels: ["type: feature", "status: triage"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What do you want to do, and why?
+    validations:
+      required: true
+  - type: input
+    id: spec
+    attributes:
+      label: Specification part
+      description: For example 13.4. Leave this empty if no part applies.

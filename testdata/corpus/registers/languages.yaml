@@ -1,0 +1,243 @@
+# The language register of spec 08.2. An implementation in a language merges only when the language is here (rule I12).
+# Tier 1 is required for each node of the core. Tier 2 is required for each core node from milestone M3.
+- id: python
+  name: Python
+  tier: 1
+  ext: [py]
+  file_case: snake
+  test: {framework: pytest, file: test_<name>.py}
+  format: {tool: ruff format}
+  lint: {tool: ruff, args: [check]}
+  toolchain: Python 3.14, pytest 9
+  run: python3 -m pytest
+  comment: "#"
+  highlight: python
+  int: int
+  list: list[int]
+  since: 2026-11
+- id: cpp
+  name: C++
+  tier: 1
+  ext: [hpp, cpp]
+  file_case: snake
+  test: {framework: assert, file: test_<name>.cpp}
+  format: {tool: clang-format}
+  lint: {tool: clang-tidy}
+  toolchain: C++23, GCC 15 or Clang 21, with ASan and UBSan
+  run: c++ -std=c++23 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined test_<name>.cpp && ./a.out
+  comment: "//"
+  highlight: cpp
+  int: std::int64_t
+  list: std::vector<T> / std::span<const T>
+  since: 2026-11
+- id: java
+  name: Java
+  tier: 1
+  ext: [java]
+  file_case: pascal
+  test: {framework: JUnit 5, file: <Name>Test.java}
+  format: {tool: google-java-format}
+  lint: {tool: javac, args: [-Xlint:all, -Werror]}
+  toolchain: JDK 25, JUnit 5
+  run: javac and the JUnit console launcher
+  comment: "//"
+  highlight: java
+  int: long
+  list: int[] / List<T>
+  since: 2026-11
+- id: c
+  name: C
+  tier: 1
+  ext: [h, c]
+  file_case: snake
+  test: {framework: assert, file: test_<name>.c}
+  format: {tool: clang-format}
+  lint: {tool: clang-tidy}
+  toolchain: C23, GCC 15 or Clang 21, with ASan and UBSan
+  run: cc -std=c2x -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined *.c && ./a.out
+  comment: "//"
+  highlight: c
+  int: int64_t
+  list: pointer and length
+  since: 2026-11
+- id: csharp
+  name: C#
+  tier: 1
+  ext: [cs]
+  file_case: pascal
+  test: {framework: xUnit, file: <Name>Tests.cs}
+  format: {tool: dotnet format}
+  lint: {tool: dotnet build, args: [-warnaserror]}
+  toolchain: .NET 10, C# 14, xUnit
+  run: dotnet test
+  comment: "//"
+  highlight: csharp
+  int: long
+  list: T[] / ReadOnlySpan<T>
+  since: 2026-11
+- id: javascript
+  name: JavaScript
+  tier: 1
+  ext: [js]
+  file_case: camel
+  test: {framework: "node:test", file: <name>.test.js}
+  format: {tool: prettier}
+  lint: {tool: eslint}
+  toolchain: Node.js 24, ES modules
+  run: node --test
+  comment: "//"
+  highlight: javascript
+  int: number
+  list: Array
+  since: 2026-11
+- id: typescript
+  name: TypeScript
+  tier: 1
+  ext: [ts]
+  file_case: camel
+  test: {framework: "node:test", file: <name>.test.ts}
+  format: {tool: prettier}
+  lint: {tool: tsc, args: [--strict, --noEmit]}
+  toolchain: TypeScript 5, strict, run by Node.js 24 type stripping
+  run: node --test
+  comment: "//"
+  highlight: typescript
+  int: number
+  list: readonly T[]
+  since: 2026-11
+- id: go
+  name: Go
+  tier: 1
+  ext: [go]
+  file_case: snake
+  test: {framework: testing, file: <name>_test.go}
+  format: {tool: gofmt}
+  lint: {tool: go vet}
+  toolchain: Go 1.27
+  run: go test
+  comment: "//"
+  highlight: go
+  int: int
+  list: "[]T"
+  since: 2026-11
+- id: rust
+  name: Rust
+  tier: 1
+  ext: [rs]
+  file_case: snake
+  test: {framework: cargo test, file: tests/<name>_test.rs}
+  format: {tool: rustfmt}
+  lint: {tool: clippy, args: [-D, warnings]}
+  toolchain: Rust stable, edition 2024
+  run: cargo test
+  comment: "//"
+  highlight: rust
+  int: i64
+  list: "Vec<T> / &[T]"
+  since: 2026-11
+- id: kotlin
+  name: Kotlin
+  tier: 1
+  ext: [kt]
+  file_case: pascal
+  test: {framework: JUnit 5, file: <Name>Test.kt}
+  format: {tool: ktlint}
+  lint: {tool: kotlinc, args: [-Werror]}
+  toolchain: Kotlin 2.3 on JDK 25
+  run: kotlinc and the JUnit console launcher
+  comment: "//"
+  highlight: kotlin
+  int: Long
+  list: IntArray / List<T>
+  since: 2026-11
+- id: swift
+  name: Swift
+  tier: 2
+  ext: [swift]
+  comment: "//"
+  highlight: swift
+  since: 2026-11
+- id: ruby
+  name: Ruby
+  tier: 2
+  ext: [rb]
+  comment: "#"
+  highlight: ruby
+  since: 2026-11
+- id: php
+  name: PHP
+  tier: 2
+  ext: [php]
+  comment: "//"
+  highlight: php
+  since: 2026-11
+- id: dart
+  name: Dart
+  tier: 2
+  ext: [dart]
+  comment: "//"
+  highlight: dart
+  since: 2026-11
+- id: scala
+  name: Scala
+  tier: 2
+  ext: [scala]
+  comment: "//"
+  highlight: scala
+  since: 2026-11
+- id: haskell
+  name: Haskell
+  tier: 2
+  ext: [hs]
+  comment: "--"
+  highlight: haskell
+  since: 2026-11
+- id: ocaml
+  name: OCaml
+  tier: 2
+  ext: [ml]
+  comment: "(*"
+  highlight: ocaml
+  since: 2026-11
+- id: fsharp
+  name: F#
+  tier: 2
+  ext: [fs]
+  comment: "//"
+  highlight: fsharp
+  since: 2026-11
+- id: elixir
+  name: Elixir
+  tier: 2
+  ext: [ex]
+  comment: "#"
+  highlight: elixir
+  since: 2026-11
+- id: julia
+  name: Julia
+  tier: 2
+  ext: [jl]
+  comment: "#"
+  highlight: julia
+  since: 2026-11
+- id: r
+  name: R
+  tier: 2
+  ext: [R]
+  comment: "#"
+  highlight: r
+  since: 2026-11
+- id: zig
+  name: Zig
+  tier: 2
+  ext: [zig]
+  comment: "//"
+  highlight: zig
+  since: 2026-11
+- id: lua
+  name: Lua
+  tier: 2
+  ext: [lua]
+  comment: "--"
+  highlight: lua
+  since: 2026-11

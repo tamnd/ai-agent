@@ -1,0 +1,542 @@
+# The area tree of spec 05.2. Each node has one primary area, and the node directory is nodes/<top>/<sub>/<slug>/.
+# A change to this file is its own pull request, with a note on what the area holds and what it does not.
+- id: foundations
+  name: Foundations
+  summary: The models, the measures and the proof methods that the rest of the site uses.
+  children:
+    - id: models-of-computation
+      name: Models of computation
+    - id: asymptotic-analysis
+      name: Asymptotic analysis
+    - id: recurrences
+      name: Recurrences
+    - id: correctness-and-invariants
+      name: Correctness and invariants
+    - id: amortized-analysis
+      name: Amortized analysis
+    - id: probabilistic-analysis
+      name: Probabilistic analysis
+    - id: lower-bounds
+      name: Lower bounds
+- id: techniques
+  name: Techniques
+  summary: The general methods of algorithm design, such as divide and conquer and dynamic programming.
+  children:
+    - id: divide-and-conquer
+      name: Divide and conquer
+    - id: dynamic-programming
+      name: Dynamic programming
+    - id: greedy
+      name: Greedy
+    - id: backtracking
+      name: Backtracking
+    - id: branch-and-bound
+      name: Branch and bound
+    - id: search-strategies
+      name: Search strategies
+    - id: two-pointers-and-windows
+      name: Two pointers and windows
+    - id: sweep-line
+      name: Sweep line
+    - id: meet-in-the-middle
+      name: Meet in the middle
+    - id: randomization-techniques
+      name: Randomization techniques
+    - id: reductions-and-transforms
+      name: Reductions and transforms
+    - id: bit-tricks
+      name: Bit tricks
+- id: data-structures
+  name: Data structures
+  summary: The ways to store data so that the operations on it are fast.
+  children:
+    - id: linear-structures
+      name: Linear structures
+    - id: hashing
+      name: Hashing
+    - id: search-trees
+      name: Search trees
+    - id: balanced-trees
+      name: Balanced trees
+    - id: heaps
+      name: Heaps
+    - id: disjoint-sets
+      name: Disjoint sets
+    - id: range-query-structures
+      name: Range query structures
+    - id: string-structures
+      name: String structures
+    - id: spatial-structures
+      name: Spatial structures
+    - id: probabilistic-structures
+      name: Probabilistic structures
+    - id: persistent-structures
+      name: Persistent structures
+    - id: succinct-structures
+      name: Succinct structures
+    - id: external-memory-structures
+      name: External memory structures
+    - id: concurrent-structures
+      name: Concurrent structures
+- id: sorting
+  name: Sorting
+  summary: Algorithms that put items in order, and the problems near sorting.
+  children:
+    - id: comparison-sorts
+      name: Comparison sorts
+    - id: distribution-sorts
+      name: Distribution sorts
+    - id: selection-and-order-statistics
+      name: Selection and order statistics
+    - id: sorting-networks
+      name: Sorting networks
+    - id: external-sorting
+      name: External sorting
+    - id: parallel-sorting
+      name: Parallel sorting
+- id: searching
+  name: Searching
+  summary: Algorithms that find an item, or a value with a property, in a collection.
+  children:
+    - id: sequential-and-binary-search
+      name: Sequential and binary search
+    - id: search-on-answers
+      name: Search on answers
+    - id: hashing-search
+      name: Hashing search
+    - id: fractional-cascading
+      name: Fractional cascading
+    - id: similarity-search
+      name: Similarity search
+- id: sequences
+  name: Sequences
+  summary: Problems on arrays and sequences, such as sums, subarrays, subsequences and intervals.
+  children:
+    - id: prefix-sums-and-differences
+      name: Prefix sums and differences
+    - id: subarray-problems
+      name: Subarray problems
+    - id: subsequence-problems
+      name: Subsequence problems
+    - id: inversions-and-permutations
+      name: Inversions and permutations
+    - id: interval-problems
+      name: Interval problems
+- id: graphs
+  name: Graphs
+  summary: Algorithms on graphs and trees, such as traversal, paths, flows and matching.
+  children:
+    - id: graph-representation
+      name: Graph representation
+    - id: traversal
+      name: Traversal
+    - id: shortest-paths
+      name: Shortest paths
+    - id: spanning-trees
+      name: Spanning trees
+    - id: connectivity
+      name: Connectivity
+    - id: flows-and-cuts
+      name: Flows and cuts
+    - id: matching
+      name: Matching
+    - id: coloring-and-cliques
+      name: Coloring and cliques
+    - id: paths-and-cycles
+      name: Paths and cycles
+    - id: tree-algorithms
+      name: Tree algorithms
+    - id: planar-graphs
+      name: Planar graphs
+    - id: dynamic-graphs
+      name: Dynamic graphs
+    - id: graph-isomorphism
+      name: Graph isomorphism
+    - id: network-analysis
+      name: Network analysis
+- id: strings
+  name: Strings
+  summary: Algorithms that match, index and compare strings.
+  children:
+    - id: exact-matching
+      name: Exact matching
+    - id: multiple-pattern-matching
+      name: Multiple pattern matching
+    - id: suffix-structures
+      name: Suffix structures
+    - id: approximate-matching
+      name: Approximate matching
+    - id: palindromes
+      name: Palindromes
+    - id: string-hashing
+      name: String hashing
+    - id: string-combinatorics
+      name: String combinatorics
+- id: automata-and-parsing
+  name: Automata and parsing
+  summary: Finite automata, regular expressions and parsers.
+  children:
+    - id: finite-automata
+      name: Finite automata
+    - id: regular-expressions
+      name: Regular expressions
+    - id: context-free-parsing
+      name: Context free parsing
+    - id: parser-generators
+      name: Parser generators
+    - id: term-rewriting
+      name: Term rewriting
+- id: number-theory
+  name: Number theory
+  summary: Algorithms on integers, such as divisibility, primes, modular arithmetic and factoring.
+  children:
+    - id: divisibility-and-gcd
+      name: Divisibility and GCD
+    - id: modular-arithmetic
+      name: Modular arithmetic
+    - id: primality
+      name: Primality
+    - id: factorization
+      name: Factorization
+    - id: sieves
+      name: Sieves
+    - id: discrete-logarithm
+      name: Discrete logarithm
+    - id: lattice-reduction
+      name: Lattice reduction
+- id: algebra
+  name: Algebra
+  summary: Exact arithmetic on numbers, polynomials and matrices, and fast transforms.
+  children:
+    - id: integer-arithmetic
+      name: Integer arithmetic
+    - id: polynomial-arithmetic
+      name: Polynomial arithmetic
+    - id: fast-transforms
+      name: Fast transforms
+    - id: matrix-multiplication
+      name: Matrix multiplication
+    - id: exact-linear-algebra
+      name: Exact linear algebra
+    - id: computer-algebra
+      name: Computer algebra
+- id: numerical
+  name: Numerical
+  summary: Algorithms on real numbers in floating point.
+  children:
+    - id: floating-point
+      name: Floating point
+    - id: root-finding
+      name: Root finding
+    - id: linear-systems
+      name: Linear systems
+    - id: eigenproblems
+      name: Eigenproblems
+    - id: interpolation-and-approximation
+      name: Interpolation and approximation
+    - id: quadrature
+      name: Quadrature
+    - id: differential-equations
+      name: Differential equations
+    - id: random-number-generation
+      name: Random number generation
+- id: geometry
+  name: Geometry
+  summary: Algorithms on points, lines and shapes in the plane and in space.
+  children:
+    - id: convex-hulls
+      name: Convex hulls
+    - id: intersections
+      name: Intersections
+    - id: triangulations
+      name: Triangulations
+    - id: voronoi-and-delaunay
+      name: Voronoi and Delaunay
+    - id: point-location
+      name: Point location
+    - id: range-searching
+      name: Range searching
+    - id: proximity
+      name: Proximity
+    - id: polygons
+      name: Polygons
+    - id: geometric-optimization
+      name: Geometric optimization
+- id: combinatorics
+  name: Combinatorics
+  summary: Algorithms that generate and count combinatorial objects.
+  children:
+    - id: generating-permutations
+      name: Generating permutations
+    - id: generating-combinations
+      name: Generating combinations
+    - id: generating-partitions-and-trees
+      name: Generating partitions and trees
+    - id: gray-codes
+      name: Gray codes
+    - id: counting-algorithms
+      name: Counting algorithms
+    - id: exhaustive-search
+      name: Exhaustive search
+- id: optimization
+  name: Optimization
+  summary: Algorithms that find the best solution under constraints.
+  children:
+    - id: linear-programming
+      name: Linear programming
+    - id: integer-programming
+      name: Integer programming
+    - id: convex-optimization
+      name: Convex optimization
+    - id: gradient-methods
+      name: Gradient methods
+    - id: combinatorial-optimization
+      name: Combinatorial optimization
+    - id: metaheuristics
+      name: Metaheuristics
+    - id: multi-objective
+      name: Multi objective
+- id: logic-and-constraints
+  name: Logic and constraints
+  summary: Solvers for logic formulas and constraint problems.
+  children:
+    - id: sat-solving
+      name: SAT solving
+    - id: smt
+      name: SMT
+    - id: constraint-satisfaction
+      name: Constraint satisfaction
+    - id: binary-decision-diagrams
+      name: Binary decision diagrams
+    - id: unification-and-resolution
+      name: Unification and resolution
+    - id: model-checking
+      name: Model checking
+- id: randomized
+  name: Randomized
+  summary: Algorithms that use random choices, and how to analyse them.
+  children:
+    - id: sampling
+      name: Sampling
+    - id: shuffling
+      name: Shuffling
+    - id: random-hashing
+      name: Random hashing
+    - id: monte-carlo-and-las-vegas
+      name: Monte carlo and las vegas
+    - id: markov-chain-monte-carlo
+      name: Markov chain monte carlo
+    - id: derandomization
+      name: Derandomization
+- id: approximation
+  name: Approximation
+  summary: Algorithms that find a near-best solution with a proved bound.
+  children:
+    - id: covering-and-packing
+      name: Covering and packing
+    - id: scheduling-approximation
+      name: Scheduling approximation
+    - id: tsp-approximation
+      name: TSP approximation
+    - id: lp-rounding
+      name: LP rounding
+    - id: approximation-schemes
+      name: Approximation schemes
+    - id: hardness-of-approximation
+      name: Hardness of approximation
+- id: online-and-streaming
+  name: Online and streaming
+  summary: Algorithms that get the input one item at a time.
+  children:
+    - id: paging-and-caching-online
+      name: Paging and caching online
+    - id: online-scheduling
+      name: Online scheduling
+    - id: competitive-analysis
+      name: Competitive analysis
+    - id: streaming-sketches
+      name: Streaming sketches
+    - id: sliding-windows
+      name: Sliding windows
+- id: parallel
+  name: Parallel
+  summary: Algorithms for many processors that share memory or work in bulk steps.
+  children:
+    - id: work-span-models
+      name: Work span models
+    - id: parallel-primitives
+      name: Parallel primitives
+    - id: parallel-graph-algorithms
+      name: Parallel graph algorithms
+    - id: gpu-algorithms
+      name: GPU algorithms
+    - id: mapreduce-and-bsp
+      name: MapReduce and BSP
+- id: distributed
+  name: Distributed
+  summary: Algorithms for many machines that send messages to each other.
+  children:
+    - id: consensus
+      name: Consensus
+    - id: leader-election
+      name: Leader election
+    - id: clocks-and-ordering
+      name: Clocks and ordering
+    - id: replication-and-crdts
+      name: Replication and CRDTs
+    - id: distributed-graph-algorithms
+      name: Distributed graph algorithms
+    - id: byzantine-agreement
+      name: Byzantine agreement
+    - id: gossip
+      name: Gossip
+- id: concurrency
+  name: Concurrency
+  summary: Algorithms for threads that share memory at the same time.
+  children:
+    - id: mutual-exclusion
+      name: Mutual exclusion
+    - id: lock-free-structures
+      name: Lock free structures
+    - id: memory-reclamation
+      name: Memory reclamation
+    - id: transactional-memory
+      name: Transactional memory
+- id: cryptography
+  name: Cryptography
+  summary: Algorithms that keep data secret and prove who sent it.
+  children:
+    - id: symmetric-ciphers
+      name: Symmetric ciphers
+    - id: hash-functions
+      name: Hash functions
+    - id: public-key
+      name: Public key
+    - id: signatures
+      name: Signatures
+    - id: key-exchange
+      name: Key exchange
+    - id: post-quantum
+      name: Post quantum
+    - id: protocols
+      name: Protocols
+- id: compression-and-coding
+  name: Compression and coding
+  summary: Algorithms that make data smaller, or protect it from errors.
+  children:
+    - id: entropy-coding
+      name: Entropy coding
+    - id: dictionary-compression
+      name: Dictionary compression
+    - id: transforms-for-compression
+      name: Transforms for compression
+    - id: error-correcting-codes
+      name: Error correcting codes
+    - id: checksums
+      name: Checksums
+- id: machine-learning
+  name: Machine learning
+  summary: Algorithms that learn a model from data.
+  children:
+    - id: supervised-learning
+      name: Supervised learning
+    - id: clustering
+      name: Clustering
+    - id: dimensionality-reduction
+      name: Dimensionality reduction
+    - id: neural-network-training
+      name: Neural network training
+    - id: probabilistic-inference
+      name: Probabilistic inference
+    - id: reinforcement-learning
+      name: Reinforcement learning
+- id: systems
+  name: Systems
+  summary: Algorithms inside operating systems, databases and networks.
+  children:
+    - id: caching-policies
+      name: Caching policies
+    - id: scheduling
+      name: Scheduling
+    - id: memory-allocation
+      name: Memory allocation
+    - id: garbage-collection
+      name: Garbage collection
+    - id: database-algorithms
+      name: Database algorithms
+    - id: networking-algorithms
+      name: Networking algorithms
+    - id: load-balancing-and-hashing
+      name: Load balancing and hashing
+    - id: rate-limiting
+      name: Rate limiting
+- id: biology
+  name: Biology
+  summary: Algorithms for sequences and structures in biology.
+  children:
+    - id: sequence-alignment
+      name: Sequence alignment
+    - id: genome-assembly
+      name: Genome assembly
+    - id: phylogenetics
+      name: Phylogenetics
+    - id: structure-prediction
+      name: Structure prediction
+- id: graphics-and-signals
+  name: Graphics and signals
+  summary: Algorithms for images, curves, rendering and signals.
+  children:
+    - id: rasterization
+      name: Rasterization
+    - id: curves-and-surfaces
+      name: Curves and surfaces
+    - id: visibility
+      name: Visibility
+    - id: ray-tracing
+      name: Ray tracing
+    - id: image-processing
+      name: Image processing
+    - id: signal-processing
+      name: Signal processing
+- id: games-and-search
+  name: Games and search
+  summary: Algorithms that play games, plan and solve puzzles.
+  children:
+    - id: game-tree-search
+      name: Game tree search
+    - id: heuristic-search
+      name: Heuristic search
+    - id: planning
+      name: Planning
+    - id: puzzles
+      name: Puzzles
+- id: quantum
+  name: Quantum
+  summary: Algorithms for quantum computers.
+  children:
+    - id: quantum-primitives
+      name: Quantum primitives
+    - id: quantum-search
+      name: Quantum search
+    - id: quantum-number-theory
+      name: Quantum number theory
+    - id: quantum-simulation
+      name: Quantum simulation
+- id: complexity
+  name: Complexity
+  summary: What each problem needs, with classes, reductions and lower bounds.
+  children:
+    - id: complexity-classes
+      name: Complexity classes
+    - id: np-completeness
+      name: NP completeness
+    - id: reductions-catalogue
+      name: Reductions catalogue
+    - id: parameterized-complexity
+      name: Parameterized complexity
+    - id: fine-grained-complexity
+      name: Fine grained complexity
+    - id: communication-and-query-complexity
+      name: Communication and query complexity
+    - id: computability
+      name: Computability

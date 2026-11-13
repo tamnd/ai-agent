@@ -1,0 +1,42 @@
+{{define "logo"}}<svg class="logo" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><rect x="3" y="18" width="5" height="11" fill="currentColor" opacity=".45"/><rect x="10" y="12" width="5" height="17" fill="currentColor" opacity=".65"/><rect x="17" y="7" width="5" height="22" fill="currentColor" opacity=".85"/><rect x="24" y="3" width="5" height="26" fill="var(--accent)"/></svg>{{end}}
+
+{{define "crumbs"}}{{if .}}<nav class="crumbs" aria-label="Breadcrumb"><ol>{{range .}}<li><a href="{{.URL}}">{{.Name}}</a></li>{{end}}</ol></nav>{{end}}{{end}}
+
+{{define "link"}}{{if .Missing}}<span class="missing" title="{{.Note}}">{{.Name}}</span>{{else}}<a href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}
+
+{{define "links"}}{{range $i, $l := .}}{{if $i}}, {{end}}{{template "link" $l}}{{end}}{{end}}
+
+{{define "tiles"}}<ul class="tiles">{{range .}}<li class="tile{{if .Missing}} empty{{end}}" style="--hue: {{.Hue}}"><a href="{{.URL}}"><span class="tile-name">{{.Name}}</span>{{with .Summary}}<span class="tile-sum">{{.}}</span>{{end}}<span class="tile-meta">{{if .Unit}}{{plural .Count .Unit (print .Unit "s")}}{{end}}{{with .Extra}}{{if not (eq (slice . 0 1) "/")}} · {{.}}{{end}}{{end}}</span></a></li>{{end}}</ul>{{end}}
+
+{{define "items"}}<ul class="items">{{range .}}<li class="item{{if .Missing}} empty{{end}}" style="--hue: {{.Hue}}"><div class="item-main">{{template "link" .Link}}{{with .Summary}}<p>{{.}}</p>{{end}}</div><div class="item-side">{{with .Meta}}<span class="item-meta">{{.}}</span>{{end}}{{range .Chips}}<span class="chip">{{.}}</span>{{end}}{{with .Level}}<span class="chip level-{{.}}">{{.}}</span>{{end}}</div></li>{{end}}</ul>{{end}}
+
+{{define "groups"}}{{range .}}<section class="group" id="{{.ID}}"><h2>{{.Title}}</h2>{{with .Intro}}<p>{{.}}</p>{{end}}{{template "items" .Items}}</section>{{end}}{{end}}
+
+{{define "rung"}}<span class="rung r{{.Level}}" title="{{.Name}}">{{.Label}}</span>{{end}}
+
+{{define "player"}}<div class="player" data-scene="{{.Slug}}" data-presets="{{.Presets}}">
+<div class="pl-main">
+<div class="pl-stage" role="img" aria-label="The state of the algorithm"><noscript><p class="pl-off">The player needs JavaScript. The pseudocode and the proof on this page do not.</p></noscript></div>
+<p class="pl-note" aria-live="polite"></p>
+</div>
+<div class="pl-side">
+{{.Pseudo}}
+<dl class="pl-vars" aria-label="Variables"></dl>
+<dl class="pl-counters" aria-label="Counters"></dl>
+</div>
+<div class="pl-bar">
+<div class="pl-buttons">
+<button type="button" data-act="start" aria-label="Go to the start" title="Start (Home)">⏮</button>
+<button type="button" data-act="prev" aria-label="Step back" title="Back (←)">◀</button>
+<button type="button" data-act="play" class="pl-play" aria-label="Play" title="Play (Space)">▶</button>
+<button type="button" data-act="next" aria-label="Step forward" title="Forward (→)">▶▏</button>
+<button type="button" data-act="end" aria-label="Go to the end" title="End (End)">⏭</button>
+</div>
+<input class="pl-scrub" name="step" type="range" min="0" max="0" value="0" aria-label="Step">
+<span class="pl-pos" aria-live="off">0 / 0</span>
+<label class="pl-field"><span>Speed</span><select class="pl-speed" name="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+<label class="pl-field"><span>Input</span><select class="pl-preset" name="preset"></select></label>
+</div>
+<details class="pl-custom"><summary>Use your own input</summary><p>Type the input as JSON, in the same form as a preset.</p><textarea name="input" rows="3" spellcheck="false" aria-label="Your input as JSON"></textarea><div><button type="button" data-act="run">Run</button> <a href="{{.Full}}">Open the full player</a></div><p class="pl-err" role="alert"></p></details>
+</div>{{end}}
+

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+version: "2"
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - nolintlint
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        - G204 # aik test runs the toolchain of each language on purpose
+        - G122 # aik walks its own content tree, not a tree that other users can change
+        - G203 # the HTML comes from markup that aik renders from the reviewed content tree
+        - G301
+        - G304 # aik reads files from the content tree on purpose
+        - G306
+        - G703 # paths come from the content tree or from the command line
+        - G705 # aik serve writes pages that it built itself
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters: [gosec]
+formatters:
+  enable:
+    - gofmt

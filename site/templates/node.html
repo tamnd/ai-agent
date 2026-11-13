@@ -1,0 +1,88 @@
+{{define "main"}}<article class="node kind-{{.N.Kind}}">
+<header class="node-head">
+{{template "crumbs" .Crumbs}}
+<p class="eyebrow">{{title .KindName}}<span class="level level-{{.N.Level}}">{{.N.Level}}</span></p>
+<h1>{{.N.Name}}</h1>
+{{with .N.Aliases}}<p class="aka">Also called {{join . ", "}}.</p>{{end}}
+<p class="lead">{{.N.Summary}}</p>
+</header>
+<div class="node-grid">
+<aside class="toc-col"><nav class="toc" aria-label="On this page"><p>On this page</p><ol>{{range .TOC}}<li><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}<li><a href="#about-this-page">About this page</a></li></ol></nav></aside>
+<div class="content">
+{{with .Card}}{{template "card" .}}{{end}}
+{{with .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .}}{{template "link" .}}{{end}}</nav>{{end}}
+<div class="prose">{{.Body}}</div>
+{{with .Leads}}<section class="leads"><h2 class="small">Where this leads</h2><ul class="chips">{{range .}}<li style="--hue: {{.Hue}}">{{template "link" .}}</li>{{end}}</ul></section>{{end}}
+{{with .Related}}<section class="related"><h2 class="small">Related</h2><ul class="chips">{{range .}}<li style="--hue: {{.Hue}}">{{template "link" .}}</li>{{end}}</ul></section>{{end}}
+<section class="about-page" aria-labelledby="about-this-page">
+<h2 id="about-this-page">About this page</h2>
+<p>The build computes these levels from the evidence in the repository. Each row says what the next level needs. <a href="/badges/">Read what the levels mean</a>.</p>
+<table class="ladders"><thead><tr><th scope="col">Ladder</th><th scope="col">Level</th><th scope="col">What the next level needs</th></tr></thead><tbody>
+{{range .Rungs}}<tr><th scope="row">{{.Ladder}}{{with .Lang}} ({{.}}){{end}}</th><td>{{template "rung" .Rung}} {{.Name}}</td><td>{{if .Next}}<ul>{{range .Next}}<li>{{.}}</li>{{end}}</ul>{{else}}This is the top level.{{end}}</td></tr>{{end}}
+</tbody></table>
+{{with .Tests}}<p>{{.}}</p>{{end}}
+<p class="page-links"><span>Tag <code>{{.N.Tag}}</code></span> <a href="{{.Edit}}">Edit this page</a> <a href="{{.History}}">History</a> <a href="{{.Report}}">Report an error</a> {{if .Copies}}<a href="/{{.N.Slug}}.md">Markdown</a>{{end}}</p>
+</section>
+</div>
+</div>
+</article>{{end}}
+
+{{define "card"}}<dl class="card">
+{{with .Solves}}<div><dt>Solves</dt><dd>{{template "links" .}}</dd></div>{{end}}
+{{with .Implements}}<div><dt>Implements</dt><dd>{{template "links" .}}</dd></div>{{end}}
+{{with .Time}}<div><dt>Time</dt><dd>{{range .}}<span class="claim"><span class="bound">{{.Bound}}</span> <span class="case">{{.Cases}}</span></span>{{end}}</dd></div>{{end}}
+{{with .Space}}<div><dt>Space</dt><dd>{{range .}}<span class="claim"><span class="bound">{{.Bound}}</span> <span class="case">{{.Cases}}</span></span>{{end}}</dd></div>{{end}}
+{{with .Other}}<div><dt>Counts</dt><dd>{{range .}}<span class="claim"><span class="case">{{.Group}}</span> <span class="bound">{{.Bound}}</span> <span class="case">{{.Cases}}</span></span>{{end}}</dd></div>{{end}}
+{{with .Vars}}<div class="vars"><dt>Where</dt><dd>{{join . "; "}}</dd></div>{{end}}
+{{with .Model}}<div><dt>Model</dt><dd>{{template "link" .}}</dd></div>{{end}}
+{{with .Techniques}}<div><dt>Technique</dt><dd>{{template "links" .}}</dd></div>{{end}}
+{{with .Props}}<div><dt>Properties</dt><dd class="chips">{{range .}}<span class="chip{{if .On}} on{{end}}">{{.Text}}</span>{{end}}</dd></div>{{end}}
+{{with .Evidence}}<div><dt>Evidence</dt><dd class="chips">{{range .}}<a class="chip badge{{if .Tick}} tick{{end}}" href="{{.Href}}"{{with .Hint}} title="{{.}}"{{end}}>{{if .Tick}}✓ {{end}}{{.Text}}</a>{{end}}</dd></div>{{end}}
+{{with .Origin}}<div><dt>Origin</dt><dd>{{.}}</dd></div>{{end}}
+</dl>{{end}}
+
+{{define "player-section"}}<section class="see-it-run"><h2 id="see-it-run">See it run</h2>{{template "player" .Player}}</section>
+{{end}}
+
+{{define "proofs-inline"}}<div class="proofs" id="proofs">{{range $i, $p := .Proofs}}<details class="proof" id="proof-{{.ID}}"{{if eq $i 0}} open{{end}}><summary><span class="proof-title">Proof: {{.Title}}</span>{{with .Status}}<span class="chip">{{.}}</span>{{end}}</summary><div class="proof-body">{{.HTML}}</div></details>{{end}}</div>
+{{end}}
+
+{{define "known-algorithms"}}<h2 id="known-algorithms">Known algorithms</h2>
+{{template "solver-table" .}}{{end}}
+
+{{define "solver-table"}}<div class="table-wrap"><table class="solvers"><thead><tr><th scope="col">Algorithm</th><th scope="col">Time</th><th scope="col">Space</th><th scope="col">Properties</th><th scope="col">Code</th></tr></thead><tbody>
+{{range .Solvers}}<tr><th scope="row">{{template "link" .Link}}</th><td>{{.Time}}</td><td>{{.Space}}</td><td>{{range .Props}}<span class="chip{{if .On}} on{{end}}">{{.Text}}</span>{{end}}</td><td>{{if .Langs}}{{plural .Langs "language" "languages"}}{{end}}</td></tr>{{end}}
+</tbody></table></div>
+{{end}}
+
+{{define "code-section"}}<h2 id="code">Code</h2>
+{{template "code-body" .}}{{end}}
+
+{{define "code-body"}}<section class="code" id="code-tabs" aria-label="Code">
+<p>Each implementation follows the pseudocode above. A comment <code>@line</code> links a line of code to a line of the pseudocode. Point at a line of the pseudocode to see the matching code. The build runs the native tests of each language.</p>
+<div class="tabs" role="tablist" aria-label="Language">{{range .Impls}}<button type="button" role="tab" id="tab-{{.Lang}}" aria-controls="code-{{.Lang}}" aria-selected="{{.Selected}}" data-lang="{{.Lang}}">{{.Name}}</button>{{end}}</div>
+{{range .Impls}}<div class="panel{{if .Selected}} on{{end}}" role="tabpanel" id="code-{{.Lang}}" aria-labelledby="tab-{{.Lang}}" data-markers="{{.Markers}}">
+<div class="panel-bar"><span class="file">{{.File}}</span>{{template "rung" .Rung}}{{with .Test}}{{if .Pass}}<span class="test ok">tests pass</span>{{else}}<span class="test bad">tests fail</span>{{end}}{{end}}<span class="grow"></span><a href="{{.Raw}}">Raw</a><a href="{{.GitHub}}">GitHub</a><button type="button" class="copy" data-copy>Copy</button></div>
+{{.HTML}}
+{{range .Tests}}<details class="tests"><summary>{{.Name}} <span>{{.Lines}} lines</span></summary>{{.HTML}}</details>{{end}}
+</div>{{end}}
+</section>
+{{end}}
+
+{{define "formal-section"}}<h2 id="formal-proof">Formal proof</h2>
+{{template "formal-body" .}}{{end}}
+
+{{define "formal-body"}}{{with .Lean}}<section class="formal" aria-label="Formal proof">
+<p>The Lean module <a href="{{.URL}}"><code>{{.Module}}</code></a> holds the model and the proofs of this page. Its level is {{template "rung" .Rung}} {{.Rung.Name}}.{{if .Built}}{{if .Std}} Each declaration uses only the standard axioms.{{else}} A declaration of the module uses an axiom outside the policy.{{end}}{{end}}</p>
+{{if .Key}}<div class="table-wrap"><table class="decls">
+<thead><tr><th scope="col">Part</th><th scope="col">Declaration</th><th scope="col">Statement</th></tr></thead>
+<tbody>{{range .Key}}<tr><td>{{.Role}}</td><td>{{if .Source}}<a href="{{.Source}}"><code>{{.Short}}</code></a>{{else}}<code>{{.Short}}</code>{{end}}</td><td><code class="stmt">{{.Type}}</code></td></tr>{{end}}</tbody>
+</table></div>{{else if not .Built}}<p>This build did not run the Lean checks. The <a href="{{.URL}}">Lean page</a> shows the source.</p>{{end}}
+<p><a href="{{.URL}}">See the Lean source and each declaration</a></p>
+</section>{{end}}{{end}}
+
+{{define "refs-list"}}<ol class="refs">{{range .Sources}}<li>{{if .URL}}<a href="{{.URL}}">{{.Text}}</a>{{else}}{{.Text}}{{end}}{{with .Locator}}, {{.}}{{end}}{{with .Note}}. {{.}}{{end}}</li>{{end}}</ol>
+{{end}}
+
+{{define "refs-section"}}<h2 id="references">References</h2>
+{{template "refs-list" .}}{{end}}

@@ -1,0 +1,104 @@
+package check
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/tamnd/ai-agent/node"
+)
+
+func TestCorpusIsClean(t *testing.T) {
+	c, err := node.Load("../testdata/corpus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range Run(c, Options{Main: true}) {
+		if f.Severity == Block {
+			t.Errorf("%s:%d %s %s", f.Path, f.Line, f.Rule, f.Msg)
+		}
+	}
+}
+
+func TestPseudoIDs(t *testing.T) {
+	body := "## The algorithm\n\n```pseudo id=main\nF(A)\nL1  x ← 0\nL2  return x\n```\n"
+	ids, bad := PseudoIDs(body)
+	if len(bad) != 0 {
+		t.Fatalf("findings: %v", bad)
+	}
+	if got := ids["main"]; len(got) != 2 || got[0] != "L1" || got[1] != "L2" {
+		t.Errorf("ids are %v, want [L1 L2]", got)
+	}
+}
+
+func TestMarkers(t *testing.T) {
+	got := Markers("x = 0  # @line L1\nreturn x  # @line L2, L3\n")
+	want := []string{"L1", "L2", "L3"}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestParseClaim(t *testing.T) {
+	for _, s := range []string{"Θ(n log n)", "O(1)", "Ω(n)"} {
+		if err := ParseClaim(s); err != nil {
+			t.Errorf("ParseClaim(%q): %v", s, err)
+		}
+	}
+}
+
+func TestMissingSlug(t *testing.T) {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(root, "nodes/searching/sequential-and-binary-search/binary-search/node.md")
+	data, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data = []byte(strings.Replace(string(data), "see_also: [loop-invariant]", "see_also: [no-such-node]", 1))
+	if err := os.WriteFile(p, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range Run(c, Options{}) {
+		if f.Rule == "G05" && f.Severity == Block && strings.Contains(f.Msg, "no-such-node") {
+			return
+		}
+	}
+	t.Error("a see_also link to a missing node gave no G05 finding")
+}
+
+func TestBuildFile(t *testing.T) {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	p := filepath.Join(root, "nodes", "searching", "sequential-and-binary-search", "binary-search", "impl", "go", "go.mod")
+	if err := os.WriteFile(p, []byte("module x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, f := range Run(c, Options{}) {
+		if f.Rule == "I15" && f.Severity == Block && strings.HasSuffix(f.Path, "impl/go/go.mod") {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("no I15 finding for impl/go/go.mod")
+	}
+}

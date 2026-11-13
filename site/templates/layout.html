@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{if eq .Path "/"}}Algorithm: algorithms explained, proved and run{{else}}{{.Title}} · Algorithm{{end}}</title>
+<meta name="description" content="{{.Desc}}">
+<link rel="canonical" href="{{.Meta.BaseURL}}{{.Path}}">
+{{if .NoIndex}}<meta name="robots" content="noindex">
+{{end}}<meta property="og:type" content="website">
+<meta property="og:site_name" content="Algorithm">
+<meta property="og:title" content="{{.Title}}">
+<meta property="og:description" content="{{.Desc}}">
+<meta property="og:url" content="{{.Meta.BaseURL}}{{.Path}}">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preload" href="/assets/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/site.css">
+<link rel="stylesheet" href="/assets/code.css">
+<link rel="stylesheet" href="/assets/katex/katex.min.css">
+<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="Algorithm">
+<script src="/assets/theme.js"></script>
+<script src="/assets/site.js" defer></script>
+{{range .Scripts}}<script src="{{.}}" defer></script>
+{{end}}{{with .JSONLD}}<script type="application/ld+json">{{.}}</script>
+{{end}}</head>
+<body class="page-{{.BodyKind}}" style="--hue: {{.Hue}}">
+{{if eq .BodyKind "embed"}}<main id="main" class="embed">{{block "main" .}}{{end}}</main>
+{{else}}<a class="skip" href="#main">Skip to the content</a>
+<header class="top">
+<div class="bar">
+<a class="brand" href="/" aria-label="Algorithm, home">{{template "logo"}}<span>Algorithm</span></a>
+<nav class="nav" aria-label="Main">
+<a href="/learn/"{{if eq .Section "learn"}} aria-current="page"{{end}}>Learn</a>
+<a href="/areas/"{{if eq .Section "areas"}} aria-current="page"{{end}}>Areas</a>
+<a href="/problems/"{{if eq .Section "problems"}} aria-current="page"{{end}}>Problems</a>
+<a href="/kind/technique/"{{if eq .Section "techniques"}} aria-current="page"{{end}}>Techniques</a>
+<a href="/visualize/"{{if eq .Section "visualize"}} aria-current="page"{{end}}>Visualize</a>
+</nav>
+<a class="find" href="/search/" data-palette><span>Search</span><kbd>⌘K</kbd></a>
+<button class="theme" type="button" data-theme-toggle aria-label="Change the colour theme" title="Change the colour theme">◐</button>
+</div>
+</header>
+<main id="main" class="{{if .Wide}}wide{{end}}">
+{{block "main" .}}{{end}}
+</main>
+<footer class="foot">
+<div class="cols">
+<div><h2>Learn</h2><ul><li><a href="/learn/">Reading path</a></li><li><a href="/areas/">Areas</a></li><li><a href="/problems/">Problems</a></li><li><a href="/kind/algorithm/">Algorithms</a></li><li><a href="/kind/data-structure/">Data structures</a></li><li><a href="/visualize/">Visualize</a></li></ul></div>
+<div><h2>Reference</h2><ul><li><a href="/languages/">Languages</a></li><li><a href="/matrix/">Matrix</a></li><li><a href="/badges/">Badges</a></li><li><a href="/spec/">Specification</a></li><li><a href="/search/">Search</a></li></ul></div>
+<div><h2>Project</h2><ul><li><a href="/about/">About</a></li><li><a href="/contribute/">Contribute</a></li><li><a href="{{.Meta.Repo}}">Content on GitHub</a></li><li><a href="{{.Meta.AgentURL}}">Toolchain on GitHub</a></li><li><a href="{{.Meta.Repo}}/issues">Issues</a></li></ul></div>
+<div><h2>Data</h2><ul><li><a href="/llms.txt">llms.txt</a></li><li><a href="/api/nodes.json">nodes.json</a></li><li><a href="/search.json">search.json</a></li><li><a href="/sitemap.xml">Sitemap</a></li></ul></div>
+</div>
+<p class="fine">The text is <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. The code is MIT. Built by aik {{.Meta.Version}}{{with .Meta.Short}} from commit <a href="{{$.Meta.Repo}}/commit/{{$.Meta.Commit}}">{{.}}</a>{{end}} on {{.Meta.Date}}.</p>
+</footer>
+<dialog class="palette" id="palette" aria-label="Search">
+<form method="dialog" class="palette-box" role="search">
+<input type="search" name="q" placeholder="Search algorithms, problems and ideas" autocomplete="off" spellcheck="false" aria-label="Search" aria-controls="palette-list">
+<ul id="palette-list" role="listbox"></ul>
+<p class="palette-help"><kbd>↑</kbd> <kbd>↓</kbd> to move, <kbd>Enter</kbd> to open, <kbd>Esc</kbd> to close</p>
+</form>
+</dialog>
+{{end}}</body>
+</html>

@@ -1,0 +1,7 @@
+# Each line is a tag and its slug (spec 04.2). A tag never changes and is never used again.
+# Tags are 6 characters of Crockford base32. aik mint gives the next one.
+2B7QDX binary-search
+6SRCHA search-in-sorted-array
+7NVRNT loop-invariant
+8ASYMP asymptotic-notation
+9CMPMD comparison-model

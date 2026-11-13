@@ -1,0 +1,24 @@
+name: Bug
+description: aik does something wrong.
+labels: ["type: bug", "status: triage"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Give the command and its output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `aik version`.
+    validations:
+      required: true

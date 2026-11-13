@@ -1,0 +1,15 @@
+- name: The key is in the array
+  input: {a: [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], x: 72}
+  note: Three steps find the key.
+- name: The key is not in the array
+  input: {a: [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], x: 30}
+  note: The range becomes empty after four steps.
+- name: The first middle item is the key
+  input: {a: [2, 5, 8, 12, 16, 23, 38, 56, 72, 91], x: 23}
+  note: The best case takes one step.
+- name: The key is smaller than each item
+  input: {a: [10, 20, 30, 40, 50, 60, 70], x: 4}
+  note: Each step keeps the left half.
+- name: A large array
+  input: {a: [1, 4, 6, 9, 11, 15, 18, 21, 24, 27, 33, 36, 40, 42, 47, 51, 55, 58, 63, 69, 71, 77, 84, 90], x: 58}
+  note: 24 items need at most 5 steps.

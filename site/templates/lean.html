@@ -1,0 +1,24 @@
+{{define "main"}}<div class="page">
+{{template "crumbs" .Crumbs}}
+{{with .Lean}}<header class="page-head"><h1>Lean: {{$.N.Name}}</h1><p class="lead">The Lean module <code>{{.Module}}</code> states what {{$.N.Name}} must do, models it, and proves the claims of the page.</p></header>
+<dl class="facts">
+<div><dt>Module</dt><dd><code>{{.Module}}</code></dd></div>
+<div><dt>File</dt><dd><a href="{{.GitHub}}"><code>{{.File}}</code></a>, {{.Lines}} lines</dd></div>
+<div><dt>Level</dt><dd>{{template "rung" .Rung}} {{.Rung.Name}}</dd></div>
+{{if .Built}}<div><dt>Axioms</dt><dd>{{if .Std}}only propext, Classical.choice and Quot.sound{{else}}an axiom outside the policy{{end}}</dd></div>{{end}}
+</dl>
+{{with .Rung.Next}}<p class="next">Next level: {{join . " "}}</p>{{end}}
+{{if .All}}<h2 id="declarations">Declarations</h2>
+<div class="table-wrap"><table class="decls">
+<thead><tr><th scope="col">Name</th><th scope="col">Kind</th><th scope="col">Statement</th><th scope="col">Axioms</th><th scope="col">Human proof</th></tr></thead>
+<tbody>{{range .All}}<tr><td>{{if .Source}}<a href="{{.Source}}"><code>{{.Short}}</code></a>{{else}}<code>{{.Short}}</code>{{end}}{{with .Doc}}<br><span class="doc">{{.}}</span>{{end}}</td><td>{{.Kind}}</td><td><code class="stmt">{{.Type}}</code></td><td>{{if .Axioms}}{{join .Axioms ", "}}{{else}}none{{end}}</td><td>{{with .Proof}}<a href="{{.URL}}">{{.Name}}</a>{{end}}</td></tr>{{end}}</tbody>
+</table></div>{{else if not .Built}}<p>This build did not run the Lean checks, so the page shows the source only. Run <code>aik lean build</code> before <code>aik site</code> to add the declarations.</p>{{end}}
+<h2 id="source">Source</h2>
+<div class="code single">
+<div class="panel on">
+<div class="panel-bar"><span class="file">{{.File}}</span><span class="grow"></span><a href="{{.GitHub}}">GitHub</a><button type="button" class="copy" data-copy>Copy</button></div>
+{{.HTML}}
+</div>
+</div>{{end}}
+<p><a href="/{{.N.Slug}}/">Back to {{.N.Name}}</a></p>
+</div>{{end}}

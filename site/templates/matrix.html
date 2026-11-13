@@ -1,0 +1,7 @@
+{{define "main"}}<div class="page">
+<header class="page-head"><h1>Matrix</h1><p class="lead">This table shows the state of each algorithm and data structure. H is the human proof, L is the Lean proof, V is the visual and W is the writing. Each language cell gives the code level. <a href="/badges/">Read what the levels mean</a>.</p></header>
+{{if .Rows}}<div class="matrix-wrap"><table class="matrix">
+<thead><tr><th scope="col">Page</th><th scope="col">H</th><th scope="col">L</th><th scope="col">V</th><th scope="col">W</th>{{range .Langs}}<th scope="col" title="{{.Name}}">{{.ID}}</th>{{end}}</tr></thead>
+<tbody>{{range .Rows}}<tr><th scope="row"><a href="{{.URL}}">{{.Name}}</a></th><td>{{template "rung" .H}}</td><td>{{template "rung" .L}}</td><td>{{template "rung" .V}}</td><td>{{template "rung" .W}}</td>{{range .Cells}}<td>{{if .Has}}<a class="rung r{{.Level}}" href="{{.URL}}" title="{{.Title}}">{{.Label}}</a>{{else}}<span class="none" aria-label="none">·</span>{{end}}</td>{{end}}</tr>{{end}}</tbody>
+</table></div>{{else}}<p class="empty-note">No algorithm pages exist yet.</p>{{end}}
+</div>{{end}}

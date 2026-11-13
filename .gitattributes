@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+# Check out every text file with LF line endings, also on Windows. aik fmt writes LF, and the tests compare files byte by byte.
+* text=auto eol=lf

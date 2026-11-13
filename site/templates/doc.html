@@ -1,0 +1,10 @@
+{{define "main"}}<div class="page doc">
+{{template "crumbs" .Crumbs}}
+<header class="page-head"><h1>{{.Heading}}</h1>{{with .Lead}}<p class="lead">{{.}}</p>{{end}}</header>
+<div class="doc-grid">
+{{if .TOC}}<aside class="toc-col"><nav class="toc" aria-label="On this page"><p>On this page</p><ol>{{range .TOC}}{{if eq .Level 2}}<li><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}{{end}}</ol></nav></aside>{{end}}
+<div class="prose">{{.Body}}{{with .Source}}<p class="source-link"><a href="{{.}}">Source of this page</a></p>{{end}}</div>
+</div>
+</div>{{end}}
+
+{{define "learn-path"}}{{range .}}<section class="group" id="path-{{.ID}}"><h2>{{.Title}}</h2><ol class="path">{{range .Items}}<li style="--hue: {{.Hue}}">{{template "link" .Link}}<span class="kind"> · {{kindName .Kind}}</span>{{with .Summary}}<p>{{.}}</p>{{end}}</li>{{end}}</ol></section>{{end}}{{end}}

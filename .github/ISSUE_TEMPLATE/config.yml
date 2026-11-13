@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/tamnd/ai-agent/security/advisories/new
+    about: Do not open a public issue for a security problem.
+  - name: Change the content of the site
+    url: https://github.com/tamnd/ai/issues/new/choose
+    about: Pages, proofs, implementations and scenes are in tamnd/ai.
