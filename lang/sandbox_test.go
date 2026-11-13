@@ -51,11 +51,11 @@ func TestSandboxArgv(t *testing.T) {
 	}
 }
 
-// TestSandboxNoNetwork runs a test that opens a socket in the Python image. The test must fail, because the container has no network. Set ALGO_TEST_PYTHON_IMAGE to the image to run it.
+// TestSandboxNoNetwork runs a test that opens a socket in the Python image. The test must fail, because the container has no network. Set AIK_TEST_PYTHON_IMAGE to the image to run it.
 func TestSandboxNoNetwork(t *testing.T) {
-	ref := os.Getenv("ALGO_TEST_PYTHON_IMAGE")
+	ref := os.Getenv("AIK_TEST_PYTHON_IMAGE")
 	if ref == "" {
-		t.Skip("ALGO_TEST_PYTHON_IMAGE is not set")
+		t.Skip("AIK_TEST_PYTHON_IMAGE is not set")
 	}
 	if _, err := exec.LookPath("docker"); err != nil {
 		t.Skip("no docker")

@@ -5,6 +5,9 @@
 | Image | Languages | Toolchain |
 |---|---|---|
 | `aik-runner-python` | python | Python 3.14, pytest 9.2 |
+| `aik-runner-numpy` | numpy | Python 3.14, pytest 9.2, NumPy 2.5.4, SciPy 1.18.1, Hypothesis 6.170 |
+| `aik-runner-pytorch` | pytorch | the NumPy set, and PyTorch 2.15.0 for CPU |
+| `aik-runner-jax` | jax | the NumPy set, and JAX 0.12.0.1 with jaxlib for CPU |
 | `aik-runner-go` | go | Go 1.27 |
 | `aik-runner-rust` | rust | Rust 1.98 |
 | `aik-runner-gcc` | c, cpp | GCC 15, with ASan and UBSan |
