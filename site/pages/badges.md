@@ -67,6 +67,24 @@ The build also computes the status of each fact from its sources.
 
 Two numbers are the same value when they differ by 1% or less. Two dates are the same when they agree to the precision of the less precise date, so 2024-07 and 2024-07-23 agree.
 
+## Evidence labels
+
+Each claim of a page is in the file `claims.yaml` of the page, with a type and its sources. The claim sentence in the text ends with a chip. The build computes the label of the chip from the sources of the claim. The writer does not write it.
+
+| Label | What it needs |
+| :-- | :-- |
+| proved | A Lean proof or a full derivation proves the claim. Only a mathematical claim can have this label. |
+| measured here | An experiment of this site tests the claim and passes. The chip always shows the scope of the experiment. |
+| replicated | At least two independent sources support the claim within its scope. |
+| reported | At least one source supports the claim, and no other label applies. |
+| contested | An independent source, a failed replication or a failed experiment of this site is against the claim. |
+
+A claim can have more than one label. The chip shows one of them, in this order: proved, contested, measured here, replicated, reported. The Evidence table of the page shows all of them.
+
+A source counts only when the citation check finds the claimed text or number in a stored copy of the source. The citation check is not in the toolchain yet. Until then, each chip says "not checked yet". A definition has no label. Its chip says "source".
+
+Two sources are independent when they share no author and no institution, when one does not reuse the weights of the other, and when one is not a review of the other. A claim whose only sources are by the developer of the system it is about can be at most reported.
+
 ## W: the writing
 
 The W level comes from the sections of the page. Each kind of page has its own list.

@@ -261,6 +261,16 @@ details.tests summary span { color: var(--muted); font-family: var(--sans); marg
 .fact-table ul { margin: 0; padding-left: 1rem; }
 .fact-table .fact-note { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--muted); }
 .fact-table .status-disputed { color: var(--warn, #b45309); }
+.claim-table { width: 100%; font-size: 0.95rem; }
+.claim-table ul { margin: 0; padding-left: 1rem; }
+.claim-table .claim-note { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.claim-table tr.superseded td { color: var(--muted); }
+.claim-chip { font-size: 0.72rem; padding: 0.05rem 0.45rem; text-decoration: none; vertical-align: 0.1em; }
+.claim-chip.label-proved, .claim-chip.label-measured-here, .claim-chip.label-replicated { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.claim-chip.label-contested { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.claim-chip.label-unchecked { color: var(--muted); }
+.claim-ref { padding-left: 0.9rem; border-left: 3px solid var(--surface-2); }
+:target.claim-chip { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ladders ul { margin: 0; padding-left: 1rem; }
 .ladders td:first-child { white-space: nowrap; }
 .page-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.9rem; }

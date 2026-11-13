@@ -192,6 +192,7 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	if err := b.buildScenes(); err != nil {
 		return nil, err
 	}
+	computeClaims(c)
 	for _, n := range c.Nodes {
 		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls})
 	}
