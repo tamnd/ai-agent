@@ -423,16 +423,9 @@ func CheckArch(f *shapes.File, d *ArchData, samples []map[string]int64) Report {
 	if gz.Len() > MaxArchBytes {
 		r.Fails = append(r.Fails, fmt.Sprintf("the scene is %d bytes after gzip; the budget is %d (V08)", gz.Len(), MaxArchBytes))
 	}
-	type run struct {
-		Name   string           `json:"name"`
-		Values map[string]int64 `json:"values"`
-	}
-	var runs []run
-	for _, p := range d.Presets {
-		runs = append(runs, run{p.Name, p.Values})
-	}
+	runs := slices.Clone(d.Presets)
 	for i, s := range samples {
-		runs = append(runs, run{fmt.Sprintf("sample-%d", i+1), s})
+		runs = append(runs, ArchPreset{fmt.Sprintf("sample-%d", i+1), s})
 	}
 	nodeBin, err := exec.LookPath("node")
 	if err != nil {
