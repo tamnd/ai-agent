@@ -12,6 +12,8 @@ State: state/<slug>.json. Logs: logs/events.jsonl, logs/runs/<slug>/*.txt. Prove
 The ladder is writer_ladder of models.yaml, or writer_ladder_hard for the hard kinds of kinds.py.
 The auditor is never of the family of a writer of the node. When no such auditor is available, the item waits with the status blocked (spec 14.4, Q-08).
 The gate is `aik gate -json <slug>`, plus the cheap local checks of algorithm-work. `aik cite <slug>` runs once, after the audit passes.
+AIK_GATE_FLAGS adds flags to the gate, as -unsafe-local on a machine without docker. A gate that fails for a reason of
+the machine (docker down, a full disk) blocks the item instead of asking a model to fix the page.
 """
 import argparse
 import hashlib
@@ -167,12 +169,27 @@ def local_checks(item):
     return probs
 
 
+# ENV_FAULTS are gate failures of the machine, not of the page: no model edit can fix them, so the item waits.
+ENV_FAULTS = ("Cannot connect to the Docker daemon", "docker.sock", "the tests run in docker containers",
+              "no space left on device")
+
+
+def gate_flags():
+    """The extra flags of aik gate, from AIK_GATE_FLAGS, as "-unsafe-local" on a machine without docker."""
+    return os.environ.get("AIK_GATE_FLAGS", "").split()
+
+
 def gate(item, final=False):
-    """Run the gate. Returns a list of problem strings; an empty list means pass."""
+    """Run the gate. Returns a list of problem strings; an empty list means pass. Raises Wait when the gate fails
+    for a reason of the machine (ENV_FAULTS), as docker being down."""
     slug = item["slug"]
     probs = local_checks(item)
     with _gate_lock:
-        rc, out = aik("gate", "-json", slug, timeout=1800)
+        rc, out = aik("gate", "-json", *gate_flags(), slug, timeout=1800)
+    if rc:
+        for f in ENV_FAULTS:
+            if f in out:
+                raise Wait(f"aik gate fails for a reason of the machine, not the page ({f!r}); fix it, or set AIK_GATE_FLAGS=-unsafe-local")
     fs = findings(out)
     if fs is None:
         if rc:
@@ -311,6 +328,14 @@ def block(st, why):
 
 
 def process(item, ladder, max_rounds=6):
+    """Write one item. A gate that fails for a reason of the machine blocks the item (ENV_FAULTS)."""
+    try:
+        return _process(item, ladder, max_rounds)
+    except Wait as w:
+        return block(state(item["slug"]), str(w))
+
+
+def _process(item, ladder, max_rounds=6):
     slug = item["slug"]
     if item["kind"] in CARD_ONLY:
         return "card-only"
