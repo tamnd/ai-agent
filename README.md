@@ -39,6 +39,7 @@ Run these commands in a clone of tamnd/ai.
 | `aik test <slug>` | Runs the tests of the implementations of a node in the sandbox. Without the sandbox, it runs only with `-unsafe-local`. |
 | `aik exp list` | Lists the experiments of the nodes, with the verdict and the date of the last run, and tells when `results.json` is stale. |
 | `aik exp run <slug>` | Runs the experiments of a node in the sandbox, with the limits of the budget class `cpu-small`, and prints the verdict of each test of `expect.yaml`. Add `-update` to write `results.json`. |
+| `aik results table <benchmark>@<version>` | Prints the computed results table of a benchmark version: one block for each comparable group, from the best score down, with the source and the evidence label of each row (spec 10.7). Add `-json` for JSON. |
 | `aik lean build` | Builds the Lean package, extracts the declarations and checks the axiom policy. |
 | `aik viz check` | Builds each scene and runs each preset two times. |
 | `aik site serve` | Renders the site and serves it at http://localhost:8150. |
