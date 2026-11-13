@@ -17,6 +17,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/node"
 )
@@ -608,6 +609,26 @@ func Lead(body string) string {
 
 var listItem = regexp.MustCompile(`(?m)^\s*(?:[-*]|\d+\.)\s+\S`)
 
+// callout finds the start of a callout box, such as > [!pitfall] (06.3); each one counts as an item of its section.
+var callout = regexp.MustCompile(`(?m)^>\s*\[![a-z]+\]`)
+
+// prereqsExist tells if each prerequisite of n is a node of the corpus or, for slug@al and the like, a neighbour
+// that a bridge card names and that the last sync still found (5.9).
+func prereqsExist(n *node.Node, c *node.Corpus) bool {
+	for _, p := range n.Prereqs {
+		if _, _, ok := bridge.Split(p); ok {
+			if b := c.Bridges.Find(p); b == nil || b.Retired != "" {
+				return false
+			}
+			continue
+		}
+		if _, ok := c.BySlug[p]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // need is one requirement of a writing level.
 type need struct {
 	what string
@@ -631,16 +652,12 @@ func Writing(n *node.Node, env Env) (r Rung) {
 		return false
 	}
 	items := func(h string, k int) func() bool {
-		return func() bool { return len(listItem.FindAllString(Section(n.Body, h), -1)) >= k }
-	}
-	linked := func() bool {
-		for _, p := range n.Prereqs {
-			if _, ok := env.Corpus.BySlug[p]; !ok {
-				return false
-			}
+		return func() bool {
+			sec := Section(n.Body, h)
+			return len(listItem.FindAllString(sec, -1))+len(callout.FindAllString(sec, -1)) >= k
 		}
-		return true
 	}
+	linked := func() bool { return prereqsExist(n, env.Corpus) }
 	lead := func() bool { return Lead(n.Body) != "" }
 
 	var levels [5][]need
