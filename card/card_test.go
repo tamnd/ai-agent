@@ -3,6 +3,7 @@
 package card
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -79,7 +80,8 @@ func TestRead(t *testing.T) {
 	if len(errs) != 1 {
 		t.Fatalf("Read gives the errors %v", errs)
 	}
-	if e, ok := errs[0].(*Error); !ok || e.Line != 3 {
+	var e *Error
+	if !errors.As(errs[0], &e) || e.Line != 3 {
 		t.Errorf("the error is %v", errs[0])
 	}
 	if cs, errs := Read(t.TempDir()); len(cs) != 0 || len(errs) != 0 {
