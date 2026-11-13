@@ -358,7 +358,7 @@ func group(s string) string {
 }
 
 // labels are the names of the common fact ids.
-var labels = map[string]string{
+var labels = map[string]string{ //nolint:gosec // G101 reads the fact id training.tokens as a credential; these are display names.
 	"developer": "Developer", "released": "Release date", "architecture": "Architecture",
 	"params.total": "Parameters (total)", "params.active": "Parameters (active)",
 	"access": "Access", "licence": "Licence", "modalities": "Modalities", "modality": "Modality",
