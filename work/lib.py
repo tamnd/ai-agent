@@ -294,15 +294,16 @@ def run_model(prompt: str, backend: str, model: str, job: str = "", slug: str = 
 
 
 def extract_json(text: str):
-    """Take the last JSON object or array in a model reply."""
+    """Take the last JSON object or array in a model reply. Control characters in strings are allowed: a quote
+    from a PDF can carry one, as an epsilon that comes through as a raw control character."""
     m = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
     if m:
         try:
-            return json.loads(m.group(1))
+            return json.loads(m.group(1), strict=False)
         except json.JSONDecodeError:
             pass
     try:
-        return json.loads(text.strip())
+        return json.loads(text.strip(), strict=False)
     except json.JSONDecodeError:
         pass
     pairs = [("[", "]"), ("{", "}")]
@@ -312,7 +313,7 @@ def extract_json(text: str):
         j = text.rfind(closer)
         if i != -1 and j > i:
             try:
-                return json.loads(text[i:j + 1])
+                return json.loads(text[i:j + 1], strict=False)
             except json.JSONDecodeError:
                 continue
     raise ValueError("no JSON in reply")
