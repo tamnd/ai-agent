@@ -86,3 +86,63 @@ func TestExpRun(t *testing.T) {
 		t.Errorf("an experiment that is not there exits with %d, not 2", got)
 	}
 }
+
+// The run.py of the data test reads the pinned file through the path in job.json.
+const dataRun = `import argparse, json, os
+ap = argparse.ArgumentParser()
+ap.add_argument("--job")
+ap.add_argument("--out")
+a = ap.parse_args()
+job = json.load(open(a.job))
+v = float(open(os.path.join(job["data"]["toy-data"], "v.txt")).read())
+loss = v - 0.05 * job["config"]["p"] + job["seed"] * 1e-4
+json.dump({"final": {"test_loss": loss}, "device": "cpu"}, open(os.path.join(a.out, "metrics.json"), "w"))
+`
+
+func TestExpRunData(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the test runs python3")
+	}
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("no python3")
+	}
+	root := copyCorpus(t)
+	dir := filepath.Join(root, "nodes/foundations/models-of-computation/comparison-model/exp/toy-dropout")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	design := toyDesign + "data:\n  - {dataset: toy, pin: \"S:toy-data\"}\n"
+	// The sha256 of "0.5".
+	pins := `- id: toy-data
+  dataset: toy
+  version: "1"
+  licence: {spdx: CC0-1.0}
+  mirror: allowed
+  files:
+    - {name: v.txt, sha256: "d2cbad71ff333de67d07ec676e352ab7f38248eb69c942950157220607c55e84", bytes: 3, url: "https://example.invalid/v.txt"}
+`
+	for path, s := range map[string]string{
+		filepath.Join(dir, exp.DesignFile):                    design,
+		filepath.Join(dir, exp.ExpectFile):                    toyExpect,
+		filepath.Join(dir, exp.Script):                        dataRun,
+		filepath.Join(root, exp.PinsFile):                     pins,
+		filepath.Join(root, exp.DataDir, "toy-data", "v.txt"): "0.5",
+	} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "comparison-model/toy-dropout"}); got != 0 {
+		t.Fatalf("aik exp run with a pinned file in the cache exits with %d", got)
+	}
+	// A file with the wrong hash stops the run before training, and the url does not resolve.
+	if err := os.WriteFile(filepath.Join(root, exp.DataDir, "toy-data", "v.txt"), []byte("0.6"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "comparison-model/toy-dropout"}); got == 0 {
+		t.Fatal("aik exp run with a changed pinned file exits with 0")
+	}
+}

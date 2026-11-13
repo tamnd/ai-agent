@@ -12,7 +12,7 @@ An experiment is the AI analogue of a proof. It is weaker than a proof and stron
 - It has five parts: `experiment.yaml` (the claim, the design, the config, the data pins, the seeds, the budget class), `run.py` (the script), `expect.yaml` (the statistical test that decides the claim, fixed before the first run), `results.json` (written only by `aik exp run -update`), and `figures/` (SVG plots made by the run).
 - An experiment that passes its test gives the claim the evidence label `measured-here` at the experiment's scale (07.4). It never changes what the page says about the claim at the paper's scale.
 - An experiment that fails its test is kept and shown. It is evidence that the claim does not hold at that scale, and the page says so (9.7). Failed experiments are never deleted to make a page look better (rule R10).
-- `aik exp run` runs `run.py` once for each arm and each seed, in the order of the seeds. Each run gets a job directory with `job.json` (the arm, the seed and the merged configuration) and the command `python3 run.py --job <dir>/job.json --out <dir>`. The script writes `<dir>/metrics.json`, `{"final": {"<metric>": <value>, ...}, "device": "cpu"}`, with the final value of each metric of `metrics`.
+- `aik exp run` runs `run.py` once for each arm and each seed, in the order of the seeds. Each run gets a job directory with `job.json` (the arm, the seed, the merged configuration and, in `data`, the directory of each pinned dataset by pin id) and the command `python3 run.py --job <dir>/job.json --out <dir>`. The script writes `<dir>/metrics.json`, `{"final": {"<metric>": <value>, ...}, "device": "cpu"}`, with the final value of each metric of `metrics`.
 - An experiment is not a test of the code. The learning smoke test of 08.7.6 checks that code can learn; an experiment checks a claim about the method.
 - The build computes the level R0 to R4 of the node from its experiments (9.11).
 
@@ -145,8 +145,8 @@ Every dataset that an experiment reads is pinned:
   dataset: mnist                       # the dataset card or node
   version: "lecun-1998"
   files:
-    - {name: train-images-idx3-ubyte.gz, blake3: "…", bytes: 9912422}
-    - {name: train-labels-idx1-ubyte.gz, blake3: "…", bytes: 28881}
+    - {name: train-images-idx3-ubyte.gz, sha256: "…", bytes: 9912422, url: "https://…/train-images-idx3-ubyte.gz"}
+    - {name: train-labels-idx1-ubyte.gz, sha256: "…", bytes: 28881, url: "https://…/train-labels-idx1-ubyte.gz"}
   origin: "the original distribution URL, recorded in the raw store"
   licence: {spdx: CC-BY-SA-3.0, source: "S:mnist-licence-note"}
   mirror: allowed                      # allowed | not-allowed | unknown
@@ -157,6 +157,7 @@ Rules:
 
 - **Mirroring.** A dataset is copied to `ai-data` only when its licence allows redistribution (`mirror: allowed`), checked by the licence rules of 19.8 (rule C10). Otherwise the prepare step fetches it from its origin and checks the hash. A fetched copy lives in the pool's private cache and is never published. A dataset whose licence is `unknown` is not used until the licence is resolved.
 - **Hash first.** A run whose input files do not match the pinned hashes fails before training (rule R02).
+- **The prepare step.** Before the sandbox starts, `aik exp run` makes each pinned dataset ready in `build/data/<pin>/`. It fetches a file from its `url` over HTTPS only when the cache does not have the file with the pinned sha256, and it checks the size and the sha256 of each file. The sandbox mounts each pin directory read-only. In CI, the cache of `build/data` is keyed by the hash of `registers/data-pins.yaml`.
 - **Preferred data.** Experiments prefer small, openly licensed, well-documented data: synthetic generators in the node (a two-moons generator, modular arithmetic, a copy task, a toy model of features), MNIST, Fashion-MNIST, CIFAR-10 and CIFAR-100, Tiny Shakespeare, TinyStories, the OpenML-CC18 suite, WikiText-103, small Gymnasium and MinAtar environments, and small subsets of larger corpora under their licences. `registers/data-pins.yaml` lists them, and the curate step chooses from it first.
 - **Subsets.** A subset is defined by a deterministic rule in the pin (`train[:6000]`, or a seeded sample with the seed), never by a file that the experiment writes.
 - **Environments.** RL environments are pinned by package version and environment id (`gymnasium==<v>`, `CartPole-v1`), and their versions are part of the image.

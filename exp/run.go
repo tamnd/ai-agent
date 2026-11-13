@@ -19,6 +19,8 @@ type Job struct {
 	Arm    string         `json:"arm"`
 	Seed   int64          `json:"seed"`
 	Config map[string]any `json:"config"`
+	// Data gives the directory of each pinned dataset, by pin id. The directory is read-only in the sandbox.
+	Data map[string]string `json:"data,omitempty"`
 }
 
 // Jobs gives the jobs of the design: every arm with every seed, in the order of the seeds, so that a run that stops early has the same number of seeds in each arm.
@@ -62,6 +64,8 @@ type Options struct {
 	Hardware Hardware
 	Now      func() time.Time
 	Log      func(format string, a ...any)
+	// Data gives the directory of each pinned dataset, by pin id, from Prepare. Each job gets it in job.json.
+	Data map[string]string
 }
 
 // ErrBudget means that the run went past the cap of its budget class (rule R09).
@@ -106,6 +110,7 @@ func Run(ctx context.Context, e *Experiment, o Options) (*Results, error) {
 	values := Values{}
 	device := ""
 	for _, j := range d.Jobs() {
+		j.Data = o.Data
 		dir := filepath.Join(o.Work, j.Arm, fmt.Sprint(j.Seed))
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, err

@@ -19,6 +19,8 @@ type PinFile struct {
 	SHA256 string `yaml:"sha256,omitempty"`
 	BLAKE3 string `yaml:"blake3,omitempty"`
 	Bytes  int64  `yaml:"bytes,omitempty"`
+	// URL is where aik exp run fetches the file when the data cache does not have it. It is https.
+	URL string `yaml:"url,omitempty"`
 }
 
 // Licence is the licence of a pinned dataset.
