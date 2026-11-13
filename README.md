@@ -37,6 +37,8 @@ Run these commands in a clone of tamnd/ai.
 | `aik check` | Runs the audit rules of spec 15. Add `-changed origin/main` to check only the nodes that a branch changes. |
 | `aik status <slug>` | Shows the ladders of a node and what the next level needs. |
 | `aik test <slug>` | Runs the tests of the implementations of a node in the sandbox. Without the sandbox, it runs only with `-unsafe-local`. |
+| `aik exp list` | Lists the experiments of the nodes, with the verdict and the date of the last run, and tells when `results.json` is stale. |
+| `aik exp run <slug>` | Runs the experiments of a node in the sandbox, with the limits of the budget class `cpu-small`, and prints the verdict of each test of `expect.yaml`. Add `-update` to write `results.json`. |
 | `aik lean build` | Builds the Lean package, extracts the declarations and checks the axiom policy. |
 | `aik viz check` | Builds each scene and runs each preset two times. |
 | `aik site serve` | Renders the site and serves it at http://localhost:8150. |
@@ -49,7 +51,7 @@ The exit codes are 0 for success, 1 when a check finds a problem, 2 for a usage 
 
 ## Safety of `aik test`
 
-`aik test` runs code from the content tree. When the content repository has `manifests/images.yaml`, each test runs in a new container with no network, a read-only root and limits on memory, CPU and processes. Give `-sandbox podman` to use Podman. Without the sandbox, `aik test` runs on your computer only with the flag `-unsafe-local`. Use it only on code that you have read. In CI, the jobs that run content code have no secrets.
+`aik test` and `aik exp run` run code from the content tree. When the content repository has `manifests/images.yaml`, each test runs in a new container with no network, a read-only root and limits on memory, CPU and processes. Give `-sandbox podman` to use Podman. Without the sandbox, `aik test` runs on your computer only with the flag `-unsafe-local`. Use it only on code that you have read. In CI, the jobs that run content code have no secrets.
 
 ## Layout
 

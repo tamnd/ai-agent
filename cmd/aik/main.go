@@ -66,6 +66,7 @@ func init() {
 		{"gen", "write the build tree of each language to build/lang", cmdGen},
 		{"test", "run the native tests and the shared cases", cmdTest},
 		{"lean", "build the Lean package and check its axioms: lean build", cmdLean},
+		{"exp", "list and run the experiments: exp list | run", cmdExp},
 		{"viz", "bundle and check the scenes: viz build | check", cmdViz},
 		{"oracle", "run the oracle of a problem on its cases or on given arguments", cmdOracle},
 		{"site", "render and preview the site: site build | serve | check", cmdSite},
