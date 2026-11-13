@@ -2,7 +2,7 @@
 
 {{define "crumbs"}}{{if .}}<nav class="crumbs" aria-label="Breadcrumb"><ol>{{range .}}<li><a href="{{.URL}}">{{.Name}}</a></li>{{end}}</ol></nav>{{end}}{{end}}
 
-{{define "link"}}{{if .Missing}}<span class="missing" title="{{.Note}}">{{.Name}}</span>{{else}}<a href="{{.URL}}">{{.Name}}</a>{{end}}{{end}}
+{{define "link"}}{{if .Missing}}<span class="missing" title="{{.Note}}">{{.Name}}</span>{{else}}<a href="{{.URL}}">{{.Name}}</a>{{with .Elsewhere}} <span class="elsewhere">{{.}}</span>{{end}}{{end}}{{end}}
 
 {{define "links"}}{{range $i, $l := .}}{{if $i}}, {{end}}{{template "link" $l}}{{end}}{{end}}
 

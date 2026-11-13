@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/check"
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/katex"
@@ -86,6 +87,8 @@ type Link struct {
 	Missing bool
 	Note    string
 	Hue     int
+	// Elsewhere is the mark of a link to a neighbour, such as "on algorithm.tamnd.com" (spec 16.4).
+	Elsewhere string
 }
 
 // Base is the frame of a page.
@@ -365,6 +368,12 @@ func (b *builder) base(title, desc, p string) Base {
 
 // resolve finds a node or an area for a [[slug]] link.
 func (b *builder) resolve(slug string) (string, string, bool) {
+	if _, _, ok := bridge.Split(slug); ok {
+		if c := b.c.Bridges.Find(slug); c != nil && c.Retired == "" {
+			return c.Name, c.URL, true
+		}
+		return "", "", false
+	}
 	if n, ok := b.c.BySlug[slug]; ok {
 		return n.Name, "/" + n.Slug + "/", true
 	}
@@ -397,6 +406,13 @@ func (b *builder) render(src string) markup.Result {
 }
 
 func (b *builder) link(slug string) Link {
+	if site, s, ok := bridge.Split(slug); ok {
+		c := b.c.Bridges.Find(slug)
+		if c == nil || c.Retired != "" {
+			return Link{Name: humanize(s), Missing: true, Note: "This item is not on " + bridge.Sites[site].Host + "."}
+		}
+		return Link{Name: c.Name, URL: c.URL, Kind: c.Kind, Elsewhere: c.Mark(), Hue: b.hueOf("")}
+	}
 	if n, ok := b.c.BySlug[slug]; ok {
 		return Link{Name: n.Name, URL: "/" + n.Slug + "/", Kind: n.Kind, Hue: b.hueOf(n.Area)}
 	}

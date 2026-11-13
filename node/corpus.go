@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/exp"
 	"go.yaml.in/yaml/v3"
@@ -110,6 +111,10 @@ type Corpus struct {
 	CardByKey map[string]*card.Card
 	// CardErrors are the lines of cards/ that are not cards. Package check reports them as T01.
 	CardErrors []error
+	// Bridges are the bridge cards of cards/bridge (spec 5.9).
+	Bridges *bridge.Set
+	// BridgeErrors are the lines of cards/bridge that are not bridge cards.
+	BridgeErrors []error
 	// Pins are the datasets of registers/data-pins.yaml (spec 9.5), by id. It is nil when the register does not exist.
 	Pins map[string]*exp.Pin
 }
@@ -207,6 +212,9 @@ func Load(root string) (*Corpus, error) {
 			c.CardByKey[cd.Key()] = cd
 		}
 	}
+	var bs []*bridge.Card
+	bs, c.BridgeErrors = bridge.Read(root)
+	c.Bridges = bridge.NewSet(bs)
 	return c, nil
 }
 

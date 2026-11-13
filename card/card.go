@@ -19,6 +19,9 @@ import (
 // Dir is the directory of the cards in the content repository.
 const Dir = "cards"
 
+// BridgeDir is the directory of the bridge cards, which Read skips.
+const BridgeDir = Dir + "/bridge"
+
 // MaxSummary is the most words that the summary of a card can have.
 const MaxSummary = 30
 
@@ -90,11 +93,15 @@ func Read(root string) ([]*Card, []error) {
 		if err != nil {
 			return err
 		}
+		rel, _ := filepath.Rel(root, p)
+		rel = filepath.ToSlash(rel)
+		if d.IsDir() && rel == BridgeDir {
+			// Package bridge reads the bridge cards (spec 5.9). They are the items of a neighbour, so the rules of our cards do not apply to them.
+			return filepath.SkipDir
+		}
 		if d.IsDir() || !strings.HasSuffix(p, ".jsonl") {
 			return nil
 		}
-		rel, _ := filepath.Rel(root, p)
-		rel = filepath.ToSlash(rel)
 		cs, errs := readFile(p, rel)
 		out = append(out, cs...)
 		bad = append(bad, errs...)

@@ -56,7 +56,8 @@ type Result struct {
 	MathErrors []string // the formulas that do not render (rule W07)
 }
 
-var wikiLink = regexp.MustCompile(`\[\[([a-z0-9][a-z0-9-]*)(?:\|([^\]]+))?\]\]`)
+// wikiLink finds [[slug]], [[slug|label]], and a link to a neighbour such as [[al:k-means]] (spec 6.2).
+var wikiLink = regexp.MustCompile(`\[\[((?:(?:al|m2|pg):)?[a-z0-9][a-z0-9-]*)(?:\|([^\]]+))?\]\]`)
 
 // Render renders Markdown to HTML.
 func Render(src string, resolve Resolver) (Result, error) {
