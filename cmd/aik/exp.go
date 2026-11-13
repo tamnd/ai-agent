@@ -6,11 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"maps"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
+	"time"
 
 	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/lang"
@@ -171,8 +176,17 @@ func runExp(c *node.Corpus, r expRef, box *lang.Sandbox, python string, update b
 	if fw == "" {
 		fw = "python"
 	}
+	// The sandbox has no network, so the pinned data is fetched and checked here, before the run (9.4.2).
+	data, err := exp.Prepare(context.Background(), c.Pins, e.Design, filepath.Join(c.Root, filepath.FromSlash(exp.DataDir)), fetchData)
+	if err != nil {
+		return err
+	}
+	mounts := []lang.Mount{{Dir: work}, {Dir: nodeDir, ReadOnly: true}}
+	for _, id := range slices.Sorted(maps.Keys(data)) {
+		mounts = append(mounts, lang.Mount{Dir: data[id], ReadOnly: true})
+	}
 	o := exp.Options{
-		Work: work, Node: r.n.Tag, Image: "local",
+		Work: work, Node: r.n.Tag, Image: "local", Data: data,
 		Hardware: exp.Hardware{CPU: runtime.GOARCH, Threads: runtime.NumCPU(), OS: runtime.GOOS},
 		Log:      func(format string, a ...any) { fmt.Fprintf(os.Stderr, format+"\n", a...) },
 	}
@@ -186,7 +200,7 @@ func runExp(c *node.Corpus, r expRef, box *lang.Sandbox, python string, update b
 		o.Image = ref
 		o.Hardware.Threads = 0
 		o.Exec = func(ctx context.Context, _ exp.Job, dir string) error {
-			argv := box.Argv(fw, false, []lang.Mount{{Dir: work}, {Dir: nodeDir, ReadOnly: true}}, append([]string{"env"}, append(env, "python3", script, "--job", filepath.Join(dir, exp.JobFile), "--out", dir)...))
+			argv := box.Argv(fw, false, mounts, append([]string{"env"}, append(env, "python3", script, "--job", filepath.Join(dir, exp.JobFile), "--out", dir)...))
 			return runLogged(ctx, argv, dir)
 		}
 	} else {
@@ -242,4 +256,38 @@ func runLogged(ctx context.Context, argv []string, dir string, env ...string) er
 		return err
 	}
 	return nil
+}
+
+// fetchData gets one file of a data pin over HTTPS, with the generic user agent of aik.
+func fetchData(ctx context.Context, url string) (io.ReadCloser, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "aik/"+strings.TrimPrefix(ver(), "v")+" (+https://github.com/tamnd/ai-agent)")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		cancel()
+		return nil, fmt.Errorf("GET %s: %s", url, resp.Status)
+	}
+	return cancelBody{resp.Body, cancel}, nil
+}
+
+// cancelBody ends the context of a request when the body is closed.
+type cancelBody struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (b cancelBody) Close() error {
+	err := b.ReadCloser.Close()
+	b.cancel()
+	return err
 }
