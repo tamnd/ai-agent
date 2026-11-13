@@ -95,6 +95,24 @@
 {{range .}}<tr id="fact-{{.ID}}"><th scope="row">{{.Label}}</th><td>{{.Value}}{{with .Note}}<p class="fact-note">{{.}}</p>{{end}}</td><td><span class="chip status-{{.Status}}">{{.Status}}</span></td><td>{{.AsOf}}</td><td><ul>{{$disputed := eq .Status "disputed"}}{{range .Sources}}<li><code>{{.Src}}</code> ({{.Kind}}){{with .Loc}}, {{.}}{{end}}{{if $disputed}}: {{.Value}}{{end}}{{with .AsOf}}, as of {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
 </tbody></table></div></section>{{end}}
 
+{{define "shapes-section"}}<h2 id="shapes-and-parameters">Shapes and parameters</h2>
+{{template "shapes-body" .}}{{end}}
+
+{{define "shapes-body"}}{{with .Shapes}}<section class="shapes" aria-label="Shapes and parameters">
+<p class="shapes-intro">These formulas come from <a href="{{.File}}">shapes.yaml</a>. The tests of each implementation check its shapes, its parameter count and its FLOP count against them.</p>
+<div class="table-wrap"><table class="shapes-table"><caption>Sizes</caption><thead><tr><th scope="col">Symbol</th><th scope="col">Name</th><th scope="col">Meaning</th><th scope="col">Formula</th>{{range .Configs}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>
+{{range .Sizes}}<tr><td>{{.Symbol}}</td><th scope="row"><code>{{.Name}}</code></th><td>{{.Meaning}}</td><td>{{.Formula}}</td>{{range .Values}}<td class="num">{{.}}</td>{{end}}</tr>{{end}}
+</tbody></table></div>
+<div class="table-wrap"><table class="shapes-table"><caption>Blocks</caption><thead><tr><th scope="col">Block</th><th scope="col">Shapes</th><th scope="col">Parameters</th><th scope="col">At the example</th><th scope="col">Forward FLOPs</th></tr></thead><tbody>
+{{range .Blocks}}<tr><th scope="row"><code>{{.ID}}</code>{{with .Meaning}}<br><span class="shapes-meaning">{{.}}</span>{{end}}</th><td>{{range $i, $s := .Shapes}}{{if $i}}<br>{{end}}<code>{{$s}}</code>{{end}}</td><td>{{.Params}}</td><td class="num">{{.Value}}</td><td>{{.Flops}}</td></tr>{{end}}
+</tbody></table></div>
+<div class="table-wrap"><table class="shapes-table"><caption>The model</caption><thead><tr><th scope="col">Symbol</th><th scope="col">Total</th><th scope="col">Formula</th>{{range .Configs}}<th scope="col">{{.}}</th>{{end}}</tr></thead><tbody>
+{{range .Totals}}<tr><td>{{.Symbol}}</td><th scope="row"><code>{{.Name}}</code>{{with .Meaning}}<br><span class="shapes-meaning">{{.}}</span>{{end}}</th><td>{{.Formula}}</td>{{range .Values}}<td class="num">{{.}}</td>{{end}}</tr>{{end}}
+</tbody></table></div>
+{{with .Note}}<p class="exp-note">{{.}}</p>{{end}}
+{{with .Sources}}<p class="exp-note">Sources of the formulas: {{range $i, $s := .}}{{if $i}}; {{end}}{{$s}}{{end}}.</p>{{end}}
+</section>{{end}}{{end}}
+
 {{define "exp-section"}}<h2 id="experiments">Experiments</h2>
 {{template "exp-list" .}}{{end}}
 

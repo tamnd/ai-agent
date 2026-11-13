@@ -17,6 +17,7 @@ import (
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/facts"
+	"github.com/tamnd/ai-agent/shapes"
 )
 
 // Kinds are the ids of the 28 kinds of spec 04.2, in the order of KindTable.
@@ -203,6 +204,8 @@ type Node struct {
 	Claims []claims.Claim `json:"claims,omitempty"`
 	// Exps are the experiments of exp/ (spec 09).
 	Exps []*exp.Experiment `json:"-"`
+	// Shapes is the shape contract of an architecture, shapes.yaml (spec 08.6), or nil.
+	Shapes *shapes.File `json:"-"`
 }
 
 // Lang returns the implementation in a language, or nil.
@@ -293,6 +296,9 @@ func Read(root, dir string) (*Node, error) {
 	}
 	if n.Exps, err = exp.Read(n.Dir, n.Rel); err != nil {
 		return nil, fmt.Errorf("%s/%w", n.Rel, err)
+	}
+	if n.Shapes, err = shapes.Read(n.Dir, n.Rel); err != nil {
+		return nil, err
 	}
 	return n, nil
 }

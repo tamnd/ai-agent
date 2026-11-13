@@ -40,6 +40,7 @@ type NodePage struct {
 	Facts    []FactView
 	Claims   []ClaimView
 	Exps     []ExpView
+	Shapes   *ShapesView
 	Share    string // the claim share line of "About this page"
 	Edit     string
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
@@ -304,7 +305,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	}
 	p.Related = b.links(rel)
 
-	r := b.render(n.Body)
+	r := b.render(shapeRefs(n.Shapes, n.Body))
 	html := b.claimMarks(n, r.HTML)
 	p.Impls = b.implViews(n)
 	p.Proofs = b.proofViews(n)
@@ -332,6 +333,14 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 			html = insertAfterSection(html, b.snippet("formal-body", p), "formal-proof")
 		} else {
 			html = insertBefore(html, b.snippet("formal-section", p), "history", "exercises", "references")
+		}
+	}
+	p.Shapes = b.shapesView(n)
+	if p.Shapes != nil {
+		if hasH2(html, "shapes-and-parameters") {
+			html = insertAfterSection(html, b.snippet("shapes-body", p), "shapes-and-parameters")
+		} else {
+			html = insertBefore(html, b.snippet("shapes-section", p), "computation-and-cost", "training", "inductive-biases", "evidence", "limitations", "history", "references")
 		}
 	}
 	if len(p.Impls) > 0 {
