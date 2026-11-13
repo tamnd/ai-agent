@@ -95,6 +95,27 @@
 {{range .}}<tr id="fact-{{.ID}}"><th scope="row">{{.Label}}</th><td>{{.Value}}{{with .Note}}<p class="fact-note">{{.}}</p>{{end}}</td><td><span class="chip status-{{.Status}}">{{.Status}}</span></td><td>{{.AsOf}}</td><td><ul>{{$disputed := eq .Status "disputed"}}{{range .Sources}}<li><code>{{.Src}}</code> ({{.Kind}}){{with .Loc}}, {{.}}{{end}}{{if $disputed}}: {{.Value}}{{end}}{{with .AsOf}}, as of {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
 </tbody></table></div></section>{{end}}
 
+{{define "exp-section"}}<h2 id="experiments">Experiments</h2>
+{{template "exp-list" .}}{{end}}
+
+{{define "exp-list"}}{{range .Exps}}<section class="exp-box" id="exp-{{.ID}}" aria-label="Experiment {{.ID}}">
+<p class="exp-claim">{{with .Claim}}{{.}}{{else}}{{.Question}}{{end}}{{with .ClaimID}} <a class="claim-id" href="#ev-{{.}}">{{.}}</a>{{end}} <span class="chip rung">{{.Level}}</span></p>
+<p class="exp-scale"><strong>Here:</strong> {{.Here}} <strong>Source:</strong> {{.Source}}</p>
+{{if .Run}}<div class="table-wrap"><table class="exp-table"><thead><tr><th scope="col">Arm</th><th scope="col">{{.Metric}}, mean</th><th scope="col">95% interval</th><th scope="col">Seeds</th></tr></thead><tbody>
+{{range .Arms}}<tr><th scope="row">{{.ID}}</th><td>{{.Mean}}</td><td>{{.CI}}</td><td>{{.Seeds}}</td></tr>{{end}}
+</tbody></table></div>
+<div class="table-wrap"><table class="exp-table"><thead><tr><th scope="col">Test</th><th scope="col">Metric</th><th scope="col">p-value</th><th scope="col">95% interval of the difference</th><th scope="col">Effect</th><th scope="col">Result</th></tr></thead><tbody>
+{{range .Tests}}<tr><th scope="row">{{.Test}}</th><td>{{.Metric}}</td><td>{{.P}}</td><td>{{.CI}}</td><td>{{.Effect}}</td><td>{{.Verdict}}</td></tr>{{end}}
+</tbody></table></div>
+<p class="exp-verdict {{.Class}}">{{.Verdict}}</p>
+{{with .Stale}}<p class="exp-note">The results are stale: {{.}}.</p>{{end}}
+{{range .Figures}}<figure class="exp-figure"><img src="{{.}}" alt="A figure of the experiment" loading="lazy"></figure>{{end}}
+{{else}}<p class="exp-note">This experiment has not run yet.</p>{{end}}
+{{if .Small}}<p class="exp-note">This is a small-scale check, not a reproduction of the paper's result.</p>{{end}}
+<p class="page-links">{{range .Links}}<a href="{{.URL}}">{{.Name}}</a> {{end}}<span>Run it yourself: <code>{{.Command}}</code></span></p>
+</section>
+{{end}}{{end}}
+
 {{define "evidence-section"}}<h2 id="evidence">Evidence</h2>
 {{template "claim-table" .}}{{end}}
 

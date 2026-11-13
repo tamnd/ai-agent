@@ -67,6 +67,20 @@ The build also computes the status of each fact from its sources.
 
 Two numbers are the same value when they differ by 1% or less. Two dates are the same when they agree to the precision of the less precise date, so 2024-07 and 2024-07-23 agree.
 
+## R: the reproduction
+
+A method, an architecture or a finding can have experiments in the directory `exp/` of the page. An experiment tests a claim of `claims.yaml` at a small scale, with a fixed number of seeds and a test that is written before the first run.
+
+| Level | What it needs |
+| :-- | :-- |
+| R0 | No experiment. The page shows the evidence labels of the published results only. |
+| R1 | An experiment ran within its budget class, its data is pinned or generated, and `results.json` records the seeds and the confidence intervals. `expect.yaml` did not change after the run. |
+| R2 | R1, and the primary test of `expect.yaml` passes: the claim holds at the scale of the experiment. |
+| R3 | R2, and a second experiment at another scale or on other data also passes. |
+| R4 | R3, and a person reviewed the design and this exact results file. |
+
+The level of the page is the lowest level of its claims that are marked `small_scale: yes`. A claim takes the best experiment that tests it. A claim with an experiment at R2 or above gets the label measured here. A small experiment is a check at this scale, not a reproduction of the result of the paper.
+
 ## Evidence labels
 
 Each claim of a page is in the file `claims.yaml` of the page, with a type and its sources. The claim sentence in the text ends with a chip. The build computes the label of the chip from the sources of the claim. The writer does not write it.

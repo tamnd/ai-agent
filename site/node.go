@@ -39,6 +39,7 @@ type NodePage struct {
 	Sources  []SourceView
 	Facts    []FactView
 	Claims   []ClaimView
+	Exps     []ExpView
 	Share    string // the claim share line of "About this page"
 	Edit     string
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
@@ -345,6 +346,14 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 			html = insertBefore(html, b.snippet("evidence-section", p), "history", "exercises", "references")
 		}
 	}
+	p.Exps = b.expViews(n)
+	if len(p.Exps) > 0 {
+		if hasH2(html, "experiments") {
+			html = insertAfterSection(html, b.snippet("exp-list", p), "experiments")
+		} else {
+			html = insertBefore(html, b.snippet("exp-section", p), "history", "exercises", "references")
+		}
+	}
 	p.Sources = b.sourceViews(n)
 	if len(p.Sources) > 0 {
 		if hasH2(html, "references") {
@@ -394,6 +403,9 @@ func rungs(s status.Status) []RungView {
 	out = append(out, RungView{Ladder: "Visual", Rung: s.V}, RungView{Ladder: "Writing", Rung: s.W})
 	if s.D != nil {
 		out = append(out, RungView{Ladder: "Data facts", Rung: *s.D})
+	}
+	if s.R != nil {
+		out = append(out, RungView{Ladder: "Reproduction", Rung: *s.R})
 	}
 	return out
 }

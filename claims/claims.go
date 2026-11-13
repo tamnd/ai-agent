@@ -128,6 +128,9 @@ type Claim struct {
 	SelfReported bool       `yaml:"self_reported,omitempty" json:"self_reported,omitempty"`
 	SupersededBy string     `yaml:"superseded_by,omitempty" json:"superseded_by,omitempty"`
 	ReviewAfter  string     `yaml:"review_after,omitempty" json:"review_after,omitempty"`
+	// SmallScale tells if the claim has a small-scale form that an experiment can test: yes, no or partial (spec 9.2). SmallScaleNote says why.
+	SmallScale     string `yaml:"small_scale,omitempty" json:"small_scale,omitempty"`
+	SmallScaleNote string `yaml:"small_scale_note,omitempty" json:"small_scale_note,omitempty"`
 
 	// Extra catches the other keys of the record while it is read. Read rejects an unknown key, and keeps a computed key in Written.
 	Extra map[string]any `yaml:",inline" json:"-"`

@@ -156,3 +156,14 @@ func TestClaimRules(t *testing.T) {
 		}
 	}
 }
+
+func TestSmallScale(t *testing.T) {
+	cy := "- id: c-fits\n  type: empirical\n  text: The toy model fits the data.\n  scope: {models: toy}\n  small_scale: maybe\n  evidence:\n    - {work: paper, role: original, stance: for, locator: \"Table 2\"}\n- id: c-toy\n  type: definitional\n  text: A toy is a small model.\n  small_scale: yes\n  evidence:\n    - {work: paper, role: original, stance: for, locator: \"p. 1\"}\n"
+	fs := Run(fixture(t, map[string]string{modelDir + "node.md": claimNode, modelDir + "claims.yaml": cy}), Options{})
+	if got := fired(fs, "T01"); !slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, `small_scale: "maybe"`) }) {
+		t.Errorf("T01 = %q", got)
+	}
+	if got := fired(fs, "T02"); !slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, `the definitional claim "c-toy" has small_scale`) }) {
+		t.Errorf("T02 = %q", got)
+	}
+}

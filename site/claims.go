@@ -10,6 +10,7 @@ import (
 
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/node"
+	"github.com/tamnd/ai-agent/status"
 )
 
 // ClaimView is one row of the Evidence table and the data of one claim chip (spec 07.12).
@@ -36,13 +37,25 @@ type ClaimSourceView struct {
 	Stance  string
 }
 
-// computeClaims sets the computed fields of each claim of the corpus. The citation check (13.6) is not in aik yet, so no source is grounded and no claim gets a label.
+// computeClaims sets the computed fields of each claim of the corpus. The citation check (13.6) is not in aik yet, so no source is grounded, and only the experiments of the node give a label (measured here).
 func computeClaims(c *node.Corpus) {
 	for _, n := range c.Nodes {
+		env := measuredEnv{m: status.Measured(n, status.Env{Corpus: c})}
 		for i := range n.Claims {
-			claims.Compute(&n.Claims[i], claims.NoChecks{})
+			claims.Compute(&n.Claims[i], env)
 		}
 	}
+}
+
+// measuredEnv is the claims.Env of the build: it knows the experiments of the node, and has none of the other checks yet.
+type measuredEnv struct {
+	claims.NoChecks
+	m map[string][2]bool
+}
+
+func (e measuredEnv) Measured(c *claims.Claim) (bool, bool) {
+	r := e.m[c.ID]
+	return r[0], r[1]
 }
 
 func claimView(c *claims.Claim) ClaimView {
