@@ -331,7 +331,13 @@ func readImpls(root string, n *Node) error {
 			if err != nil {
 				return err
 			}
-			if d.IsDir() || strings.HasPrefix(d.Name(), ".") {
+			if d.IsDir() {
+				if p != dir && skipDir(d.Name()) {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if strings.HasPrefix(d.Name(), ".") {
 				return nil
 			}
 			b, err := os.ReadFile(p)
@@ -362,6 +368,11 @@ func readImpls(root string, n *Node) error {
 		}
 	}
 	return nil
+}
+
+// skipDir reports whether the walk of an implementation skips a directory. The test tools write caches there, such as __pycache__, .pytest_cache and .hypothesis, and they are not part of the implementation.
+func skipDir(name string) bool {
+	return strings.HasPrefix(name, ".") || name == "__pycache__" || name == "node_modules"
 }
 
 func readProofs(root string, n *Node) error {
