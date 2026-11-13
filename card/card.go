@@ -168,7 +168,7 @@ func Parse(b []byte) (*Card, error) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		if !notFacts[k] && !(resultFields[k] && (c.Kind == "result" || k == "versions")) {
+		if !notFacts[k] && (!resultFields[k] || c.Kind != "result" && k != "versions") {
 			c.facts(k, c.Fields[k])
 		}
 	}

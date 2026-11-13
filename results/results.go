@@ -171,7 +171,7 @@ func Load(c *node.Corpus) *Register {
 		}
 		var vs []*Version
 		if err := yaml.Unmarshal(b, &vs); err != nil {
-			reg.VersionErrs = append(reg.VersionErrs, fmt.Errorf("%s/%s: %v", n.Rel, ReleasesFile, err))
+			reg.VersionErrs = append(reg.VersionErrs, fmt.Errorf("%s/%s: %w", n.Rel, ReleasesFile, err))
 		}
 		add(n.Slug, vs)
 	}
@@ -239,7 +239,7 @@ func Tolerance(unit string, v float64) float64 {
 
 // independent tells if two results are from independent sources: the sources differ, and the developer does not report both.
 func independent(a, b *Result) bool {
-	return a.Source.Src != b.Source.Src && !(a.SelfReported && b.SelfReported)
+	return a.Source.Src != b.Source.Src && (!a.SelfReported || !b.SelfReported)
 }
 
 // MeasuredBy tells if our harness produced the result (spec 10.4).
