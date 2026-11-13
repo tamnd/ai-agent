@@ -329,7 +329,7 @@ Code from a pull request runs only inside the sandbox, on CI runners or the buil
 
 ### 8.9.3 The cache
 
-A test result is cached under the hash of the implementation files, the fixtures, the vectors, `shapes.yaml`, `contract.yaml`, the test files and the image digest. A change to the NumPy reference invalidates every framework of that node, because it is their oracle.
+A test result is cached under the hash of the implementation files, the fixtures, the vectors, `shapes.yaml`, `contract.yaml`, the test files and the image digest. A change to the NumPy reference invalidates every framework of that node, because it is their oracle. A mutation run (`aik test -kind mutate -cache`) is cached the same way, under the sample size and the seeds as well, and only a run that reaches the threshold is kept, so that a run under it runs again.
 
 ### 8.9.4 Scale (Estimate)
 

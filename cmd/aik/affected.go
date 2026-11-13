@@ -165,6 +165,13 @@ func (tc *testCache) key(tool string, n *node.Node, im node.Impl, ks []*contract
 	for _, f := range im.Files {
 		fmt.Fprintf(h, "file %s %d\n%s\n", f.Name, len(f.Content), f.Content)
 	}
+	// The metric vectors read contract.yaml, and the tests of an architecture read shapes.yaml (8.9.3).
+	for _, name := range []string{"contract.yaml", "shapes.yaml"} {
+		if b, err := os.ReadFile(filepath.Join(n.Dir, name)); err == nil {
+			fmt.Fprintf(h, "node %s %d\n", name, len(b))
+			h.Write(b)
+		}
+	}
 	shared, _ := lang.Shared(n)
 	for _, rel := range shared {
 		b, err := os.ReadFile(filepath.Join(n.Dir, filepath.FromSlash(rel)))
