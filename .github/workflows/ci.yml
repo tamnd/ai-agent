@@ -84,6 +84,22 @@ jobs:
           path: build/site
           retention-days: 7
 
+  work:
+    name: Pipeline scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The system Python of the runner, with PyYAML from apt, so that no package comes from pip without a hash.
+      - name: PyYAML
+        run: /usr/bin/python3 -c 'import yaml' || { sudo apt-get update -q && sudo apt-get install -y -q python3-yaml; }
+      - run: /usr/bin/python3 -m py_compile work/*.py
+      - run: /usr/bin/python3 -m unittest discover -s work -p 'test_*.py' -v
+      - run: bash -n work/ship.sh && bash -n work/deploy.sh
+      - run: shellcheck work/*.sh
+
   workflows:
     name: Check workflows
     runs-on: ubuntu-latest
