@@ -328,7 +328,8 @@ func readImpls(root string, n *Node) error {
 		return err
 	}
 	for _, l := range langs {
-		if !l.IsDir() {
+		// A tool's cache next to the frameworks, such as .ruff_cache or __pycache__, is not a framework.
+		if !l.IsDir() || skipDir(l.Name()) {
 			continue
 		}
 		im := Impl{Lang: l.Name()}
