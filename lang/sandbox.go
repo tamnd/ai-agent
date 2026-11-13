@@ -62,6 +62,15 @@ func LoadImages(path string) (map[string]string, error) {
 	return m, nil
 }
 
+// Image gives the image of the language or the framework. A framework with no image of its own uses the image of its language.
+func (s *Sandbox) Image(lang string) (string, bool) {
+	if ref, ok := s.Images[lang]; ok {
+		return ref, true
+	}
+	ref, ok := s.Images[Frameworks[lang]]
+	return ref, ok
+}
+
 // NewSandbox returns a sandbox with the default limits.
 func NewSandbox(engine string, images map[string]string) *Sandbox {
 	return &Sandbox{Engine: engine, Images: images, Memory: "2g", CPUs: "2", Pids: 512}
@@ -69,7 +78,7 @@ func NewSandbox(engine string, images map[string]string) *Sandbox {
 
 // Ready pulls the image of the language once. It returns a Skip when the manifest has no image for the language.
 func (s *Sandbox) Ready(lang string) error {
-	ref, ok := s.Images[lang]
+	ref, ok := s.Image(lang)
 	if !ok {
 		return Skip{lang, "image"}
 	}
@@ -135,7 +144,8 @@ func (s *Sandbox) Argv(lang string, interactive bool, mounts []Mount, cmd []stri
 	for _, e := range env {
 		a = append(a, "-e", e)
 	}
-	return append(append(a, s.Images[lang]), cmd...)
+	ref, _ := s.Image(lang)
+	return append(append(a, ref), cmd...)
 }
 
 // Version returns the first line of the version output of the toolchain in the image.
@@ -148,7 +158,9 @@ func (s *Sandbox) Version(lang string, cmd []string) string {
 	s.mu.Unlock()
 	v := ""
 	if s.Ready(lang) == nil {
-		args := []string{s.Engine, "run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp", "-e", "HOME=/tmp", "-e", "DOTNET_CLI_HOME=/tmp", s.Images[lang]}
+		args := []string{s.Engine, "run", "--rm", "--network", "none", "--read-only", "--tmpfs", "/tmp", "-e", "HOME=/tmp", "-e", "DOTNET_CLI_HOME=/tmp"}
+		ref, _ := s.Image(lang)
+		args = append(args, ref)
 		if out, err := exec.Command(args[0], append(args[1:], cmd...)...).CombinedOutput(); err == nil {
 			v = strings.TrimSpace(strings.SplitN(strings.TrimSpace(string(out)), "\n", 2)[0])
 		}

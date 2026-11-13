@@ -55,6 +55,18 @@ var Recipes = map[string]Recipe{
 	"csharp":     {ID: "csharp", Tools: []string{"dotnet"}, Version: []string{"dotnet", "--version"}, Run: csharp},
 }
 
+// Frameworks maps each framework of spec 08.2 that has a recipe to the language of its code. The framework uses the recipe and the adapter of its language. When the image manifest has no image for the framework, it uses the image of its language.
+var Frameworks = map[string]string{"numpy": "python", "pytorch": "python", "jax": "python"}
+
+func init() {
+	for fw, l := range Frameworks {
+		rc := Recipes[l]
+		rc.ID = fw
+		Recipes[fw] = rc
+		adapters[fw] = adapters[l]
+	}
+}
+
 // Runner runs tests and keeps the results.
 type Runner struct {
 	// Cache holds the downloaded jars. The default is the user cache directory.
