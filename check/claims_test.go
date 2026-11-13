@@ -115,7 +115,7 @@ func TestClaimRules(t *testing.T) {
 			`superseded by "c-nowhere"`,
 		},
 		"T05": {`the claim "c-new" has the field "labels"`},
-		"T06": {`the definitional claim "c-new" has a scope`, `the source 1 of the claim "c-new" has reuses`},
+		"T02": {`the definitional claim "c-new" has a scope`, `the source 1 of the claim "c-new" has reuses`},
 		"G01": {`the source 1 of the claim "c-wide" names no work`},
 		"G02": {`the claim "c-theorem" has no source`, `the claim "Bad" has no source`},
 		"G03": {`the source 1 of the claim "c-old" has no locator`},

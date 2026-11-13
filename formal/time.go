@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// The limits of rule L10 (spec 11.13). A module that takes more than SlowModule to build gets a warning, and a module that takes more than TooSlowModule blocks the merge.
+// The limits of rule F10 (spec 11.13). A module that takes more than SlowModule to build gets a warning, and a module that takes more than TooSlowModule blocks the merge.
 const (
 	SlowModule    = 60 * time.Second
 	TooSlowModule = 300 * time.Second
@@ -104,14 +104,14 @@ func ownTime(log string) (time.Duration, bool) {
 	return sum, true
 }
 
-// CheckTimes reports each module that is slower than SlowModule (rule L10). The finding is a warning up to TooSlowModule, and blocks above it.
+// CheckTimes reports each module that is slower than SlowModule (rule F10). The finding is a warning up to TooSlowModule, and blocks above it.
 func CheckTimes(ts []ModuleTime) []Finding {
 	var out []Finding
 	for _, t := range ts {
 		if t.Took <= SlowModule {
 			continue
 		}
-		f := Finding{Rule: "L10", Where: t.File, Severity: "warn", Msg: fmt.Sprintf("the module %s takes %s to build, more than %s; make the proofs faster", t.Module, t.Took.Round(time.Second), SlowModule)}
+		f := Finding{Rule: "F10", Where: t.File, Severity: "warn", Msg: fmt.Sprintf("the module %s takes %s to build, more than %s; make the proofs faster", t.Module, t.Took.Round(time.Second), SlowModule)}
 		if t.Took > TooSlowModule {
 			f.Severity = "block"
 			f.Msg = fmt.Sprintf("the module %s takes %s to build, more than %s", t.Module, t.Took.Round(time.Second), TooSlowModule)

@@ -1,4 +1,4 @@
-# The language register of spec 08.2. An implementation in a language merges only when the language is here (rule I12).
+# The language register of spec 08.2. An implementation in a language merges only when the language is here (rule X12).
 # Tier 1 is required for each node of the core. Tier 2 is required for each core node from milestone M3.
 - id: python
   name: Python

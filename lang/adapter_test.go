@@ -99,7 +99,7 @@ func TestSharedPython(t *testing.T) {
 		t.Fatalf("an exception: %+v", s)
 	}
 
-	// A flaky case counts as a failure, also when it passes (S09).
+	// A flaky case counts as a failure, also when it passes (M04).
 	flaky := append([]contract.Case(nil), cases...)
 	flaky[1].Flaky, flaky[1].Issue = true, "#7"
 	s = r.Shared(n, pyImpl(goodSort), k, flaky)

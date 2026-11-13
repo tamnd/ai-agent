@@ -86,7 +86,7 @@ type Case struct {
 	Args      map[string]json.RawMessage `json:"args"`
 	Expect    json.RawMessage            `json:"expect,omitempty"`
 	ExpectAny []json.RawMessage          `json:"expect_any,omitempty"`
-	// Flaky marks a case that gave two results on the same input (rule S09). It counts as a failure, and Issue names the open issue.
+	// Flaky marks a case that gave two results on the same input (rule M04). It counts as a failure, and Issue names the open issue.
 	Flaky bool   `json:"flaky,omitempty"`
 	Issue string `json:"issue,omitempty"`
 	// Found names the node and the language that a regression case broke, such as merge-sort/go (spec 09.11).

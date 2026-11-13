@@ -16,7 +16,7 @@ func leanFile(mod string) string {
 	return "lean/" + strings.ReplaceAll(mod, ".", "/") + ".lean"
 }
 
-// leanNode runs the L rules of one node. L04 needs only the files. The others need the declarations of aik lean build.
+// leanNode runs the L rules of one node. F02 needs only the files. The others need the declarations of aik lean build.
 func (r *run) leanNode(n *node.Node) {
 	mod := n.Lean["module"]
 	if mod == "" {
@@ -25,12 +25,12 @@ func (r *run) leanNode(n *node.Node) {
 	p := n.Rel + "/node.md"
 	file := leanFile(mod)
 	if _, err := os.Stat(filepath.Join(r.root, filepath.FromSlash(file))); err != nil {
-		r.add("L01", Block, p, 0, "lean.module is %s, but %s does not exist", mod, file)
+		r.add("F01", Block, p, 0, "lean.module is %s, but %s does not exist", mod, file)
 		return
 	}
 	if n.Level == "core" {
 		if ok, why := status.Reviewed(r.root, n.Tag, "lean-spec", filepath.Join(r.root, filepath.FromSlash(file))); !ok {
-			r.add("L04", Level, p, 0, "the Lean spec of a core node needs a fidelity review by a person: %s", why)
+			r.add("F02", Level, p, 0, "the Lean spec of a core node needs a fidelity review by a person: %s", why)
 		}
 	}
 	if r.opt.Decls == nil {
@@ -43,7 +43,7 @@ func (r *run) leanNode(n *node.Node) {
 	}
 }
 
-// leanDecls runs the axiom rule on each declaration (L03).
+// leanDecls runs the axiom rule on each declaration (F03).
 func (r *run) leanDecls() {
 	if r.opt.Decls == nil || len(r.opt.Only) > 0 {
 		return

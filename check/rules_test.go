@@ -38,6 +38,17 @@ func fixture(t *testing.T, files map[string]string) *node.Corpus {
 	return c
 }
 
+// only keeps the findings that contain sub. M04 holds several checks of the task contract, and a test looks at one of them.
+func only(fs []string, sub string) []string {
+	var out []string
+	for _, f := range fs {
+		if strings.Contains(f, sub) {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
 // fired returns the findings of the rule, as path: message.
 func fired(fs []Finding, rule string) []string {
 	var out []string
@@ -77,12 +88,14 @@ func TestSRules(t *testing.T) {
 	bs.Complexity.Time["worst"] = "Θ(log m)"
 	fs := Run(c, Options{})
 	for rule, want := range map[string][]string{
-		"S01": {`the claim "Θ(log m)" uses "m"`},
-		"S03": {"needs checker_cases.jsonl"},
-		"S04": {`no case has the edge class "missing"`, `the class "odd" is not in edge_classes`},
-		"S05": {`the generator name "uniform" is empty or used twice`, `the file "../x.py"`, `uses "import random"`},
-		"S06": {"needs a review by a person: no review record reviews/ABCDEF/contract.yaml"},
-		"S09": {"the flaky case e1 needs an issue"},
+		"T01": {`the claim "Θ(log m)" uses "m"`},
+		"M04": {
+			"needs checker_cases.jsonl",
+			`no case has the edge class "missing"`, `the class "odd" is not in edge_classes`,
+			`the generator name "uniform" is empty or used twice`, `the file "../x.py"`, `uses "import random"`,
+			"needs a review by a person: no review record reviews/ABCDEF/contract.yaml",
+			"the flaky case e1 needs an issue",
+		},
 	} {
 		got := fired(fs, rule)
 		for _, w := range want {
@@ -91,12 +104,14 @@ func TestSRules(t *testing.T) {
 			}
 		}
 	}
-	if got := fired(fs, "S04"); len(got) > 0 && !strings.Contains(got[0], ": level: ") {
-		t.Errorf("S04 is not a level rule: %q", got)
+	for _, f := range fired(fs, "M04") {
+		if strings.Contains(f, "needs a review by a person") && !strings.Contains(f, ": level: ") {
+			t.Errorf("the contract review is not a level finding: %q", f)
+		}
 	}
 }
 
-func TestS02AndS03Cases(t *testing.T) {
+func TestCasesAndCheckerCases(t *testing.T) {
 	c := fixture(t, map[string]string{
 		problemDir + "contract.yaml":       searchContract,
 		problemDir + "checker.py":          "",
@@ -104,24 +119,24 @@ func TestS02AndS03Cases(t *testing.T) {
 		problemDir + "checker_cases.jsonl": `{"name":"ok","args":{"a":[1],"x":1},"output":0,"valid":true}` + "\n" + `{"name":"bad","args":{"a":[1],"x":1},"output":5,"valid":false}` + "\n",
 	})
 	fs := Run(c, Options{})
-	if got := fired(fs, "S02"); len(got) != 1 || !strings.Contains(got[0], "cases/basic.jsonl:1") {
-		t.Errorf("S02 = %q", got)
+	if got := fired(fs, "T01"); len(got) != 1 || !strings.Contains(got[0], "cases/basic.jsonl:1") {
+		t.Errorf("T01 = %q", got)
 	}
 	c = fixture(t, map[string]string{
 		problemDir + "contract.yaml":       searchContract,
 		problemDir + "checker.py":          "",
 		problemDir + "checker_cases.jsonl": `{"name":"ok","args":{"a":[1],"x":1},"output":0,"valid":true}` + "\n" + `{"name":"bad","args":{"a":[1],"x":1},"output":5,"valid":false}` + "\n",
 	})
-	if got := fired(Run(c, Options{}), "S03"); len(got) != 1 || !strings.Contains(got[0], "the invalid output bad needs a note") {
-		t.Errorf("S03 = %q", got)
+	if got := only(fired(Run(c, Options{}), "M04"), "checker_cases.jsonl"); len(got) != 1 || !strings.Contains(got[0], "the invalid output bad needs a note") {
+		t.Errorf("M04 = %q", got)
 	}
 	c = fixture(t, map[string]string{problemDir + "contract.yaml": strings.Replace(searchContract, "checker: custom", "checker: fuzzy", 1)})
-	if got := fired(Run(c, Options{}), "S01"); len(got) != 1 || !strings.Contains(got[0], `"fuzzy" is not a checker kind`) {
-		t.Errorf("S01 = %q", got)
+	if got := fired(Run(c, Options{}), "T01"); len(got) != 1 || !strings.Contains(got[0], `"fuzzy" is not a checker kind`) {
+		t.Errorf("T01 = %q", got)
 	}
 }
 
-func TestS03Run(t *testing.T) {
+func TestCheckerCasesRun(t *testing.T) {
 	if _, err := exec.LookPath("python3"); err != nil {
 		t.Skip("no python3")
 	}
@@ -140,18 +155,18 @@ func TestS03Run(t *testing.T) {
 			`{"name":"lax","args":{"a":[1,2],"x":1},"output":0,"valid":false,"note":"the checker must reject it, but it is right"}` + "\n",
 	})
 	run := func(k *contract.Contract) (*contract.Custom, error) { return k.StartCustom(nil) }
-	got := fired(Run(c, Options{Rule: "S03", Checker: run}), "S03")
+	got := only(fired(Run(c, Options{Rule: "M04", Checker: run}), "M04"), "checker_cases.jsonl")
 	want := []string{"checker_cases.jsonl: block: the checker rejects the valid output wrong: not an index of x", "checker_cases.jsonl: block: the checker accepts the invalid output lax"}
 	if len(got) != len(want) {
-		t.Fatalf("S03 = %q", got)
+		t.Fatalf("M04 = %q", got)
 	}
 	for i, w := range want {
 		if !strings.Contains(got[i], w) {
-			t.Errorf("S03[%d] = %q, want %q", i, got[i], w)
+			t.Errorf("M04[%d] = %q, want %q", i, got[i], w)
 		}
 	}
-	if got := fired(Run(c, Options{Rule: "S03"}), "S03"); len(got) != 0 {
-		t.Errorf("without Checker, S03 = %q", got)
+	if got := only(fired(Run(c, Options{Rule: "M04"}), "M04"), "checker_cases.jsonl"); len(got) != 0 {
+		t.Errorf("without Checker, M04 = %q", got)
 	}
 }
 
@@ -166,27 +181,28 @@ func TestLRules(t *testing.T) {
 		"AI.Search.BinarySearch.ok":     {Decl: "AI.Search.BinarySearch.ok", Kind: "theorem", Module: "AI.Search.BinarySearch", Type: "True", Axioms: []string{"sorryAx"}, Sorry: true, Pos: &formal.Pos{Line: 3, EndLine: 4}},
 	}
 	fs := Run(c, Options{Decls: ds})
-	for rule, want := range map[string]string{
-		"L01": "lean.cost: AI.Search.BinarySearch.cost is not a declaration",
-		"L02": "does not mention the spec AI.Search.Spec",
-		"L03": "lean/AI/Search/BinarySearch.lean: block: AI.Search.BinarySearch.ok uses the axiom sorryAx (a sorry)",
-		"L04": "needs a fidelity review by a person: no review record reviews/ABCDEF/lean-spec.yaml",
-		"L05": "time.worst: Θ(log n) has no class lemma in AI.Search.BinarySearch",
-		"L07": "AI.Search.BinarySearch.search is not computable",
-		"L09": "AI.Search.BinarySearch does not mirror the node path",
+	for _, tc := range []struct{ rule, want string }{
+		{"F01", "lean.cost: AI.Search.BinarySearch.cost is not a declaration"},
+		{"F02", "does not mention the spec AI.Search.Spec"},
+		{"F03", "lean/AI/Search/BinarySearch.lean: block: AI.Search.BinarySearch.ok uses the axiom sorryAx (a sorry)"},
+		{"F02", "needs a fidelity review by a person: no review record reviews/ABCDEF/lean-spec.yaml"},
+		{"F01", "level: time.worst: Θ(log n) has no class lemma in AI.Search.BinarySearch"},
+		{"F06", "AI.Search.BinarySearch.search is not computable"},
+		{"F07", "AI.Search.BinarySearch does not mirror the node path"},
 	} {
+		rule, want := tc.rule, tc.want
 		got := fired(fs, rule)
 		if !slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, want) }) {
 			t.Errorf("%s does not report %q; it reports %q", rule, want, got)
 		}
 	}
 	n.Lean["module"] = "AI.Search.Missing"
-	if got := fired(Run(c, Options{}), "L01"); len(got) != 1 || !strings.Contains(got[0], "lean/AI/Search/Missing.lean does not exist") {
-		t.Errorf("L01 for a missing module = %q", got)
+	if got := fired(Run(c, Options{}), "F01"); len(got) != 1 || !strings.Contains(got[0], "lean/AI/Search/Missing.lean does not exist") {
+		t.Errorf("F01 for a missing module = %q", got)
 	}
 }
 
-func TestS08(t *testing.T) {
+func TestMutantsIgnore(t *testing.T) {
 	const ignore = "nodes/searching/sequential-and-binary-search/binary-search/impl/python/mutants.ignore"
 	tests := []struct {
 		name, text, want string
@@ -202,7 +218,7 @@ func TestS08(t *testing.T) {
 		if tc.text != "" {
 			files[ignore] = "# The equivalent mutants.\n" + tc.text
 		}
-		got := fired(Run(fixture(t, files), Options{}), "S08")
+		got := fired(Run(fixture(t, files), Options{}), "X10")
 		switch {
 		case tc.want == "" && len(got) > 0:
 			t.Errorf("%s: %v, want no finding", tc.name, got)

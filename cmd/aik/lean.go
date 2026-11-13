@@ -32,7 +32,7 @@ func cmdLeanBuild(args []string) error {
 	sandbox := f.String("sandbox", "none", "run lake in a container of the Lean image: docker, podman or none")
 	images := f.String("images", "manifests/images.yaml", "the image manifest, for -sandbox")
 	verbose := f.Bool("v", false, "show the output of lake")
-	timed := f.Bool("time", false, "after the build, elaborate each module again and report a slow module (L10)")
+	timed := f.Bool("time", false, "after the build, elaborate each module again and report a slow module (F10)")
 	if err := parse(f, args); err != nil {
 		return err
 	}

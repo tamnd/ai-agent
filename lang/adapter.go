@@ -138,7 +138,7 @@ func (r *Runner) Shared(n *node.Node, im node.Impl, k *contract.Contract, cases 
 			continue
 		}
 		if c.Flaky {
-			// A flaky case counts as a failure, also when this run passes it (rule S09).
+			// A flaky case counts as a failure, also when this run passes it (rule M04).
 			f := status.CaseFailure{Case: c.ID(), Reason: "the case passes in this run, but " + flakyNote(c)}
 			s.Failures = append(s.Failures, f)
 			continue

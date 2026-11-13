@@ -262,7 +262,7 @@ func (k *Contract) StartGenerator(wrap func(argv []string) []string) (*Generator
 	return &Generator{p: p, k: k}, nil
 }
 
-// Make runs one request and gives the cases that it makes, without expect. Each case is checked against the contract, so a bad input is a generator bug (rule S05).
+// Make runs one request and gives the cases that it makes, without expect. Each case is checked against the contract, so a bad input is a generator bug (rule M04).
 func (g *Generator) Make(q GenRequest) ([]Case, error) {
 	line, err := g.p.Call(q, 60*time.Second)
 	if err != nil {
@@ -276,7 +276,7 @@ func (g *Generator) Make(q GenRequest) ([]Case, error) {
 		return nil, jsonl.Errorf(line, "the generator %s wrote a line that is not a list of inputs", q.Gen)
 	}
 	if r.Error != "" {
-		return nil, fmt.Errorf("the generator %s (n = %d) raised %s (S05)", q.Gen, q.N, r.Error)
+		return nil, fmt.Errorf("the generator %s (n = %d) raised %s (M04)", q.Gen, q.N, r.Error)
 	}
 	var out []Case
 	for i, in := range r.Inputs {
@@ -285,7 +285,7 @@ func (g *Generator) Make(q GenRequest) ([]Case, error) {
 			c.T = ""
 		}
 		if err := g.k.CheckArgs(c); err != nil {
-			return nil, fmt.Errorf("the generator %s (n = %d) gives an input that does not meet the contract (S05): %w", q.Gen, q.N, err)
+			return nil, fmt.Errorf("the generator %s (n = %d) gives an input that does not meet the contract (M04): %w", q.Gen, q.N, err)
 		}
 		out = append(out, c)
 	}

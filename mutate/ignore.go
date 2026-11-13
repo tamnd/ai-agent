@@ -12,7 +12,7 @@ import (
 // IgnoreFile is the name of the list of equivalent mutants in impl/<lang>/ (spec 09.6).
 const IgnoreFile = "mutants.ignore"
 
-// MaxIgnored is the largest part of the mutants of an implementation that mutants.ignore can list (rule S08).
+// MaxIgnored is the largest part of the mutants of an implementation that mutants.ignore can list (rule X10).
 const MaxIgnored = 0.05
 
 // Ignore is one entry of mutants.ignore: the id of an equivalent mutant and the reason why it cannot change the output.

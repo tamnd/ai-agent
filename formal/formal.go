@@ -158,7 +158,7 @@ func (o Options) run(ctx context.Context, dir string, env []string, argv ...stri
 
 // Finding is one problem that Check finds.
 type Finding struct {
-	// Rule is the rule of 11.13, such as L01 or L03.
+	// Rule is the rule of 11.13, such as F01 or F03.
 	Rule string
 	// Where is the declaration, or the node and its field.
 	Where string
@@ -166,12 +166,12 @@ type Finding struct {
 	// Node is the slug of the node of the finding, and Decl the declaration, when there is one.
 	Node string
 	Decl string
-	// Severity, when it is not empty, overrides the severity of the rule in Severities. L10 uses it, because a slow module is a warning and a very slow module blocks.
+	// Severity, when it is not empty, overrides the severity of the rule in Severities. F10 uses it, because a slow module is a warning and a very slow module blocks.
 	Severity string
 }
 
-// Severities are the severities of the L rules in 13.3: a block rule stops a merge, and a level rule keeps the node below the level that needs it.
-var Severities = map[string]string{"L01": "block", "L02": "level", "L03": "block", "L05": "level", "L07": "level", "L09": "block", "L10": "warn"}
+// Severities are the severities of the F rules of spec 11: a block rule stops a merge, and a level rule keeps the node below the level that needs it.
+var Severities = map[string]string{"F01": "block", "F02": "level", "F03": "block", "F06": "level", "F07": "block", "F10": "warn"}
 
 func (f Finding) String() string { return f.Rule + " " + f.Where + ": " + f.Msg }
 
@@ -192,7 +192,7 @@ var Kinds = map[string][]string{
 	"space":   {"theorem"},
 }
 
-// Check reports each declaration that uses an axiom outside the policy (rule L03), and each name of a lean field that is not in ds or has the wrong kind (rule L01). The findings are in a stable order.
+// Check reports each declaration that uses an axiom outside the policy (rule F03), and each name of a lean field that is not in ds or has the wrong kind (rule F01). The findings are in a stable order.
 func Check(c *node.Corpus, ds Decls) []Finding {
 	var out []Finding
 	names := make([]string, 0, len(ds))
@@ -207,7 +207,7 @@ func Check(c *node.Corpus, ds Decls) []Finding {
 			if d.Sorry {
 				msg += " (a sorry)"
 			}
-			out = append(out, Finding{Rule: "L03", Where: d.Decl, Msg: msg, Decl: d.Decl})
+			out = append(out, Finding{Rule: "F03", Where: d.Decl, Msg: msg, Decl: d.Decl})
 		}
 	}
 	if c == nil {
@@ -220,7 +220,7 @@ func Check(c *node.Corpus, ds Decls) []Finding {
 	return out
 }
 
-// CheckNode checks the lean field of one node: each name exists with the right kind (L01), the module mirrors the node path (L09), the correctness theorem names the spec and the model (L02), and the model is total and computable (L07).
+// CheckNode checks the lean field of one node: each name exists with the right kind (F01), the module mirrors the node path (F07), the correctness theorem names the spec and the model (F02), and the model is total and computable (F06).
 func CheckNode(n *node.Node, ds Decls) []Finding {
 	var out []Finding
 	mod := n.Lean["module"]
@@ -232,35 +232,35 @@ func CheckNode(n *node.Node, ds Decls) []Finding {
 		where := n.Slug + " lean." + k
 		d, ok := ds[v]
 		if !ok {
-			out = append(out, Finding{Rule: "L01", Where: where, Msg: v + " is not a declaration of the AI package", Node: n.Slug})
+			out = append(out, Finding{Rule: "F01", Where: where, Msg: v + " is not a declaration of the AI package", Node: n.Slug})
 			continue
 		}
 		if want := Kinds[k]; want != nil && !slices.Contains(want, d.Kind) {
-			out = append(out, Finding{Rule: "L01", Where: where, Msg: fmt.Sprintf("%s is of the kind %s, want %s", v, d.Kind, strings.Join(want, " or ")), Node: n.Slug})
+			out = append(out, Finding{Rule: "F01", Where: where, Msg: fmt.Sprintf("%s is of the kind %s, want %s", v, d.Kind, strings.Join(want, " or ")), Node: n.Slug})
 		}
 		if mod != "" && k != "spec" && d.Module != mod {
-			out = append(out, Finding{Rule: "L01", Where: where, Msg: fmt.Sprintf("%s is in the module %s, not in %s", v, d.Module, mod), Node: n.Slug})
+			out = append(out, Finding{Rule: "F01", Where: where, Msg: fmt.Sprintf("%s is in the module %s, not in %s", v, d.Module, mod), Node: n.Slug})
 		}
 	}
 	if mod == "" {
 		return out
 	}
 	if !Mirrors(mod, n.Rel) {
-		out = append(out, Finding{Rule: "L09", Where: n.Slug + " lean.module", Msg: fmt.Sprintf("%s does not mirror the node path; use a module such as %s", mod, MirrorOf(n.Rel)), Node: n.Slug})
+		out = append(out, Finding{Rule: "F07", Where: n.Slug + " lean.module", Msg: fmt.Sprintf("%s does not mirror the node path; use a module such as %s", mod, MirrorOf(n.Rel)), Node: n.Slug})
 	}
 	if c, ok := ds[n.Lean["correct"]]; ok {
 		for _, k := range []string{"spec", "model"} {
 			if name := n.Lean[k]; name != "" && !mentions(c.Type, name) {
-				out = append(out, Finding{Rule: "L02", Where: n.Slug + " lean.correct", Msg: fmt.Sprintf("the statement of %s does not mention the %s %s", c.Decl, k, name), Node: n.Slug})
+				out = append(out, Finding{Rule: "F02", Where: n.Slug + " lean.correct", Msg: fmt.Sprintf("the statement of %s does not mention the %s %s", c.Decl, k, name), Node: n.Slug})
 			}
 		}
 	}
 	if m, ok := ds[n.Lean["model"]]; ok && (m.Kind == "def" || m.Kind == "opaque") {
 		switch {
 		case m.Kind == "opaque":
-			out = append(out, Finding{Rule: "L07", Where: n.Slug + " lean.model", Msg: m.Decl + " is opaque, which a partial def gives; the model must be total", Node: n.Slug})
+			out = append(out, Finding{Rule: "F06", Where: n.Slug + " lean.model", Msg: m.Decl + " is opaque, which a partial def gives; the model must be total", Node: n.Slug})
 		case !m.Computable:
-			out = append(out, Finding{Rule: "L07", Where: n.Slug + " lean.model", Msg: m.Decl + " is not computable, so the oracle cannot run it", Node: n.Slug})
+			out = append(out, Finding{Rule: "F06", Where: n.Slug + " lean.model", Msg: m.Decl + " is not computable, so the oracle cannot run it", Node: n.Slug})
 		}
 	}
 	return out
@@ -307,7 +307,7 @@ func MirrorOf(rel string) string {
 	return "AI." + strings.Join(parts, ".")
 }
 
-// Mirrors tells if a module mirrors the node path (rule L09). The last part is the slug in CamelCase, the first part after AI is the top area, and the parts between are some of the sub-areas, in order. So both AI.Sorting.ComparisonSorts.MergeSort and AI.Sorting.MergeSort mirror nodes/sorting/comparison-sorts/merge-sort.
+// Mirrors tells if a module mirrors the node path (rule F07). The last part is the slug in CamelCase, the first part after AI is the top area, and the parts between are some of the sub-areas, in order. So both AI.Sorting.ComparisonSorts.MergeSort and AI.Sorting.MergeSort mirror nodes/sorting/comparison-sorts/merge-sort.
 func Mirrors(mod, rel string) bool {
 	want := strings.Split(MirrorOf(rel), ".")
 	got := strings.Split(mod, ".")
@@ -381,7 +381,7 @@ func normClass(s string) string {
 	return dropRE.ReplaceAllString(s, "")
 }
 
-// CheckClaims compares the time claims of a node that has lean.cost with the class lemmas of its module (rule L05). A claim with no class lemma of the same class is a finding. Space claims count only when lean.space is set.
+// CheckClaims compares the time claims of a node that has lean.cost with the class lemmas of its module (rule F01). A claim with no class lemma of the same class is a finding. Space claims count only when lean.space is set.
 func CheckClaims(n *node.Node, ds Decls) []Finding {
 	mod := n.Lean["module"]
 	if mod == "" || n.Complexity == nil {
@@ -402,7 +402,8 @@ func CheckClaims(n *node.Node, ds Decls) []Finding {
 			if c == "" || have[c] {
 				continue
 			}
-			out = append(out, Finding{Rule: "L05", Where: n.Slug + " " + group + "." + k, Msg: fmt.Sprintf("%s has no class lemma in %s", m[k], mod), Node: n.Slug})
+			// A missing class lemma keeps the node below L3. It does not block the merge.
+			out = append(out, Finding{Rule: "F01", Severity: "level", Where: n.Slug + " " + group + "." + k, Msg: fmt.Sprintf("%s has no class lemma in %s", m[k], mod), Node: n.Slug})
 		}
 	}
 	if n.Lean["cost"] != "" {
