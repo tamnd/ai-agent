@@ -106,6 +106,11 @@ var Rules = map[string]string{
 	"R06": "expect.yaml exists before the first full run and does not change after it",
 	"R08": "every arm has the same seeds and the same tuning budget",
 	"R09": "the run stayed within the cap of its budget class",
+	"M01": "a result card has a model, a benchmark version, a metric node, a score with unit, a setting, and a source with a locator and a date",
+	"M02": "a result attaches to a version of a benchmark, never to a task or a benchmark with no version",
+	"M03": "the setting uses the keys of 10.5, and a key that the source does not state is unknown",
+	"M08": "a result whose number the citation check did not find is not shown in any table",
+	"M14": "a rating names its arena, its snapshot date, its votes and its interval",
 }
 
 // Options select what to check.
@@ -151,6 +156,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 	}
 	r.tags()
 	r.cards()
+	r.register()
 	r.groups()
 	r.oldSlugs()
 	r.committedBuild()

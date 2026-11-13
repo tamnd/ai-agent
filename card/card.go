@@ -78,6 +78,9 @@ func (e *Error) Error() string { return fmt.Sprintf("%s:%d: %v", e.File, e.Line,
 // notFacts are the fields with an object value that are not facts.
 var notFacts = map[string]bool{"same_as": true, "harvest": true, "rules": true, "aliases": true}
 
+// resultFields are the fields of a result card that are records, not facts (spec 10.6.1).
+var resultFields = map[string]bool{"score": true, "setting": true, "source": true, "checks": true, "versions": true}
+
 // Read reads every shard under root/cards. It returns the cards in the order of the files and their lines, and the lines that are not cards.
 func Read(root string) ([]*Card, []error) {
 	var out []*Card
@@ -165,11 +168,35 @@ func Parse(b []byte) (*Card, error) {
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		if !notFacts[k] {
+		if !notFacts[k] && (!resultFields[k] || c.Kind != "result" && k != "versions") {
 			c.facts(k, c.Fields[k])
 		}
 	}
+	if c.Kind == "result" {
+		c.result()
+	}
 	return c, nil
+}
+
+// result gives a result card the names that it does not write. A result belongs to its benchmark, so the owner is the benchmark and the slug is the tag in lowercase (spec 04.4). The name says the model and the benchmark.
+func (c *Card) result() {
+	str := func(k string) string {
+		var s string
+		_ = json.Unmarshal(c.Fields[k], &s)
+		return s
+	}
+	if c.Owner == "" {
+		c.Owner = str("benchmark")
+	}
+	if c.Slug == "" {
+		c.Slug = strings.ToLower(c.Tag)
+	}
+	if c.Name == "" && str("model") != "" {
+		c.Name = str("model") + " on " + str("benchmark")
+		if v := str("version"); v != "" {
+			c.Name += " " + v
+		}
+	}
 }
 
 // facts reads the fact fields under id. An object with the key v is a fact. Another object holds more fact fields, as training holds training.tokens.

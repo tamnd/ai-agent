@@ -67,6 +67,7 @@ func init() {
 		{"test", "run the native tests and the shared cases", cmdTest},
 		{"lean", "build the Lean package and check its axioms: lean build", cmdLean},
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
+		{"results", "print the computed results table of a benchmark version: results table benchmark@version", cmdResults},
 		{"viz", "bundle and check the scenes: viz build | check", cmdViz},
 		{"oracle", "run the oracle of a problem on its cases or on given arguments", cmdOracle},
 		{"site", "render and preview the site: site build | serve | check", cmdSite},

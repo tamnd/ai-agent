@@ -136,6 +136,7 @@ Rules:
 - A result card has a model (a model node or card), a benchmark version, a metric that is a metric node, a score with its unit, a setting (10.5), a source with a locator, and the source's date (rule M01).
 - The **citation check** (07.5) must find the number in the stored snapshot of the source at the locator, within the rounding of the source, before the card is published (`checks.cite: found`). A card whose number is not found is kept with `checks.cite: not-found`, listed in the inventory report, and not shown in any table (rule M08).
 - A result has one score. A source table with ten benchmarks is ten cards.
+- A result card writes no slug and no name. A result belongs to its benchmark, so `aik` takes the benchmark as the owner of the card, the tag in lowercase as its slug, and makes the name from the model and the benchmark version. The versions of a benchmark are in the field `versions` of its card, or in `releases.yaml` of its node (10.3).
 - `evidence` is computed (07.4): `reported` for one source; `replicated` when an independent source (another lab's paper, our harness, an independent leaderboard) has a result in the same comparable group within the tolerance of the metric (`schema/metrics-tolerance.yaml`, default 1 point of percentage for accuracy-like metrics); `contested` when independent results differ by more than the tolerance; `measured-here` when our harness produced it.
 - Results that the developer reports about its own model are marked `self_reported: true`. The page shows it.
 
