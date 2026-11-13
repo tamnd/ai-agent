@@ -444,3 +444,15 @@ mark { background: color-mix(in srgb, var(--st-compare) 35%, transparent); color
 .decls code.stmt { white-space: pre-wrap; word-break: break-word; background: none; padding: 0; }
 .decls td { vertical-align: top; padding: 0.4rem 0.75rem 0.4rem 0; }
 .decls .doc { color: var(--muted); font-size: 0.88rem; }
+.cards-meta { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: 0.9rem; color: var(--muted); }
+.card-table { width: 100%; font-size: 0.93rem; }
+.card-table th[scope="row"] { min-width: 10rem; }
+.card-table .card-owner, .card-table .card-tag { display: block; font-size: 0.78rem; font-weight: 400; color: var(--muted); }
+.card-table tr:target { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.card-facts { margin: 0; }
+.card-facts div { display: flex; gap: 0.5rem; }
+.card-facts dt { color: var(--muted); }
+.card-facts dd { margin: 0; }
+.card-loc { color: var(--muted); font-size: 0.85rem; }
+.pager ul { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; padding: 0; }
+.pager [aria-current="page"] { font-weight: 700; }

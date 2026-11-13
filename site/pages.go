@@ -361,8 +361,14 @@ var kindIntro = func() map[string]string {
 }()
 
 func (b *builder) kinds() error {
+	cards := b.cardKinds()
 	for _, k := range node.Kinds {
 		if k == "area" {
+			continue
+		}
+		route, hasRoute := collections[k]
+		if len(cards[k]) > 0 && !hasRoute {
+			// The catalogue of the kind is on this path; b.collections writes it.
 			continue
 		}
 		ns := b.c.Kind(k)
@@ -377,6 +383,9 @@ func (b *builder) kinds() error {
 			p.Groups = []Group{{ID: "all", Title: fmt.Sprintf("All %s", kindName(k, true)), Items: b.items(ns)}}
 		} else {
 			p.Empty = fmt.Sprintf("No %s pages exist yet.", kindName(k))
+		}
+		if hasRoute && len(cards[k]) > 0 {
+			p.Body = template.HTML(fmt.Sprintf(`<p>The catalogue of %s, with the cards of the kind, is at <a href="%s">%s</a>.</p>`, kindName(k, true), route, route))
 		}
 		if err := b.page("list", "/kind/"+k+"/", p); err != nil {
 			return err
