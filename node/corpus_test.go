@@ -94,3 +94,36 @@ func TestSplitFront(t *testing.T) {
 		t.Error("a file without front matter gave no error")
 	}
 }
+
+func TestImplSkipsCaches(t *testing.T) {
+	root := t.TempDir()
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	impl := filepath.Join(root, "nodes/searching/sequential-and-binary-search/binary-search/impl/python")
+	for _, f := range []string{"__pycache__/binary_search.cpython-314.pyc", ".hypothesis/constants/a1", ".pytest_cache/v/cache/lastfailed", "node_modules/x/index.js"} {
+		p := filepath.Join(impl, f)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, im := range c.BySlug["binary-search"].Impls {
+		if im.Lang != "python" {
+			continue
+		}
+		for _, f := range im.Files {
+			names = append(names, f.Name)
+		}
+	}
+	if len(names) != 2 || names[0] != "binary_search.py" || names[1] != "test_binary_search.py" {
+		t.Errorf("the python files are %v, want binary_search.py and test_binary_search.py", names)
+	}
+}
