@@ -10,7 +10,7 @@ import (
 // EdgeKeys are the front matter keys whose values name other nodes by slug (spec 04.6).
 var EdgeKeys = []string{
 	"solves", "implements", "techniques", "uses", "variant_of", "generalizes",
-	"model", "complexity_in", "prereqs", "see_also", "exercises",
+	"model", "complexity_in", "prereqs", "see_also", "exercises", "related_to", "applies_to",
 }
 
 var (
