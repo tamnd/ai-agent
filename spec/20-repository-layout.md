@@ -83,7 +83,7 @@ tamnd/ai-agent/
   harness/<benchmark>/                   benchmark adapters for measured-here results (10.4)
   viz/                                   @aik/viz, the scene runtime (MIT, 12)
   site/
-    templates/  assets/  worker/         the Worker `ai` (16.20)
+    templates/  assets/  worker/         the Worker `ai-site` (16.20)
   work/                                  the pipeline scripts (14.1)
     lib.py  catalog.py  curate.py  canon.py  match.py  enrich.py  finalize.py  stub.py  kinds.py
     writer.py  gate.py  audit.py  verify.py  code.py  experiment.py  daily.py

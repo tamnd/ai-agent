@@ -592,7 +592,7 @@ const headers = `/*
   Content-Type: text/plain; charset=utf-8
 `
 
-// redirects returns the rules of _redirects and the map of the other moved paths. Pages reads at most 2,000 rules without a placeholder and 100 with one. The rules hold the old sub-pages and the old slugs of registers/aliases.reg. The tags and the aliases of the nodes are more than 2,000, so they go to /api/moved.json, and the 404 page sends the reader on with the map.
+// redirects returns the rules of _redirects and the map of the other moved paths. The static assets of a Worker read at most 2,000 rules without a placeholder and 100 with one. The rules hold the old sub-pages and the old slugs of registers/aliases.reg. The tags and the aliases of the nodes are more than 2,000, so they go to /api/moved.json, and the 404 page sends the reader on with the map.
 func (b *builder) redirects() (string, map[string]string) {
 	var s strings.Builder
 	moved := map[string]string{}

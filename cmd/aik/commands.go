@@ -850,7 +850,9 @@ func cmdSite(args []string) error {
 	minify := f.Bool("minify", false, "minify the scenes")
 	addr := f.String("addr", "localhost:8150", "the address for serve")
 	var d deployOptions
-	f.StringVar(&d.Project, "project", "ai", "the Cloudflare Pages project, for deploy")
+	// The Worker ai on the account is another app, so the site Worker is ai-site.
+	f.StringVar(&d.Worker, "worker", "ai-site", "the Cloudflare Worker that serves the site, for deploy")
+	f.StringVar(&d.Domain, "domain", "ai.tamnd.com", "the custom domain of production, for deploy")
 	f.StringVar(&d.Branch, "branch", "", "the branch of the deployment; the default is main, or the git branch with -preview")
 	f.BoolVar(&d.Preview, "preview", false, "deploy to a branch alias, not to production")
 	noBuild := f.Bool("no-build", false, "deploy the directory of -out as it is, for deploy")
@@ -945,7 +947,7 @@ func cmdSite(args []string) error {
 	return usageError{fmt.Sprintf("unknown subcommand %q; use build, serve, check or deploy", sub)}
 }
 
-// serveDir serves the site like Cloudflare Pages: /a/ maps to a/index.html, and a missing page gets 404.html.
+// serveDir serves the site like the static assets of a Cloudflare Worker: /a/ maps to a/index.html, and a missing page gets 404.html.
 func serveDir(dir string) http.Handler {
 	files := http.FileServer(http.Dir(dir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

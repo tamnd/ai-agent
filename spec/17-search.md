@@ -283,7 +283,7 @@ A query that fails is reported with the expected item, the actual top 5 and thei
 |---|---|---|---|
 | **S1: keystroke** | M0 | the static index of 17.5, the palette, the id map, the no-script results page served by the Worker from the same shards | Worker assets; the Worker for `/search/` and `/x/`; the query logs of 17.9 in the D1 database `ai-search` |
 | **S2: node full text** | M1 | Pagefind over the HTML of the node pages, loaded on the results page and when the palette has fewer than 3 keystroke results | Worker assets (`search/x/`), about 2,500 files (Estimate) |
-| **S3: full text and agents** | M3 | D1 with FTS5 over all entries with all fields of 17.2, the card text and the twins; the `search` MCP tool and `GET /search.json` | the Worker `ai`, the D1 database `ai-search` (Estimate: 4 GB, inside the 10 GB limit of a D1 database; check at M2) |
+| **S3: full text and agents** | M3 | D1 with FTS5 over all entries with all fields of 17.2, the card text and the twins; the `search` MCP tool and `GET /search.json` | the Worker `ai-site`, the D1 database `ai-search` (Estimate: 4 GB, inside the 10 GB limit of a D1 database; check at M2) |
 | **S4: related** | after M3, if Q-40 is settled yes | vector search over node summaries and sections with a pinned open-weights embedding model; shown only as "Related" under the lexical results, never mixed into them | Cloudflare Vectorize, with the embeddings built by the build server and the model id in `registers/models.yaml` |
 
 - The keystroke path stays static at every stage (Default, Q-39): the palette never waits for the Worker. S3 adds results under the keystroke results when the reader asks for "all results" or presses enter.

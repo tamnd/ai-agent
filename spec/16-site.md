@@ -291,7 +291,7 @@ Agents are a main reader (02.5). Every page and card has a machine form, the sit
 
 **Feeds.** `/feeds/` has Atom feeds of new and changed nodes per top area, new model cards, new result cards per benchmark, new incidents and policy changes, written by the daily job (14.9).
 
-**The MCP server** is at `https://ai.tamnd.com/mcp`, with discovery at `/.well-known/mcp`. It runs in the Worker `ai`, is read-only, needs no account, and is rate limited per IP (Default: 60 requests per minute). Protocol versions as in programming (2150p/16.10).
+**The MCP server** is at `https://ai.tamnd.com/mcp`, with discovery at `/.well-known/mcp`. It runs in the Worker `ai-site`, is read-only, needs no account, and is rate limited per IP (Default: 60 requests per minute). Protocol versions as in programming (2150p/16.10).
 
 | Tool | Input | Output |
 |---|---|---|
@@ -401,7 +401,7 @@ Reports get the label `reader-report`. The work queue (14.5) takes them as gap i
 
 ## 16.20 Hosting
 
-**Decision.** The site runs on the Cloudflare Worker `ai` with static assets and R2 from M0, as programming does. Algorithm started on GitHub Pages and had to move after it passed the file limits at about 3,500 nodes and 19,500 files (01.6). This site has more cards than algorithm has files before M1.
+**Decision.** The site runs on the Cloudflare Worker `ai-site` with static assets and R2 from M0, as programming does. Algorithm started on GitHub Pages and had to move after it passed the file limits at about 3,500 nodes and 19,500 files (01.6). This site has more cards than algorithm has files before M1.
 
 **The file budget** at the scale of 02.4 (all Estimate; recompute at M1 from the universe):
 
@@ -425,7 +425,7 @@ Reports get the label `reader-report`. The work queue (14.5) takes them as gap i
 
 | Outlet | Serves |
 |---|---|
-| **Workers static assets** of the Worker `ai` on `ai.tamnd.com` (Workers Paid) | the **hot set**, at most 95,000 files (the Paid limit is 100,000 files per version and 25 MiB per file, as checked by programming on 2026-11-09; recheck at M0): the shell, the core node pages, area and path pages, first catalogue pages, core benchmark pages, scene bundles, search shards |
+| **Workers static assets** of the Worker `ai-site` on `ai.tamnd.com` (Workers Paid) | the **hot set**, at most 95,000 files (the Paid limit is 100,000 files per version and 25 MiB per file, as checked by programming on 2026-11-09; recheck at M0): the shell, the core node pages, area and path pages, first catalogue pages, core benchmark pages, scene bundles, search shards |
 | **R2 `ai-site`** behind the same Worker | every other file, at its URL path, cached at the edge |
 | **R2 `ai-data`** | `/data/`, with CORS |
 | **R2 `ai-raw`, `ai-runs`** | not served (13, 09) |
@@ -433,7 +433,7 @@ Reports get the label `reader-report`. The work queue (14.5) takes them as gap i
 
 `registers/site-tiers.yaml` decides which files go to the assets, by path pattern and by the core list. `aik site check` fails when the hot set passes 95,000 files or any file passes 25 MiB.
 
-**The Worker `ai`** lives in `ai-agent/worker/`, in TypeScript (Estimate: about 1,500 lines). On each request it tries, in order:
+**The Worker `ai-site`** lives in `ai-agent/worker/`, in TypeScript (Estimate: about 1,500 lines). On each request it tries, in order:
 
 1. **Static assets**, matched before the script, so most requests cost no Worker CPU.
 2. **Content negotiation**: `Accept: text/markdown` on a page path serves the twin.
