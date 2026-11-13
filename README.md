@@ -40,6 +40,7 @@ Run these commands in a clone of tamnd/ai.
 | `aik exp list` | Lists the experiments of the nodes, with the verdict and the date of the last run, and tells when `results.json` is stale. |
 | `aik exp run <slug>` | Runs the experiments of a node in the sandbox, with the limits of the budget class `cpu-small`, and prints the verdict of each test of `expect.yaml`. Add `-update` to write `results.json`. |
 | `aik results table <benchmark>@<version>` | Prints the computed results table of a benchmark version: one block for each comparable group, from the best score down, with the source and the evidence label of each row (spec 10.7). Add `-json` for JSON. |
+| `aik bridge sync al\|m2\|pg` | Reads the index of a neighbour site (algorithm, math2 or programming) and writes its bridge cards to `cards/bridge/<site>/`. A card follows the tag of its item: a renamed item keeps its old slug, and an item that left the neighbour stays with the date of the sync in `retired`. Add `-n` to see the changes and write nothing, and `-from <file>` to read the index from a file (spec 5.9). |
 | `aik lean build` | Builds the Lean package, extracts the declarations and checks the axiom policy. |
 | `aik viz check` | Builds each scene and runs each preset two times. |
 | `aik site serve` | Renders the site and serves it at http://localhost:8150. |

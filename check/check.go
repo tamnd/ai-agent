@@ -56,7 +56,7 @@ var Rules = map[string]string{
 	"T11": "each card shard is sorted by tag, and each card is in the shard of its tag",
 	"T12": "a tag is a card or a node, never both",
 	"T05": "no status, level or badge is written in front matter",
-	"E01": "each edge target exists, as a node or a card",
+	"E01": "each edge target exists, as a node, a card or a bridge card",
 	"E02": "each implements target is an abstract type",
 	"E03": "prereqs edges form a DAG",
 	"E04": "variant_of and generalizes edges have no cycle",
@@ -97,6 +97,7 @@ var Rules = map[string]string{
 	"F07": "the module path mirrors the node path",
 	"F10": "each module builds in at most 60 seconds; aik lean build -time reports it, and a module above 300 seconds blocks",
 	"L01": "each link in a node to /<slug>/ names a node, an area or a site page",
+	"L02": "every neighbour link resolves through a current bridge card (5.9)",
 	"T04": "no node slug is a reserved word, a language id or an area id",
 	"R01": "experiment.yaml is valid, names claims that exist in claims.yaml, and has a control arm for each comparative test",
 	"R02": "every input of an experiment is a generator in its directory or a dataset of registers/data-pins.yaml with a resolved licence and hashed files",
@@ -156,6 +157,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 	}
 	r.tags()
 	r.cards()
+	r.bridges()
 	r.register()
 	r.groups()
 	r.oldSlugs()
@@ -185,6 +187,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.pseudo(n)
 		r.impls(n)
 		r.links(n)
+		r.neighbourLinks(n)
 		r.contracts(n)
 		r.leanNode(n)
 	}
@@ -317,6 +320,9 @@ func (r *run) tags() {
 }
 
 func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
+	if r.bridgeTarget(n, field, slug) {
+		return
+	}
 	p := n.Rel + "/node.md"
 	if slug == n.Slug {
 		r.add("E08", Warn, p, 0, "%s points to its own node", field)
