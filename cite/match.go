@@ -64,17 +64,32 @@ func Numbers(s string) []Number {
 }
 
 // Found tells if the number n of a claim is in the numbers of a source: a number of the source that rounds to n at
-// the precision of n. The page may round the source's number, as 4.1 for 4.08, but not state it more exactly.
+// the precision of n. The page may round the source's number, as 4.1 for 4.08, but not state it more exactly. A
+// percentage of the claim also matches the bare number of a table whose header gives the unit: "74.6 percent" is the
+// 74.6 of a column headed "accuracy (%)".
 func Found(n Number, in []Number) bool {
+	pct := percent(n)
 	for _, x := range in {
-		if x.Step > n.Step*1.0000001 {
-			continue // the source states it less exactly than the claim
+		if rounds(x, n) {
+			return true
 		}
-		if math.Abs(math.Round(x.Value/n.Step)*n.Step-n.Value) <= n.Step*1e-6 {
+		if pct && !percent(x) && rounds(x, Number{Value: n.Value * 100, Step: n.Step * 100}) {
 			return true
 		}
 	}
 	return false
+}
+
+func rounds(x, n Number) bool {
+	if x.Step > n.Step*1.0000001 {
+		return false // the source states it less exactly than the claim
+	}
+	return math.Abs(math.Round(x.Value/n.Step)*n.Step-n.Value) <= n.Step*1e-6
+}
+
+func percent(n Number) bool {
+	t := strings.ToLower(n.Text)
+	return strings.HasSuffix(t, "%") || strings.HasSuffix(t, "percent") || strings.HasSuffix(t, "per cent")
 }
 
 // stop are the words that a claim and its source share whatever they say.

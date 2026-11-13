@@ -205,7 +205,7 @@ func TestNumbers(t *testing.T) {
 }
 
 func TestFound(t *testing.T) {
-	src := Numbers("errors of 4.08 and 1.25, 213 thousand steps")
+	src := Numbers("errors of 4.08 and 1.25, 213 thousand steps, accuracy (%) 74.6, a rate of 9%")
 	for _, tc := range []struct {
 		claim string
 		ok    bool
@@ -216,6 +216,9 @@ func TestFound(t *testing.T) {
 		{"1.3", true},    // 1.25 rounds half to even or up; math.Round gives 1.3
 		{"4.2", false},   // a different number
 		{"213 thousand", true},
+		{"74.6 percent", true}, // the bare 74.6 of a column headed in percent
+		{"74.6%", true},
+		{"9 percent", true},
 	} {
 		n := Numbers(tc.claim)
 		if len(n) != 1 {
