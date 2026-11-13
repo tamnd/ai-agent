@@ -257,6 +257,10 @@ details.tests summary span { color: var(--muted); font-family: var(--sans); marg
 .about-page { margin-top: 3rem; padding-top: 0.5rem; max-width: 52rem; font-size: 0.95rem; color: var(--soft); }
 .about-page h2 { margin-top: 0; }
 .ladders { width: 100%; margin: 0 0 1rem; }
+.fact-table { width: 100%; font-size: 0.95rem; }
+.fact-table ul { margin: 0; padding-left: 1rem; }
+.fact-table .fact-note { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.fact-table .status-disputed { color: var(--warn, #b45309); }
 .ladders ul { margin: 0; padding-left: 1rem; }
 .ladders td:first-child { white-space: nowrap; }
 .page-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; font-size: 0.9rem; }

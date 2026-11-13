@@ -112,3 +112,45 @@ func TestAreasByGroup(t *testing.T) {
 		t.Errorf("the crumbs of the searching area do not link to its group")
 	}
 }
+
+func TestFactTable(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "corpus")
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "nodes", "foundations", "models-of-computation", "toy-model")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	md := "---\ntag: 7TQYMD\nkind: model\nslug: toy-model\nname: Toy model\narea: foundations/models-of-computation\nlevel: intro\nsummary: A small model.\n---\n\n## Overview\n\nA small model.\n"
+	fy := "- id: params.total\n  unit: parameters\n  sources:\n    - {src: card, kind: primary, loc: \"Table 1\", value: 7000000000}\n    - {src: epoch-ai, kind: secondary, row: \"12\", value: 8000000000}\n"
+	for name, s := range map[string]string{"node.md": md, "facts.yaml": fy} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	if _, err := Build(c, Options{Out: out}); err != nil {
+		t.Fatal(err)
+	}
+	page, err := os.ReadFile(filepath.Join(out, "toy-model", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`id="facts"`, "Parameters (total)", "7 billion parameters", "status-disputed", "Table 1", ": 8 billion parameters", "row 12", "Data facts"} {
+		if !strings.Contains(string(page), want) {
+			t.Errorf("the model page does not contain %q", want)
+		}
+	}
+	api, err := os.ReadFile(filepath.Join(out, "api", "nodes.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(api), `"facts":[{"id":"params.total"`) || !strings.Contains(string(api), `"status":"disputed"`) {
+		t.Error("nodes.json does not hold the facts with their status")
+	}
+}

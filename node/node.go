@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"go.yaml.in/yaml/v3"
+
+	"github.com/tamnd/ai-agent/facts"
 )
 
 // Kinds are the ids of the 28 kinds of spec 04.2, in the order of KindTable.
@@ -181,6 +183,8 @@ type Node struct {
 	Proofs    []Proof  `json:"proofs,omitempty"`
 	Scene     string   `json:"scene,omitempty"` // path of viz/scene.ts, relative to the root
 	Presets   []Preset `json:"presets,omitempty"`
+	// Facts are the records of facts.yaml (spec 04.9), with their computed status.
+	Facts []facts.Fact `json:"facts,omitempty"`
 }
 
 // Lang returns the implementation in a language, or nil.
@@ -262,6 +266,9 @@ func Read(root, dir string) (*Node, error) {
 	}
 	if err := readScene(root, n); err != nil {
 		return nil, err
+	}
+	if n.Facts, err = facts.Read(n.Dir); err != nil {
+		return nil, fmt.Errorf("%s/%w", n.Rel, err)
 	}
 	return n, nil
 }

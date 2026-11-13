@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/tamnd/ai-agent/check"
+	"github.com/tamnd/ai-agent/facts"
 	"github.com/tamnd/ai-agent/markup"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
@@ -36,6 +37,7 @@ type NodePage struct {
 	Lean     *LeanView
 	Player   *PlayerView
 	Sources  []SourceView
+	Facts    []FactView
 	Edit     string
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
 	History  string
@@ -136,6 +138,26 @@ type PlayerView struct {
 	Input   template.JS
 	Pseudo  template.HTML
 	Full    string
+}
+
+// FactView is one row of the facts table of a node page (spec 04.9).
+type FactView struct {
+	ID      string
+	Label   string
+	Value   string
+	Status  string
+	AsOf    string
+	Note    string
+	Sources []FactSourceView
+}
+
+// FactSourceView is one source of a fact on the page. A disputed fact shows the value of each source.
+type FactSourceView struct {
+	Src   string
+	Kind  string
+	Loc   string
+	Value string
+	AsOf  string
 }
 
 // SourceView is one entry of Further reading.
@@ -311,6 +333,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 			html = insertBefore(html, b.snippet("code-section", p), "formal-proof", "history", "exercises", "references")
 		}
 	}
+	p.Facts = factViews(n.Facts)
 	p.Sources = b.sourceViews(n)
 	if len(p.Sources) > 0 {
 		if hasH2(html, "references") {
@@ -358,6 +381,9 @@ func rungs(s status.Status) []RungView {
 		out = append(out, RungView{Ladder: "Code", Lang: l, Rung: s.I[l]})
 	}
 	out = append(out, RungView{Ladder: "Visual", Rung: s.V}, RungView{Ladder: "Writing", Rung: s.W})
+	if s.D != nil {
+		out = append(out, RungView{Ladder: "Data facts", Rung: *s.D})
+	}
 	return out
 }
 
@@ -632,6 +658,22 @@ func (b *builder) playerView(n *node.Node, r markup.Result) *PlayerView {
 		Pseudo:  template.HTML(idAttrRE.ReplaceAllString(strings.Replace(pseudo, `<ol class="pseudo"`, `<ol class="pseudo player-code"`, 1), "")),
 		Full:    "/" + n.Slug + "/visualize/",
 	}
+}
+
+func factViews(fs []facts.Fact) []FactView {
+	out := make([]FactView, 0, len(fs))
+	for _, f := range fs {
+		v := FactView{ID: f.ID, Label: facts.Label(f.ID), Value: facts.Format(f.Value, f.Unit), Status: f.Status, AsOf: facts.AsOf(f), Note: f.Note}
+		for _, s := range f.Sources {
+			loc := s.Loc
+			if loc == "" && s.Row != "" {
+				loc = "row " + s.Row
+			}
+			v.Sources = append(v.Sources, FactSourceView{Src: s.Src, Kind: s.Kind, Loc: loc, Value: facts.Format(s.Value, f.Unit), AsOf: s.AsOf})
+		}
+		out = append(out, v)
+	}
+	return out
 }
 
 func (b *builder) sourceViews(n *node.Node) []SourceView {
