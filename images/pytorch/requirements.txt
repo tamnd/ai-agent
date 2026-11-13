@@ -17,3 +17,6 @@ jinja2==3.1.6 --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908da
 markupsafe==3.0.4 --hash=sha256:a8e9f292fcda89b324f2f5c91d13f1424a153e40fc2756f38ee23b15835ff300
 fsspec==2026.9.0 --hash=sha256:8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f
 torch @ https://download-r2.pytorch.org/whl/cpu/torch-2.15.0%2Bcpu-cp314-cp314-manylinux_2_28_x86_64.whl --hash=sha256:f089c94912c955269a20e5fee6b6a371209b610849c9ece26e908a748d87a723
+ruff==0.17.5 --hash=sha256:40ca8afaac309b41a5b2e09e4e7beb1f824826b93c25697c4d74f573324fba4e
+basedpyright==1.40.2 --hash=sha256:3a53aeb93a86675ded0e12bc27bd8476c1742356de07ad8cab67bff18110c690
+nodejs-wheel-binaries==24.19.0 --hash=sha256:4196a947bcc883f2003ab101762d729f3e99b5e86b75bd09151563403e2eceb8

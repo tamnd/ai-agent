@@ -60,6 +60,38 @@ type Test struct {
 	Diff []Diff `json:"diff,omitempty"`
 	// Mutation is the result of the mutation run (spec 09.6). It comes from the file <lang>.mutate.json.
 	Mutation *Mutation `json:"mutation,omitempty"`
+	// Passed and Failed are the names of the native tests of a framework version, from the JUnit report of pytest,
+	// with the parameters cut: test_shapes[base] is test_shapes. A name is in Passed when every run of it passed.
+	// X2 looks for the tests of its kind by name (08.10).
+	Passed []string `json:"passed,omitempty"`
+	Failed []string `json:"failed,omitempty"`
+	// Vectors is the run of the metric's test vectors through the score function (08.7.5, rule X05).
+	Vectors *Vectors `json:"vectors,omitempty"`
+	// Lint is the format, lint and type check of a framework version (8.3.2, rule X13).
+	Lint []Lint `json:"lint,omitempty"`
+}
+
+// Vectors is the result of the test vectors of a metric on one framework version.
+type Vectors struct {
+	Cases    int           `json:"cases"`
+	Passed   int           `json:"passed"`
+	Failures []CaseFailure `json:"failures,omitempty"`
+	// Error is set when the vectors could not run: no contract, a bad vector file, or a score function that does not load.
+	Error string `json:"error,omitempty"`
+}
+
+// OK tells if every vector ran and passed.
+func (v Vectors) OK() bool {
+	return v.Error == "" && len(v.Failures) == 0 && v.Passed == v.Cases && v.Cases > 0
+}
+
+// Lint is one check of the code: ruff format, ruff check or pyright.
+type Lint struct {
+	Tool string `json:"tool"`
+	Pass bool   `json:"pass"`
+	// Missing is set when the tool is not installed, in the image or on this machine.
+	Missing bool   `json:"missing,omitempty"`
+	Output  string `json:"output,omitempty"`
 }
 
 // Mutation is the result of the mutation run of one implementation.
@@ -117,6 +149,9 @@ func (t Test) OK() bool {
 		if !s.OK() {
 			return false
 		}
+	}
+	if t.Vectors != nil && !t.Vectors.OK() {
+		return false
 	}
 	return t.Pass
 }
@@ -260,7 +295,11 @@ func Of(n *node.Node, env Env) Status {
 	s.H = human(n, env)
 	s.L = lean(n, env)
 	for _, im := range n.Impls {
-		s.I[im.Lang] = impl(n, im, env)
+		if Frameworks[im.Lang] {
+			s.I[im.Lang] = xImpl(n, im, env)
+		} else {
+			s.I[im.Lang] = impl(n, im, env)
+		}
 		if t, ok := env.Results[n.Slug][im.Lang]; ok {
 			s.Tests[im.Lang] = t
 		}

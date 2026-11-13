@@ -65,39 +65,43 @@ func (r *Runner) Gen(dir string, n *node.Node, im node.Impl) (Tree, error) {
 	return t, nil
 }
 
-// Shared lists the files of the node that the tests of every implementation read, relative to the node directory: the shared fixtures in fixtures/ (spec 08.7.2), with fixtures/shapes.json of the shape contract (08.6).
-// Gen copies them to the same place in the tree, so that a test finds them at fixtures/ next to it, and at ../../fixtures/ in the content repository.
+// Shared lists the files of the node that the tests of every implementation read, relative to the node directory:
+// the shared fixtures in fixtures/ (spec 08.7.2), with fixtures/shapes.json of the shape contract (08.6), and the test
+// vectors of a metric in vectors/ (08.7.5). Gen copies them to the same place in the tree, so that a test finds them
+// at fixtures/ or vectors/ next to it, and at ../../fixtures/ or ../../vectors/ in the content repository.
 func Shared(n *node.Node) ([]string, error) {
-	root := filepath.Join(n.Dir, "fixtures")
 	var out []string
-	err := filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) && p == root {
-				return filepath.SkipDir
+	for _, dir := range []string{"fixtures", "vectors"} {
+		root := filepath.Join(n.Dir, dir)
+		err := filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) && p == root {
+					return filepath.SkipDir
+				}
+				return err
 			}
-			return err
-		}
-		if d.IsDir() {
-			if p != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == "__pycache__") {
-				return filepath.SkipDir
+			if d.IsDir() {
+				if p != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == "__pycache__") {
+					return filepath.SkipDir
+				}
+				return nil
 			}
+			if strings.HasPrefix(d.Name(), ".") {
+				return nil
+			}
+			rel, err := filepath.Rel(n.Dir, p)
+			if err != nil {
+				return err
+			}
+			out = append(out, filepath.ToSlash(rel))
 			return nil
+		})
+		if err != nil && !errors.Is(err, filepath.SkipDir) {
+			return nil, err
 		}
-		if strings.HasPrefix(d.Name(), ".") {
-			return nil
-		}
-		rel, err := filepath.Rel(n.Dir, p)
-		if err != nil {
-			return err
-		}
-		out = append(out, filepath.ToSlash(rel))
-		return nil
-	})
-	if errors.Is(err, filepath.SkipDir) {
-		err = nil
 	}
 	sort.Strings(out)
-	return out, err
+	return out, nil
 }
 
 // Adapter is the generated adapter of one implementation for one problem (spec 09.2).
@@ -138,7 +142,10 @@ func (r *Runner) GenAdapter(dir string, n *node.Node, im node.Impl, k *contract.
 func (t Tree) Rewrite(s string) string {
 	dirs := []string{t.Dir}
 	if real, err := filepath.EvalSymlinks(t.Dir); err == nil && real != t.Dir {
+		// The longer path goes first: on macOS /var is a link to /private/var, and cutting /var/... first would leave
+		// /private behind.
 		dirs = append(dirs, real)
+		sort.Slice(dirs, func(i, j int) bool { return len(dirs[i]) > len(dirs[j]) })
 	}
 	for _, d := range dirs {
 		// A tool may write the tree with either separator on Windows, and a container always writes /.

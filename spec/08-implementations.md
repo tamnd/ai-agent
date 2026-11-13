@@ -99,12 +99,14 @@ The test packages (pytest, hypothesis, scipy for reference special functions in 
 
 | Framework | Test | Format | Lint | Types | Mutation |
 |---|---|---|---|---|---|
-| `numpy`, `pytorch`, `jax` | pytest, with hypothesis for property tests | ruff format | ruff | pyright (basic) | mutmut |
+| `numpy`, `pytorch`, `jax` | pytest, with hypothesis for property tests | ruff format | ruff | pyright (basic), run as basedpyright | `aik mutate` (8.8) |
 | `c` | a small `aik` test runner over `assert.h` | clang-format | clang-tidy | the compiler | Mull |
 | `cpp` | doctest | clang-format | clang-tidy | the compiler | Mull |
 | `rust` | built-in `#[test]` | rustfmt | clippy `-D warnings` | the compiler | cargo-mutants |
 | `julia` | Test | JuliaFormatter | Aqua.jl and JET.jl | JET.jl | `aik mutate` (8.8) |
 | `typescript` | vitest | prettier | eslint | `tsc --strict` | StrykerJS |
+
+The build passes the same configuration to every framework version, so a node does not carry its own: ruff with a line length of 120 and the rule sets `E4`, `E7`, `E9`, `F`, `B`, `I`, `UP` and `NPY`; pyright at the basic level. The reference is read more often than it is edited, so a line may be longer than ruff's default of 88. The images pin ruff and basedpyright, which brings its own Node, so the checks need no network (8.9.1).
 
 ### 8.3.3 The interface of each kind
 
@@ -294,8 +296,8 @@ Each architecture and each training method has one test that the code can learn:
 
 As in algorithm 09.6, with the operators adapted to numerical code:
 
-- **Tools.** mutmut for the Python frameworks, Mull for C and C++, cargo-mutants for Rust, StrykerJS for TypeScript, and `aik mutate` (the generic mutator on the tree-sitter grammar, from algorithm) for Julia and as the common operator set for all.
-- **Operators.** The algorithm set (relational and arithmetic operator changes, constants by plus or minus one, boolean negation, statement deletion, argument swaps) plus numerical operators: swap two axes in a `transpose`, `sum` or `mean`; change the axis of a reduction; drop a `keepdims`; change `sqrt(d)` to `d`; remove the max subtraction of a softmax; change `eps` by a factor of 1,000; swap `mean` and `sum`; drop a mask; change a `+ 1` in a bias correction; flip the sign of a gradient term.
+- **Tools.** `aik mutate` (the generic mutator on the tree-sitter grammar, from algorithm) for the Python frameworks, where `numpy`, `pytorch` and `jax` use the Python grammar, and for Julia, and as the common operator set for all; Mull for C and C++, cargo-mutants for Rust, StrykerJS for TypeScript. One mutator for the three Python frameworks keeps their scores comparable. The format, lint and type checks do not run on mutants.
+- **Operators.** The algorithm set (relational and arithmetic operator changes, constants by plus or minus one, boolean negation, statement deletion, argument swaps) plus numerical operators (M1; until then the algorithm set runs alone): swap two axes in a `transpose`, `sum` or `mean`; change the axis of a reduction; drop a `keepdims`; change `sqrt(d)` to `d`; remove the max subtraction of a softmax; change `eps` by a factor of 1,000; swap `mean` and `sum`; drop a mask; change a `+ 1` in a bias correction; flip the sign of a gradient term.
 - **What kills a mutant.** The own tests, the shared fixtures, the differential tests and the gradient checks. A mutant that crashes or times out counts as killed.
 - **Equivalent mutants.** Listed in `impl/<framework>/mutants.ignore` with a reason, at most 5% (rule X10). Example: removing the max subtraction in a softmax is equivalent on the fixtures but not on large logits, so the right answer is a test with large logits, not an ignore entry.
 - **The threshold.** At least **80%** of the non-equivalent mutants killed for X3 (rule X06). The threshold is lower than algorithm's 85% because numerical mutants near tolerances are harder to kill without making tests brittle. M2 measures the real distribution and may raise it (Default).
@@ -346,6 +348,22 @@ The build computes one level for each node and each framework, from the referenc
 | X4 | X3, and a person who is not the author reviewed this exact file hash (15.5) | |
 
 For the NumPy reference, X2 means: it passes the shared fixtures that it made itself, the official vectors (metrics) and the shape contract (architectures), and it agrees with at least one framework's library version where one exists (the second oracle).
+
+### 8.10.1 How the build sees each level
+
+The build does not read the tests to find out what they check; it reads their names. `aik test` runs pytest with a JUnit report, and X2 looks for a passing test by name. A test matches a required name when its name is the name or the name with a suffix after `_`, so `test_gradient_input` counts as `test_gradient` and `test_gradients` does not. The parameters of a parametrized test are cut, and a test counts as passing only when every run of it passed.
+
+| Kind | X1 needs | X2 needs |
+|---|---|---|
+| every kind | the native tests pass | |
+| `method`, `architecture`, NumPy reference with a `def backward(` | a passing `test_gradient` (X04) | a passing `test_shared_fixture` (X02) |
+| `method`, `architecture`, other frameworks | | a passing `test_shared_fixture` (X02) and `test_gradient` (X04) |
+| `architecture` | | also `test_shapes` and `test_param_count` (X09) and `test_learns` (8.7.6) |
+| `metric` | | every vector in `vectors/*.jsonl` passes (X05) |
+
+`aik` itself runs the vectors of a metric, so the node needs no test that reads them. Each line of a file in `vectors/` is one vector: `id`, `predictions`, `references`, `options`, `want` (a map from the outputs of `contract.yaml` to their values), `by` (the official implementation and its version, or `hand`) and `note` (needed for `hand`). The harness calls the `entry` of the contract (`score` by default) with the predictions, the references and the options as keyword arguments, and compares the result with `want` within the tolerance of the contract, as `|got - want| <= atol + rtol |want|`. A vector that fails or raises fails `aik test`.
+
+X3 reads the results of ruff format, ruff check and pyright on every Python file of the version, and the mutation score of `aik test -kind mutate`. A check that is not clean, or a tool that the image lacks, keeps the version at X2 and does not fail `aik test`; the status names the first finding.
 
 A node is "runs everywhere" (15.1) when `numpy` and `pytorch` are at X3 and `jax` at X2, the target of 04.10.
 

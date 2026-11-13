@@ -93,6 +93,7 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 	defer cache.Close()
 	// A mutant that loops forever is common, and a timeout kills it, so the time of a case is short. The code with no mutant must pass with the same time.
 	r.CaseTimeout = mutantCaseTimeout
+	r.NoLint = true // a mutant changes no format, and the lint of the code runs once in aik test
 	byLang := map[string]*status.Results{}
 	failed := 0
 	for _, n := range nodes {
@@ -134,7 +135,7 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 			if err != nil {
 				return fmt.Errorf("%s/%s: %w", n.Slug, im.Lang, err)
 			}
-			if m.Error != "" || m.Score() < status.MinScore {
+			if m.Error != "" || m.Score() < status.MinScoreFor(im.Lang) {
 				failed++
 			}
 			res.Tests = append(res.Tests, status.Test{Slug: n.Slug, Lang: im.Lang, Mutation: &m})
@@ -155,7 +156,7 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 		}
 	}
 	if failed > 0 {
-		fmt.Fprintf(os.Stderr, "%d implementations have a mutation score under %.0f%%, or the run did not start\n", failed, 100*status.MinScore)
+		fmt.Fprintf(os.Stderr, "%d implementations have a mutation score under %.0f%% (%.0f%% for a framework version), or the run did not start\n", failed, 100*status.MinScore, 100*status.XMinScore)
 		return errFindings
 	}
 	return nil
