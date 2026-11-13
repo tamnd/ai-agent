@@ -210,3 +210,14 @@ func TestClaimChips(t *testing.T) {
 		t.Error("nodes.json does not hold the claims with their labels")
 	}
 }
+
+func TestUpperFirstKeepsRunes(t *testing.T) {
+	for in, want := range map[string]string{"łukasz Kaiser": "Łukasz Kaiser", "attention": "Attention", "": "", "émile": "Émile"} {
+		if got := upperFirst(in); got != want {
+			t.Errorf("upperFirst(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if got := humanize("Łukasz Kaiser"); got != "Łukasz Kaiser" {
+		t.Errorf("humanize = %q", got)
+	}
+}
