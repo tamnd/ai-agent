@@ -33,7 +33,7 @@ func (f *File) rangeOf(name string) [2]int64 {
 // The seed makes it the same on every machine; aik shapes sample uses the hash of the node's path.
 func (f *File) Sample(seed uint64, n int) ([]map[string]int64, error) {
 	free := f.Free()
-	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
+	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15)) //nolint:gosec // The samples must be the same on each machine, so the source is seeded on purpose.
 	key := func(c map[string]int64) string {
 		b, _ := json.Marshal(c)
 		return string(b)
@@ -59,7 +59,7 @@ func (f *File) Sample(seed uint64, n int) ([]map[string]int64, error) {
 		out = append(out, c)
 	}
 	if len(out) < n {
-		return nil, fmt.Errorf("found %d of %d valid sampled configs; widen the sample ranges in shapes.yaml (last: %v)", len(out), n, last)
+		return nil, fmt.Errorf("found %d of %d valid sampled configs; widen the sample ranges in shapes.yaml (last: %w)", len(out), n, last)
 	}
 	return out, nil
 }
@@ -160,7 +160,7 @@ func (f *File) fixtureConfig(name, kind string, in map[string]int64) (FixtureCon
 // MakeFixture gives the fixture of a node: the example config, Samples sampled configs, and each named config.
 func (f *File) MakeFixture(seed uint64) (*Fixture, error) {
 	if ps := f.Check(); len(ps) > 0 {
-		return nil, fmt.Errorf("%s: %v", f.Path, ps[0])
+		return nil, fmt.Errorf("%s: %w", f.Path, ps[0])
 	}
 	fx := &Fixture{Note: "Written by aik shapes sample -w from shapes.yaml; do not edit. The tests of each implementation check shapes, param_count and flops against these values (spec 08.6, rule X09)."}
 	add := func(name, kind string, in map[string]int64) error {
