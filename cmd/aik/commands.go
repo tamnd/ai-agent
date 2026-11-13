@@ -875,6 +875,8 @@ func cmdViz(args []string) error {
 				switch {
 				case r.Skipped != "":
 					fmt.Printf("skip %s: %s\n", r.Slug, r.Skipped)
+				case len(r.Fails) == 0 && len(r.Lines) == 0: // an architecture scene has no reference lines
+					fmt.Printf("pass %s: %d runs\n", r.Slug, len(r.Steps))
 				case len(r.Fails) == 0:
 					fmt.Printf("pass %s: %d runs, %d lines reached\n", r.Slug, len(r.Steps), len(r.Lines))
 				default:
