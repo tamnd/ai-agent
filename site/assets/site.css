@@ -269,6 +269,15 @@ details.tests summary span { color: var(--muted); font-family: var(--sans); marg
 .claim-chip.label-proved, .claim-chip.label-measured-here, .claim-chip.label-replicated { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
 .claim-chip.label-contested { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
 .claim-chip.label-unchecked { color: var(--muted); }
+.exp-box { margin: 1.25rem 0; padding: 0.9rem 1rem; border-left: 3px solid var(--surface-2); }
+.exp-box .exp-claim { font-weight: 600; margin-top: 0; }
+.exp-box .claim-id { font-weight: 400; font-size: 0.85rem; }
+.exp-table { width: 100%; font-size: 0.95rem; }
+.exp-verdict { font-weight: 600; }
+.exp-verdict.verdict-holds { color: var(--ok); }
+.exp-verdict.verdict-did-not-hold { color: var(--bad); }
+.exp-note { font-size: 0.9rem; color: var(--muted); }
+.exp-figure img { max-width: 100%; height: auto; }
 .claim-ref { padding-left: 0.9rem; border-left: 3px solid var(--surface-2); }
 :target.claim-chip { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ladders ul { margin: 0; padding-left: 1rem; }

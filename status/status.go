@@ -39,7 +39,9 @@ type Status struct {
 	V    Rung            `json:"v"`
 	W    Rung            `json:"w"`
 	// D is the ladder of the data facts. It is nil for a kind that carries no facts.
-	D     *Rung           `json:"d,omitempty"`
+	D *Rung `json:"d,omitempty"`
+	// R is the ladder of the experiments (spec 9.11). It is nil for a node that has no experiment and no claim with a small-scale form.
+	R     *Rung           `json:"r,omitempty"`
 	Tests map[string]Test `json:"tests,omitempty"`
 }
 
@@ -265,6 +267,7 @@ func Of(n *node.Node, env Env) Status {
 	s.V = visual(n, env)
 	s.W = Writing(n, env)
 	s.D = Data(n, env)
+	s.R = Repro(n, env)
 	return s
 }
 

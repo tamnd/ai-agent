@@ -68,6 +68,12 @@ func (r *run) claim(p string, c *claims.Claim) {
 	for i, e := range c.Evidence {
 		r.evidence(p, c, i+1, e)
 	}
+	if c.SmallScale != "" && !slices.Contains([]string{"yes", "no", "partial"}, c.SmallScale) {
+		r.add("T01", Block, p, 0, "the claim %q has small_scale: %q; write yes, no or partial (9.2)", c.ID, c.SmallScale)
+	}
+	if c.SmallScale != "" && c.Type != claims.Empirical {
+		r.add("T02", Block, p, 0, "the %s claim %q has small_scale; only an empirical claim has one (9.2)", c.Type, c.ID)
+	}
 	if c.Type == claims.Forecast && c.AsOf == "" {
 		r.add("K07", Level, p, 0, "the forecast %q needs the date of the forecast in as_of", c.ID)
 	}
