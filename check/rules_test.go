@@ -156,32 +156,32 @@ func TestS03Run(t *testing.T) {
 }
 
 func TestLRules(t *testing.T) {
-	c := fixture(t, map[string]string{"lean/Algo/Search/BinarySearch.lean": "module\n"})
+	c := fixture(t, map[string]string{"lean/AI/Search/BinarySearch.lean": "module\n"})
 	n := c.BySlug["binary-search"]
 	n.Level, n.Tag = "core", "ABCDEF"
-	n.Lean = map[string]string{"module": "Algo.Search.BinarySearch", "model": "Algo.Search.BinarySearch.search", "spec": "Algo.Search.Spec", "correct": "Algo.Search.BinarySearch.ok", "cost": "Algo.Search.BinarySearch.cost"}
+	n.Lean = map[string]string{"module": "AI.Search.BinarySearch", "model": "AI.Search.BinarySearch.search", "spec": "AI.Search.Spec", "correct": "AI.Search.BinarySearch.ok", "cost": "AI.Search.BinarySearch.cost"}
 	ds := formal.Decls{
-		"Algo.Search.BinarySearch.search": {Decl: "Algo.Search.BinarySearch.search", Kind: "def", Module: "Algo.Search.BinarySearch"},
-		"Algo.Search.Spec":                {Decl: "Algo.Search.Spec", Kind: "def", Module: "Algo.Search"},
-		"Algo.Search.BinarySearch.ok":     {Decl: "Algo.Search.BinarySearch.ok", Kind: "theorem", Module: "Algo.Search.BinarySearch", Type: "True", Axioms: []string{"sorryAx"}, Sorry: true, Pos: &formal.Pos{Line: 3, EndLine: 4}},
+		"AI.Search.BinarySearch.search": {Decl: "AI.Search.BinarySearch.search", Kind: "def", Module: "AI.Search.BinarySearch"},
+		"AI.Search.Spec":                {Decl: "AI.Search.Spec", Kind: "def", Module: "AI.Search"},
+		"AI.Search.BinarySearch.ok":     {Decl: "AI.Search.BinarySearch.ok", Kind: "theorem", Module: "AI.Search.BinarySearch", Type: "True", Axioms: []string{"sorryAx"}, Sorry: true, Pos: &formal.Pos{Line: 3, EndLine: 4}},
 	}
 	fs := Run(c, Options{Decls: ds})
 	for rule, want := range map[string]string{
-		"L01": "lean.cost: Algo.Search.BinarySearch.cost is not a declaration",
-		"L02": "does not mention the spec Algo.Search.Spec",
-		"L03": "lean/Algo/Search/BinarySearch.lean: block: Algo.Search.BinarySearch.ok uses the axiom sorryAx (a sorry)",
+		"L01": "lean.cost: AI.Search.BinarySearch.cost is not a declaration",
+		"L02": "does not mention the spec AI.Search.Spec",
+		"L03": "lean/AI/Search/BinarySearch.lean: block: AI.Search.BinarySearch.ok uses the axiom sorryAx (a sorry)",
 		"L04": "needs a fidelity review by a person: no review record reviews/ABCDEF/lean-spec.yaml",
-		"L05": "time.worst: Θ(log n) has no class lemma in Algo.Search.BinarySearch",
-		"L07": "Algo.Search.BinarySearch.search is not computable",
-		"L09": "Algo.Search.BinarySearch does not mirror the node path",
+		"L05": "time.worst: Θ(log n) has no class lemma in AI.Search.BinarySearch",
+		"L07": "AI.Search.BinarySearch.search is not computable",
+		"L09": "AI.Search.BinarySearch does not mirror the node path",
 	} {
 		got := fired(fs, rule)
 		if !slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, want) }) {
 			t.Errorf("%s does not report %q; it reports %q", rule, want, got)
 		}
 	}
-	n.Lean["module"] = "Algo.Search.Missing"
-	if got := fired(Run(c, Options{}), "L01"); len(got) != 1 || !strings.Contains(got[0], "lean/Algo/Search/Missing.lean does not exist") {
+	n.Lean["module"] = "AI.Search.Missing"
+	if got := fired(Run(c, Options{}), "L01"); len(got) != 1 || !strings.Contains(got[0], "lean/AI/Search/Missing.lean does not exist") {
 		t.Errorf("L01 for a missing module = %q", got)
 	}
 }

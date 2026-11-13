@@ -1,7 +1,7 @@
 /-
-AlgoExtract (spec 07.12). `aik lean build` runs this file with `lake env lean` after `lake build`. It writes one JSON line for each declaration in the namespace Algo to the file that ALGO_DECLS names.
+AIExtract (spec 11). `aik lean build` runs this file with `lake env lean` after `lake build`. It writes one JSON line for each declaration in the namespace AI to the file that AI_DECLS names.
 -/
-import Algo
+import AI
 import Lean.Util.CollectAxioms
 
 open Lean Elab Command
@@ -16,7 +16,7 @@ def algoKind (env : Environment) (n : Name) : ConstantInfo → String
   | _ => "other"
 
 /-- A name that Lean makes for its own use, such as an equation lemma or a matcher. -/
-def algoAux (env : Environment) (n : Name) : Bool :=
+def aiAux (env : Environment) (n : Name) : Bool :=
   n.isInternalDetail || isAuxRecursor env n || isNoConfusion env n || Meta.isMatcherCore env n ||
     match n with
     | .str _ s => s.startsWith "eq_" || s.startsWith "match_" || s.startsWith "proof_" ||
@@ -26,10 +26,10 @@ def algoAux (env : Environment) (n : Name) : Bool :=
 
 #eval show CommandElabM Unit from do
   let env ← getEnv
-  let some out ← IO.getEnv "ALGO_DECLS" | throwError "ALGO_DECLS is not set"
+  let some out ← IO.getEnv "AI_DECLS" | throwError "AI_DECLS is not set"
   let mut names : Array Name := #[]
   for (n, ci) in env.constants.map₁.toList do
-    if n.getRoot == `Algo && !algoAux env n && !ci.isCtor && !(ci matches .recInfo _) then
+    if n.getRoot == `AI && !aiAux env n && !ci.isCtor && !(ci matches .recInfo _) then
       names := names.push n
   names := names.qsort (fun a b => a.toString < b.toString)
   let mut lines : Array String := #[]
@@ -45,7 +45,7 @@ def algoAux (env : Environment) (n : Name) : Bool :=
       | some i => (env.header.moduleNames[i.toNat]!).toString
       | none => ""
     let deps := ci.getUsedConstantsAsSet.toList.filter (fun d =>
-      (d.getRoot == `Algo || d.getRoot == `Cslib) && !algoAux env d) |>.map (·.toString)
+      (d.getRoot == `AI || d.getRoot == `Cslib) && !aiAux env d) |>.map (·.toString)
     let deps := deps.toArray.qsort (· < ·)
     let axs := (axs.map (·.toString)).qsort (· < ·)
     let pos : Json := match ranges with
