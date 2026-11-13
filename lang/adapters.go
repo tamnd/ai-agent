@@ -409,8 +409,9 @@ func goAdapter(j *adapterJob) error {
 	if err := write(j.Dir, "algoadapter/main.go", b.String()); err != nil {
 		return err
 	}
-	j.Build = [][]string{{"go", "build", "-o", "algo_adapter", "./algoadapter"}}
-	j.Run = []string{"./algo_adapter"}
+	// The .exe suffix lets Windows run the binary and changes nothing on Linux or macOS.
+	j.Build = [][]string{{"go", "build", "-o", "algo_adapter.exe", "./algoadapter"}}
+	j.Run = []string{"./algo_adapter.exe"}
 	return nil
 }
 
