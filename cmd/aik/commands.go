@@ -566,6 +566,7 @@ func cmdTest(args []string) error {
 			if !t.Pass {
 				fmt.Println(indent(t.Output))
 			}
+			printFramework(n.Slug, im.Lang, t)
 			for _, p := range problems(n) {
 				start := time.Now()
 				s := r.Shared(n, im, p.k, p.cases)
@@ -725,6 +726,35 @@ func printShared(slug, lang string, s status.Shared, took time.Duration) {
 			msg += "\n  want: " + f.Want
 		}
 		fmt.Println(indent(msg))
+	}
+}
+
+// printFramework prints the checks of 08.10 that a framework version has besides its native tests: the test vectors
+// of a metric, which fail the run, and the format, lint and type checks, which only lower the rung (X13).
+func printFramework(slug, lang string, t status.Test) {
+	if v := t.Vectors; v != nil {
+		state := "pass"
+		if !v.OK() {
+			state = "FAIL"
+		}
+		fmt.Printf("%-4s %s/%s test vectors: %d of %d pass\n", state, slug, lang, v.Passed, v.Cases)
+		if v.Error != "" {
+			fmt.Println(indent(v.Error))
+		}
+		for _, f := range v.Failures {
+			fmt.Println(indent(fmt.Sprintf("vector %s (%s): %s", f.Case, lang, f.Reason)))
+		}
+	}
+	for _, l := range t.Lint {
+		switch {
+		case l.Missing:
+			fmt.Printf("note %s/%s %s is not installed, so X3 waits\n", slug, lang, l.Tool)
+		case l.Pass:
+			fmt.Printf("pass %s/%s %s\n", slug, lang, l.Tool)
+		default:
+			fmt.Printf("note %s/%s %s is not clean, so X3 waits\n", slug, lang, l.Tool)
+			fmt.Println(indent(l.Output))
+		}
 	}
 }
 

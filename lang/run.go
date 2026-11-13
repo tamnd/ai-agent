@@ -83,6 +83,8 @@ type Runner struct {
 	CaseTimeout time.Duration
 	// Generate is set when the runner only writes a build tree (aik gen). The tree runs later in a runner image, so the tools of this machine are not checked.
 	Generate bool
+	// NoLint leaves out the format, lint and type checks of a framework version, as the mutation run does.
+	NoLint bool
 }
 
 // Available tells if the language can run with this runner. In a sandbox, the image replaces the tools of this machine.
@@ -194,6 +196,9 @@ func (r *Runner) Test(n *node.Node, im node.Impl) status.Test {
 			break
 		}
 	}
+	if _, ok := Frameworks[im.Lang]; ok && ctx.Err() == nil {
+		r.frameworkChecks(ctx, tree, n, im, &t)
+	}
 	t.Ms = time.Since(start).Milliseconds()
 	t.Output = tail(tree.Rewrite(out.String()), 4000)
 	return t
@@ -236,7 +241,7 @@ func python(r *Runner, dir string, _ *node.Node, _ node.Impl) ([][]string, error
 	if r.Box == nil && !r.Generate && exec.Command("python3", "-c", "import pytest").Run() != nil {
 		return nil, Skip{"python", "pytest"}
 	}
-	return [][]string{{"python3", "-m", "pytest", "-q", "-p", "no:cacheprovider", "."}}, nil
+	return [][]string{{"python3", "-m", "pytest", "-q", "-p", "no:cacheprovider", "--junitxml=" + JUnitFile, "-o", "junit_family=xunit2", "."}}, nil
 }
 
 func golang(_ *Runner, dir string, _ *node.Node, _ node.Impl) ([][]string, error) {

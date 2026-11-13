@@ -76,6 +76,13 @@ var Languages = map[string]Syntax{
 	"csharp":     {Exts: []string{".cs"}, Empty: ";", Parens: true},
 }
 
+// The framework versions of spec 08.2 are Python code, so the mutator reads them as Python (08.8).
+func init() {
+	for _, fw := range []string{"numpy", "pytorch", "jax"} {
+		Languages[fw] = Languages["python"]
+	}
+}
+
 // Source tells if the file is a source file of the language that the mutator reads.
 func Source(lang, name string) bool {
 	sy, ok := Languages[lang]
