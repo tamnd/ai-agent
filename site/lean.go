@@ -19,7 +19,7 @@ import (
 // LeanView is the Lean part of a node: its module, its declarations and the source (spec 07.16, 14.7).
 type LeanView struct {
 	Module string
-	File   string // the path in the content repository, such as lean/Algo/Sorting/MergeSort.lean
+	File   string // the path in the content repository, such as lean/AI/Sorting/MergeSort.lean
 	GitHub string
 	URL    string // the Lean page, /<slug>/lean/
 	Lines  int

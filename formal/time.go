@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// The limits of rule L10 (spec 07.18). A module that takes more than SlowModule to build gets a warning, and a module that takes more than TooSlowModule blocks the merge.
+// The limits of rule L10 (spec 11.13). A module that takes more than SlowModule to build gets a warning, and a module that takes more than TooSlowModule blocks the merge.
 const (
 	SlowModule    = 60 * time.Second
 	TooSlowModule = 300 * time.Second
@@ -23,7 +23,7 @@ const (
 
 // ModuleTime is the time that one module of the package takes to build.
 type ModuleTime struct {
-	// Module is the module name, such as Algo.Search.BinarySearch, and File its path in the package.
+	// Module is the module name, such as AI.Search.BinarySearch, and File its path in the package.
 	Module string
 	File   string
 	// Took is the time of the module alone, without the load of its imports. Wall is the time of the whole lean process.
@@ -31,14 +31,14 @@ type ModuleTime struct {
 	Wall time.Duration
 }
 
-// Time elaborates each module of the namespace Algo again with the Lean profiler, and measures the time. Run it after the build, so that the modules that a module imports are built. The time of a module is the sum of the profiler times without import and initialization, because the load of Mathlib takes the same time for each module and is not the cost of its proofs. When the profiler gives no times, the time is the wall time. The result is sorted by module name.
+// Time elaborates each module of the namespace AI again with the Lean profiler, and measures the time. Run it after the build, so that the modules that a module imports are built. The time of a module is the sum of the profiler times without import and initialization, because the load of Mathlib takes the same time for each module and is not the cost of its proofs. When the profiler gives no times, the time is the wall time. The result is sorted by module name.
 func Time(ctx context.Context, o Options) ([]ModuleTime, error) {
 	dir, err := filepath.Abs(o.Dir)
 	if err != nil {
 		return nil, err
 	}
 	var files []string
-	err = filepath.WalkDir(filepath.Join(dir, "Algo"), func(p string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(filepath.Join(dir, "AI"), func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package formal builds the Lean package of the content repository and reads what it proves (spec 07).
+// Package formal builds the Lean package of the content repository and reads what it proves (spec 11).
 //
-// Build runs lake build in the lean directory, then runs AlgoExtract (Extract.lean) with lake env lean. AlgoExtract writes one JSON line for each declaration in the namespace Algo to decls.jsonl. Check reads that file and reports each declaration that uses an axiom outside the policy of 07.5, and each name of a lean field that does not exist.
+// Build runs lake build in the lean directory, then runs AIExtract (Extract.lean) with lake env lean. AIExtract writes one JSON line for each declaration in the namespace AI to decls.jsonl. Check reads that file and reports each declaration that uses an axiom outside the policy of 11.5, and each name of a lean field that does not exist.
 package formal
 
 import (
@@ -27,7 +27,7 @@ import (
 //go:embed Extract.lean
 var extractSrc []byte
 
-// Allowed are the axioms that a proof can use (spec 07.5). Each other axiom, such as sorryAx or Lean.ofReduceBool, fails the build.
+// Allowed are the axioms that a proof can use (spec 11.5). Each other axiom, such as sorryAx or Lean.ofReduceBool, fails the build.
 var Allowed = []string{"propext", "Classical.choice", "Quot.sound"}
 
 // Decl is one line of decls.jsonl.
@@ -103,7 +103,7 @@ type Options struct {
 	Log io.Writer
 }
 
-// Build runs lake build and AlgoExtract, and returns the path of decls.jsonl.
+// Build runs lake build and AIExtract, and returns the path of decls.jsonl.
 func Build(ctx context.Context, o Options) (string, error) {
 	dir, err := filepath.Abs(o.Dir)
 	if err != nil {
@@ -130,8 +130,8 @@ func Build(ctx context.Context, o Options) (string, error) {
 	}
 	decls := filepath.Join(out, "decls.jsonl")
 	_ = os.Remove(decls)
-	if err := o.run(ctx, dir, []string{"ALGO_DECLS=" + decls}, "lake", "env", "lean", src); err != nil {
-		return "", fmt.Errorf("AlgoExtract: %w", err)
+	if err := o.run(ctx, dir, []string{"AI_DECLS=" + decls}, "lake", "env", "lean", src); err != nil {
+		return "", fmt.Errorf("AIExtract: %w", err)
 	}
 	return decls, nil
 }
@@ -158,7 +158,7 @@ func (o Options) run(ctx context.Context, dir string, env []string, argv ...stri
 
 // Finding is one problem that Check finds.
 type Finding struct {
-	// Rule is the audit rule of 07.15, such as L01 or L03.
+	// Rule is the rule of 11.13, such as L01 or L03.
 	Rule string
 	// Where is the declaration, or the node and its field.
 	Where string
@@ -232,7 +232,7 @@ func CheckNode(n *node.Node, ds Decls) []Finding {
 		where := n.Slug + " lean." + k
 		d, ok := ds[v]
 		if !ok {
-			out = append(out, Finding{Rule: "L01", Where: where, Msg: v + " is not a declaration of the Algo package", Node: n.Slug})
+			out = append(out, Finding{Rule: "L01", Where: where, Msg: v + " is not a declaration of the AI package", Node: n.Slug})
 			continue
 		}
 		if want := Kinds[k]; want != nil && !slices.Contains(want, d.Kind) {
@@ -298,20 +298,20 @@ func camel(s string) string {
 	return b.String()
 }
 
-// MirrorOf returns the module that mirrors the node path in full (spec 07.2): nodes/graphs/shortest-paths/dijkstra gives Algo.Graphs.ShortestPaths.Dijkstra.
+// MirrorOf returns the module that mirrors the node path in full (spec 11.2): nodes/graphs/shortest-paths/dijkstra gives AI.Graphs.ShortestPaths.Dijkstra.
 func MirrorOf(rel string) string {
 	parts := strings.Split(strings.TrimPrefix(filepath.ToSlash(rel), "nodes/"), "/")
 	for i, p := range parts {
 		parts[i] = camel(p)
 	}
-	return "Algo." + strings.Join(parts, ".")
+	return "AI." + strings.Join(parts, ".")
 }
 
-// Mirrors tells if a module mirrors the node path (rule L09). The last part is the slug in CamelCase, the first part after Algo is the top area, and the parts between are some of the sub-areas, in order. So both Algo.Sorting.ComparisonSorts.MergeSort and Algo.Sorting.MergeSort mirror nodes/sorting/comparison-sorts/merge-sort.
+// Mirrors tells if a module mirrors the node path (rule L09). The last part is the slug in CamelCase, the first part after AI is the top area, and the parts between are some of the sub-areas, in order. So both AI.Sorting.ComparisonSorts.MergeSort and AI.Sorting.MergeSort mirror nodes/sorting/comparison-sorts/merge-sort.
 func Mirrors(mod, rel string) bool {
 	want := strings.Split(MirrorOf(rel), ".")
 	got := strings.Split(mod, ".")
-	if len(got) < 3 || len(want) < 3 || got[0] != "Algo" || got[1] != want[1] || got[len(got)-1] != want[len(want)-1] {
+	if len(got) < 3 || len(want) < 3 || got[0] != "AI" || got[1] != want[1] || got[len(got)-1] != want[len(want)-1] {
 		return false
 	}
 	i := 2

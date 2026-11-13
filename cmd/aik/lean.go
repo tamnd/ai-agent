@@ -23,12 +23,12 @@ func cmdLean(args []string) error {
 	return cmdLeanBuild(args[1:])
 }
 
-// cmdLeanBuild builds the Lean package, extracts its declarations, and checks the axiom policy and the lean fields (spec 07.5, 07.12).
+// cmdLeanBuild builds the Lean package, extracts its declarations, and checks the axiom policy and the lean fields (spec 11.5).
 func cmdLeanBuild(args []string) error {
 	f := newFlags("lean build", "[flags]")
 	root := f.String("root", ".", "the root of the content repository")
 	out := f.String("out", "build/lean", "the directory for decls.jsonl")
-	noBuild := f.Bool("no-build", false, "skip lake build, and only run AlgoExtract and the checks")
+	noBuild := f.Bool("no-build", false, "skip lake build, and only run AIExtract and the checks")
 	sandbox := f.String("sandbox", "none", "run lake in a container of the Lean image: docker, podman or none")
 	images := f.String("images", "manifests/images.yaml", "the image manifest, for -sandbox")
 	verbose := f.Bool("v", false, "show the output of lake")
