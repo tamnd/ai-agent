@@ -251,7 +251,7 @@ fixtures/
   manifest.yaml           seeds, configs, the hash of each file, the NumPy version that made it
 ```
 
-Every framework loads the same parameters, runs the same inputs, and compares with `expected-small.npz`. When the NumPy reference changes, `aik fixtures make` rewrites the expected files, and the pull request shows the diff of every number that changed.
+Every framework loads the same parameters, runs the same inputs, and compares with `expected-small.npz`. `aik test` copies `fixtures/` of the node into the tree of each implementation, so a test finds the files at `fixtures/` next to it in the tree and at `../../fixtures/` in the content repository; a change to a fixture runs the tests of every framework of the node again. A parameter tree is stored flat, with the path of each array joined by `/` (`dec/0/cross/W_q`), and each framework rebuilds its own tree from it. When the NumPy reference changes, `aik fixtures make` rewrites the expected files, and the pull request shows the diff of every number that changed.
 
 ### 8.7.3 Differential tests
 

@@ -37,6 +37,24 @@ func (r *Runner) Gen(dir string, n *node.Node, im node.Impl) (Tree, error) {
 	for _, f := range im.Files {
 		t.Sources[f.Name] = f.Path
 	}
+	shared, err := Shared(n)
+	if err != nil {
+		return t, err
+	}
+	for _, rel := range shared {
+		b, err := os.ReadFile(filepath.Join(n.Dir, filepath.FromSlash(rel)))
+		if err != nil {
+			return t, err
+		}
+		dst := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return t, err
+		}
+		if err := os.WriteFile(dst, b, 0o644); err != nil {
+			return t, err
+		}
+		t.Sources[rel] = filepath.ToSlash(filepath.Join(n.Rel, rel))
+	}
 	g := *r
 	g.Generate = true
 	cmds, err := rc.Run(&g, dir, n, im)
@@ -45,6 +63,41 @@ func (r *Runner) Gen(dir string, n *node.Node, im node.Impl) (Tree, error) {
 	}
 	t.Test = cmds
 	return t, nil
+}
+
+// Shared lists the files of the node that the tests of every implementation read, relative to the node directory: the shared fixtures in fixtures/ (spec 08.7.2), with fixtures/shapes.json of the shape contract (08.6).
+// Gen copies them to the same place in the tree, so that a test finds them at fixtures/ next to it, and at ../../fixtures/ in the content repository.
+func Shared(n *node.Node) ([]string, error) {
+	root := filepath.Join(n.Dir, "fixtures")
+	var out []string
+	err := filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) && p == root {
+				return filepath.SkipDir
+			}
+			return err
+		}
+		if d.IsDir() {
+			if p != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == "__pycache__") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasPrefix(d.Name(), ".") {
+			return nil
+		}
+		rel, err := filepath.Rel(n.Dir, p)
+		if err != nil {
+			return err
+		}
+		out = append(out, filepath.ToSlash(rel))
+		return nil
+	})
+	if errors.Is(err, filepath.SkipDir) {
+		err = nil
+	}
+	sort.Strings(out)
+	return out, err
 }
 
 // Adapter is the generated adapter of one implementation for one problem (spec 09.2).
