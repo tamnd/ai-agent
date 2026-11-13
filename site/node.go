@@ -417,7 +417,7 @@ func rungs(s status.Status) []RungView {
 	for _, l := range langs {
 		out = append(out, RungView{Ladder: "Code", Lang: l, Rung: s.I[l]})
 	}
-	out = append(out, RungView{Ladder: "Visual", Rung: s.V}, RungView{Ladder: "Writing", Rung: s.W})
+	out = append(out, RungView{Ladder: "Visual", Rung: s.V}, RungView{Ladder: "Writing", Rung: s.W}, RungView{Ladder: "Grounding", Rung: s.G})
 	if s.D != nil {
 		out = append(out, RungView{Ladder: "Data facts", Rung: *s.D})
 	}

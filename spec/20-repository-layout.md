@@ -45,12 +45,14 @@ tamnd/ai/
     algorithm.yaml  math2.yaml  programming.yaml
   prov/
     <tag>.jsonl                          provenance of node files (04.8)
+    cite/<tag>.jsonl                     the records of the citation check of the claims of a node (13.6)
     cards/<prefix>.jsonl                 changes of card rows by people or agents
     runs/<run-id>.yaml                   agent batch records (14.7)
   manifests/
     releases/next.yaml                   the aik version, framework images, Lean pin, data pins of the next release
     releases/<YYYY.MM>.yaml              the frozen manifest of each release
     <source>.jsonl                       harvest snapshot manifests: source id, fetch time, BLAKE3 hash in ai-raw
+    works.jsonl                          the snapshots of the cited versions of works: work, version, URL, hash, extractor (13.6)
   reports/
     coverage.json  audit.json  tests.json  experiments.json  facts.json  cost.json  inventory/<source>.json
   .github/
@@ -76,7 +78,7 @@ tamnd/ai-agent/
     framework/ runner/ testkit/ exp/ results/ harness/ viz/ status/ audit/ harvest/ universe/
     coverage/ copycheck/ agent/ queue/ prov/ site/ search/ mcp/ data/ release/
   schema/
-    node.v1.json  card.v1.json  record.v1.json  locator.v1.json  facts.v1.yaml  claims.v1.json
+    node.v1.json  card.v1.json  record.v1.json  facts.v1.yaml  claims.v1.json
     experiment.v1.json  expect.v1.json  levels.v1.yaml  targets.v1.yaml  edges.md
   harvest/<source>/                      one adapter per source (13.2), on the *-cli libraries
   images/<framework>/                    Dockerfiles and lock files of the runner images (08.9)
@@ -127,7 +129,8 @@ aik
   promote <id>                              turn a card into a node directory, same tag (04.1)
   card sync [-kind K] [-source S]           write and update cards from inventories and universe outcomes; split shards
   claims extract <slug>                     find claim sentences and match them with claims.yaml (07.3)
-  cite <slug|-all>                          the citation check against ai-raw snapshots (07.5)
+  cite <slug..|-all> [-offline]             the citation check against ai-raw snapshots; writes prov/cite and manifests/works.jsonl (07.5, 13.6)
+  cite show <work> ["<locator>"]            the places that the extraction of a work found, or the text of one place (13.6)
   facts compute [-kind K]                   merge fact sources, compute status, as_of and computed facts (04.9)
   test <slug> [-framework F]                run the tests of a node in their pinned images (08)
   vectors make <slug>                       compute metric test vectors with the official implementation (08)

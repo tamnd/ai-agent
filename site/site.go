@@ -22,6 +22,7 @@ import (
 
 	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/check"
+	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/katex"
 	"github.com/tamnd/ai-agent/markup"
@@ -198,9 +199,13 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	if err := b.buildScenes(); err != nil {
 		return nil, err
 	}
-	computeClaims(c)
+	ix, err := cite.Load(c.Root)
+	if err != nil {
+		return nil, err
+	}
+	computeClaims(c, ix)
 	for _, n := range c.Nodes {
-		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls})
+		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls, Cite: ix})
 	}
 	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.resultTables, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
 	for _, f := range steps {

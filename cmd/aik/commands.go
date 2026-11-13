@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/tamnd/ai-agent/check"
+	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/contract"
 	"github.com/tamnd/ai-agent/lang"
 	"github.com/tamnd/ai-agent/node"
@@ -377,7 +378,11 @@ func cmdStatus(args []string) error {
 	if err != nil {
 		return err
 	}
-	env := status.Env{Corpus: c, Results: res, Decls: ds}
+	ix, err := cite.Load(*root)
+	if err != nil {
+		return err
+	}
+	env := status.Env{Corpus: c, Results: res, Decls: ds, Cite: ix}
 	if n.Scene != "" || n.ArchScene != "" {
 		r := checkScene(c, n)
 		if r.Skipped == "" {
@@ -396,6 +401,7 @@ func cmdStatus(args []string) error {
 		}
 	}
 	show("writing", st.W)
+	show("grounding", st.G)
 	show("proof", st.H)
 	show("lean", st.L)
 	show("visual", st.V)

@@ -72,7 +72,7 @@ var Rules = map[string]string{
 	"D09": "units are in the unit list of 04.9",
 	"G01": "every source of a claim names a work",
 	"G02": "every claim has at least one source, unless it is a mathematical claim with a derivation or a Lean proof",
-	"G03": "every evidence entry has a locator",
+	"G03": "every evidence entry has a locator in the grammar of 13.6 (aik cite resolves it in the snapshot)",
 	"K01": "every {#c-...} anchor names a claim of claims.yaml once, a sentence has at most two anchors, and every ::claim reference names a claim that exists",
 	"K03": "the evidence of each claim has a role that its type allows (07.2)",
 	"K04": "no \"state of the art\", \"SOTA\", \"currently\", \"leading\", \"frontier\" as a rank, or superlative about a model, a lab, a score or a dataset in the site voice",

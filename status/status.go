@@ -18,6 +18,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/tamnd/ai-agent/bridge"
+	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/node"
 )
@@ -39,6 +40,8 @@ type Status struct {
 	I    map[string]Rung `json:"i"`
 	V    Rung            `json:"v"`
 	W    Rung            `json:"w"`
+	// G is the ladder of the grounding of the claims (04.10).
+	G Rung `json:"g"`
 	// D is the ladder of the data facts. It is nil for a kind that carries no facts.
 	D *Rung `json:"d,omitempty"`
 	// R is the ladder of the experiments (spec 9.11). It is nil for a node that has no experiment and no claim with a small-scale form.
@@ -193,6 +196,8 @@ type Env struct {
 	VizChecked map[string][]string
 	// Decls holds the declarations that `aik lean build` extracted, or nil when it did not run.
 	Decls formal.Decls
+	// Cite holds the snapshots and the records of the citation check (13.6), or nil when there are none.
+	Cite *cite.Index
 }
 
 // LoadDecls reads decls.jsonl. A missing file gives nil, which means that the Lean build did not run.
@@ -306,6 +311,7 @@ func Of(n *node.Node, env Env) Status {
 	}
 	s.V = visual(n, env)
 	s.W = Writing(n, env)
+	s.G = Grounding(n, env)
 	s.D = Data(n, env)
 	s.R = Repro(n, env)
 	return s
@@ -728,7 +734,13 @@ func Writing(n *node.Node, env Env) (r Rung) {
 		}
 	}
 	levels[2] = append(levels[2], need{"at least two sources", sources(2)})
-	levels[3] = []need{{"at least three sources", sources(3)}, {"every prerequisite exists", linked}}
+	// The claims of a page are in the right form at W2 and found in their sources at W3 (06.11).
+	g := Grounding(n, env).Level
+	if len(n.Claims) > 0 {
+		levels[2] = append(levels[2], need{"every claim with a source and a locator (G1)", func() bool { return g >= 1 }})
+	}
+	levels[3] = append(levels[3], need{"the claims in claims.yaml, each found in a source by the citation check (G2)", func() bool { return g >= 2 }})
+	levels[3] = append(levels[3], need{"at least three sources", sources(3)}, need{"every prerequisite exists", linked})
 	if slices.Contains(k.Sections, "History") {
 		levels[3] = append(levels[3], need{"History with a source", func() bool { return has("History")() && n.History != nil }})
 	}

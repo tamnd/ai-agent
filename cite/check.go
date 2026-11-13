@@ -1,0 +1,299 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Package cite is the citation check of spec 7.5 and 13.6: it resolves the source of each claim to a stored snapshot
+// of the cited version, finds the place that the locator names, and checks that the numbers and the key terms of
+// the claim are there. Its records say which claims are grounded (G2), and carry the verifier's verdict (G3).
+package cite
+
+import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+
+	"github.com/tamnd/ai-agent/claims"
+)
+
+// CheckerVersion is the version of the rules of Check. A change of it changes every key, so every claim is checked
+// again.
+const CheckerVersion = "aik-cite-1"
+
+// MinTerms is the share of the key terms of a claim that its span or the section of its span must hold (Default,
+// spec 7.5). The verifier of G3 reads the meaning; this step only finds a passage that is about the claim.
+const MinTerms = 0.75
+
+// Work is how a work card says what to fetch: the cited version, its URL and its format (spec 13.6).
+type Work struct {
+	Slug    string `json:"slug"`
+	Version string `json:"version"`
+	URL     string `json:"url"`
+	Format  string `json:"format"` // pdf, html or none
+	Licence string `json:"licence_class,omitempty"`
+	// Authors are the names of the authors, which a claim may name without the source holding them.
+	Authors []string `json:"authors,omitempty"`
+}
+
+// Snapshot is a line of manifests/works.jsonl: the stored copy of the cited version of a work.
+type Snapshot struct {
+	Work      string `json:"work"`
+	Version   string `json:"version"`
+	URL       string `json:"url"`
+	Format    string `json:"format"`
+	Hash      string `json:"hash"`
+	Size      int    `json:"size"`
+	Fetched   string `json:"fetched"`
+	Extractor string `json:"extractor"`
+}
+
+// Record is the result of the check of one source of one claim: a line of prov/cite/<tag>.jsonl. It holds offsets
+// into the snapshot and never text of the source (C01).
+type Record struct {
+	Claim    string `json:"claim"`
+	Work     string `json:"work"`
+	Locator  string `json:"locator"`
+	Key      string `json:"key"`
+	Snapshot string `json:"snapshot"`
+	Checked  string `json:"checked"`
+	Spans    []Span `json:"spans,omitempty"`
+	// Steps of 13.6: the locator, the numbers, the key terms.
+	Located      bool     `json:"located"`
+	NotLocated   []string `json:"not_located,omitempty"`
+	Numbers      int      `json:"numbers"`
+	NumbersMiss  []string `json:"numbers_missing,omitempty"`
+	Terms        int      `json:"terms"`
+	TermsFound   int      `json:"terms_found"`
+	TermsMissing []string `json:"terms_missing,omitempty"`
+	Pass         bool     `json:"pass"`
+	// The verifier of 15.4 reads the claim and the span and gives supported, unsupported, contradicted or unreadable.
+	Verdict  string `json:"verdict,omitempty"`
+	Verifier string `json:"verifier,omitempty"`
+	Run      string `json:"run,omitempty"`
+}
+
+// The verdicts of the verifier (spec 15.4).
+const (
+	Supported    = "supported"
+	Unsupported  = "unsupported"
+	Contradicted = "contradicted"
+	Unreadable   = "unreadable"
+)
+
+// Key is the cache key of a check (spec 7.5): the claim text, the snapshot, the locator, and the versions of the
+// extractor and of the checker.
+func Key(claim, snapshot, locator, extractor string) string {
+	return Hash([]byte(strings.Join([]string{claim, snapshot, locator, extractor, CheckerVersion}, "\x00")))[:32]
+}
+
+// Check runs the steps of 13.6 for one source of a claim against the text of its snapshot. The words of exempt, as
+// the names of the authors of the work, are not key terms.
+func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...string) Record {
+	r := Record{Claim: c.ID, Work: e.Work, Locator: e.Locator, Snapshot: snap.Hash, Key: Key(c.Text, snap.Hash, e.Locator, snap.Extractor)}
+	refs, err := ParseLocator(e.Locator)
+	if err != nil {
+		r.NotLocated = []string{err.Error()}
+		return r
+	}
+	spans, fails := Resolve(d, refs)
+	r.Spans, r.NotLocated = Merge(spans), fails
+	r.Located = len(fails) == 0
+	if !r.Located {
+		return r
+	}
+	var span strings.Builder
+	for _, s := range r.Spans {
+		span.WriteString(d.Text[s.Start:s.End])
+		span.WriteByte('\n')
+	}
+	in := Numbers(span.String())
+	for _, n := range Numbers(c.Text) {
+		r.Numbers++
+		if !Found(n, in) {
+			r.NumbersMiss = append(r.NumbersMiss, n.Text)
+		}
+	}
+	// The key terms may be in the span or in the section that holds it (spec 7.5).
+	ctx := span.String()
+	for _, s := range r.Spans {
+		if h := d.section(s.Start); h != nil {
+			ctx += "\n" + d.Text[h.Start:h.End]
+		}
+	}
+	v := NewVocab(ctx)
+	terms := Terms(c.Text, exempt...)
+	r.Terms = len(terms)
+	for _, t := range terms {
+		if v.Has(t) {
+			r.TermsFound++
+		} else {
+			r.TermsMissing = append(r.TermsMissing, t)
+		}
+	}
+	r.Pass = len(r.NumbersMiss) == 0 && (r.Terms == 0 || float64(r.TermsFound) >= MinTerms*float64(r.Terms))
+	return r
+}
+
+// section is the deepest heading whose text holds the offset.
+func (d *Doc) section(off int) *Head {
+	var best *Head
+	for i := range d.Heads {
+		h := &d.Heads[i]
+		if h.Start <= off && off < h.End && (best == nil || h.Start >= best.Start) {
+			best = h
+		}
+	}
+	return best
+}
+
+// Why says in one line why a record does not pass.
+func (r Record) Why() string {
+	switch {
+	case r.Pass:
+		return ""
+	case !r.Located:
+		return "the locator does not resolve: " + strings.Join(r.NotLocated, "; ")
+	case len(r.NumbersMiss) > 0:
+		return "the numbers " + strings.Join(r.NumbersMiss, ", ") + " are not at the located place"
+	}
+	return fmt.Sprintf("%d of %d key terms are at the located place; missing: %s", r.TermsFound, r.Terms, strings.Join(r.TermsMissing, ", "))
+}
+
+// The files of the content repository that hold the snapshots and the records.
+const (
+	ManifestFile = "manifests/works.jsonl"
+	RecordDir    = "prov/cite"
+)
+
+// Index is what the build knows about the citation check: the snapshots of the works and the records of the claims.
+type Index struct {
+	Snapshots map[string]Snapshot          // by work
+	Records   map[string]map[string]Record // by node tag, then by RecordID
+}
+
+// RecordID names the record of a source of a claim.
+func RecordID(claim, work, locator string) string { return claim + "\x00" + work + "\x00" + locator }
+
+// Load reads the manifest and the records of a content root. Missing files give an empty index.
+func Load(root string) (*Index, error) {
+	ix := &Index{Snapshots: map[string]Snapshot{}, Records: map[string]map[string]Record{}}
+	if err := readLines(filepath.Join(root, ManifestFile), func(b []byte) error {
+		var s Snapshot
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		ix.Snapshots[s.Work] = s
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	files, _ := filepath.Glob(filepath.Join(root, RecordDir, "*.jsonl"))
+	for _, f := range files {
+		tag := strings.TrimSuffix(filepath.Base(f), ".jsonl")
+		m := map[string]Record{}
+		if err := readLines(f, func(b []byte) error {
+			var r Record
+			if err := json.Unmarshal(b, &r); err != nil {
+				return err
+			}
+			m[RecordID(r.Claim, r.Work, r.Locator)] = r
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+		ix.Records[tag] = m
+	}
+	return ix, nil
+}
+
+func readLines(path string, f func([]byte) error) error {
+	b, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	sc := bufio.NewScanner(bytes.NewReader(b))
+	sc.Buffer(make([]byte, 0, 64*1024), 8<<20)
+	for i := 1; sc.Scan(); i++ {
+		if len(bytes.TrimSpace(sc.Bytes())) == 0 {
+			continue
+		}
+		if err := f(sc.Bytes()); err != nil {
+			return fmt.Errorf("%s:%d: %w", path, i, err)
+		}
+	}
+	return sc.Err()
+}
+
+// Current gives the record of a source of a claim when its key matches the claim, the locator and the snapshot of
+// the work as they are now. A record of an older text, locator or snapshot is stale and counts for nothing.
+func (ix *Index) Current(tag string, c *claims.Claim, e claims.Evidence) (Record, bool) {
+	if ix == nil {
+		return Record{}, false
+	}
+	r, ok := ix.Records[tag][RecordID(c.ID, e.Work, e.Locator)]
+	if !ok {
+		return Record{}, false
+	}
+	s, ok := ix.Snapshots[e.Work]
+	if !ok || r.Key != Key(c.Text, s.Hash, e.Locator, s.Extractor) {
+		return Record{}, false
+	}
+	return r, true
+}
+
+// Grounded tells if a source of a claim passes the citation check (G2).
+func (ix *Index) Grounded(tag string, c *claims.Claim, e claims.Evidence) bool {
+	r, ok := ix.Current(tag, c, e)
+	return ok && r.Pass
+}
+
+// WriteRecords writes the records of a node, sorted, one per line.
+func WriteRecords(root, tag string, rs []Record) error {
+	slices.SortFunc(rs, func(a, b Record) int {
+		return strings.Compare(RecordID(a.Claim, a.Work, a.Locator), RecordID(b.Claim, b.Work, b.Locator))
+	})
+	var b bytes.Buffer
+	for _, r := range rs {
+		line, err := json.Marshal(r)
+		if err != nil {
+			return err
+		}
+		b.Write(line)
+		b.WriteByte('\n')
+	}
+	p := filepath.Join(root, RecordDir, tag+".jsonl")
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(p, b.Bytes(), 0o644)
+}
+
+// WriteManifest writes the snapshots, sorted by work.
+func WriteManifest(root string, snaps map[string]Snapshot) error {
+	works := make([]string, 0, len(snaps))
+	for w := range snaps {
+		works = append(works, w)
+	}
+	slices.Sort(works)
+	var b bytes.Buffer
+	for _, w := range works {
+		line, err := json.Marshal(snaps[w])
+		if err != nil {
+			return err
+		}
+		b.Write(line)
+		b.WriteByte('\n')
+	}
+	p := filepath.Join(root, ManifestFile)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(p, b.Bytes(), 0o644)
+}
