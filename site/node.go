@@ -336,6 +336,9 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 		}
 	}
 	p.Shapes = b.shapesView(n)
+	if p.Shapes != nil && p.Shapes.Arch != nil {
+		p.Scripts = append(p.Scripts, "/assets/arch.js")
+	}
 	if p.Shapes != nil {
 		if hasH2(html, "shapes-and-parameters") {
 			html = insertAfterSection(html, b.snippet("shapes-body", p), "shapes-and-parameters")

@@ -308,7 +308,24 @@ func vizFindings(c *node.Corpus, only map[string]bool) []check.Finding {
 	return out
 }
 
+// checkScene checks the step scene and the architecture scene of a node, as either exists, into one report.
 func checkScene(c *node.Corpus, n *node.Node) viz.Report {
+	r := viz.Report{Slug: n.Slug}
+	if n.Scene != "" {
+		r = checkStepScene(c, n)
+	}
+	if n.ArchScene != "" {
+		_, a := viz.NodeArch(c, n)
+		r.Fails = append(r.Fails, a.Fails...)
+		r.Steps = append(r.Steps, a.Steps...)
+		if a.Skipped != "" {
+			r.Skipped = a.Skipped
+		}
+	}
+	return r
+}
+
+func checkStepScene(c *node.Corpus, n *node.Node) viz.Report {
 	js, err := viz.Build(filepath.Join(c.Root, n.Scene), false)
 	if err != nil {
 		return viz.Report{Slug: n.Slug, Fails: []string{"the scene does not build: " + err.Error()}}
@@ -361,7 +378,7 @@ func cmdStatus(args []string) error {
 		return err
 	}
 	env := status.Env{Corpus: c, Results: res, Decls: ds}
-	if n.Scene != "" {
+	if n.Scene != "" || n.ArchScene != "" {
 		r := checkScene(c, n)
 		if r.Skipped == "" {
 			env.VizChecked = map[string][]string{n.Slug: r.Fails}
@@ -745,10 +762,52 @@ func indent(s string) string {
 // cmdViz bundles or checks the scenes.
 func cmdViz(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik viz build <slug> or aik viz check [slug ...]"}
+		return usageError{"use aik viz build <slug>, aik viz check [slug ...] or aik viz shapes <slug>"}
 	}
 	sub, args := args[0], args[1:]
 	switch sub {
+	case "shapes":
+		f := newFlags("viz shapes", "[flags] <slug>")
+		root := f.String("root", ".", "the root of the content repository")
+		write := f.Bool("w", false, "write viz/shapes.scene.yaml in the node instead of printing it")
+		force := f.Bool("force", false, "with -w, replace a scene that exists, and its layout")
+		if err := parse(f, args); err != nil {
+			return err
+		}
+		if f.NArg() != 1 {
+			return usageError{"give one slug"}
+		}
+		c, err := load(*root)
+		if err != nil {
+			return err
+		}
+		n := c.BySlug[f.Arg(0)]
+		if n == nil || n.Shapes == nil {
+			return usageError{fmt.Sprintf("no node with the slug %q has a shapes.yaml", f.Arg(0))}
+		}
+		if ps := n.Shapes.Check(); len(ps) > 0 {
+			return fmt.Errorf("%s: %w", n.Shapes.Path, ps[0])
+		}
+		b, err := viz.GenArch(n.Shapes, n.Name).Encode()
+		if err != nil {
+			return err
+		}
+		if !*write {
+			_, err = os.Stdout.Write(b)
+			return err
+		}
+		p := filepath.Join(n.Dir, filepath.FromSlash(viz.ArchFile))
+		if _, err := os.Stat(p); err == nil && !*force {
+			return fmt.Errorf("%s/%s exists; give -force to replace it", n.Rel, viz.ArchFile)
+		}
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(p, b, 0o644); err != nil {
+			return err
+		}
+		fmt.Printf("wrote %s/%s\n", n.Rel, viz.ArchFile)
+		return nil
 	case "build":
 		f := newFlags("viz build", "[flags] <slug>")
 		root := f.String("root", ".", "the root of the content repository")
@@ -795,7 +854,7 @@ func cmdViz(args []string) error {
 		var reports []viz.Report
 		failed := 0
 		for _, n := range c.Nodes {
-			if n.Scene == "" || (len(only) > 0 && !only[n.Slug]) {
+			if (n.Scene == "" && n.ArchScene == "") || (len(only) > 0 && !only[n.Slug]) {
 				continue
 			}
 			r := checkScene(c, n)
@@ -817,7 +876,7 @@ func cmdViz(args []string) error {
 				case r.Skipped != "":
 					fmt.Printf("skip %s: %s\n", r.Slug, r.Skipped)
 				case len(r.Fails) == 0:
-					fmt.Printf("pass %s: %d presets, %d lines reached\n", r.Slug, len(r.Steps), len(r.Lines))
+					fmt.Printf("pass %s: %d runs, %d lines reached\n", r.Slug, len(r.Steps), len(r.Lines))
 				default:
 					fmt.Printf("FAIL %s\n", r.Slug)
 					for _, m := range r.Fails {
@@ -831,7 +890,7 @@ func cmdViz(args []string) error {
 		}
 		return nil
 	}
-	return usageError{fmt.Sprintf("unknown subcommand %q; use build or check", sub)}
+	return usageError{fmt.Sprintf("unknown subcommand %q; use build, check or shapes", sub)}
 }
 
 // cmdSite builds, serves or checks the static site.

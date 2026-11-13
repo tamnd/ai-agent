@@ -19,6 +19,7 @@ type ShapesView struct {
 	Sources []string
 	Note    string
 	File    string // the link to shapes.yaml
+	Arch    *ArchView
 }
 
 // ShapeRow is a size or a total of the model.
@@ -64,7 +65,7 @@ func (b *builder) shapesView(n *node.Node) *ShapesView {
 	if f == nil || len(f.Check()) > 0 {
 		return nil
 	}
-	v := &ShapesView{Configs: []string{"example"}, Note: f.Note, File: b.opt.Repo + "/blob/main/" + n.Rel + "/" + shapes.FileName}
+	v := &ShapesView{Configs: []string{"example"}, Note: f.Note, File: b.opt.Repo + "/blob/main/" + n.Rel + "/" + shapes.FileName, Arch: b.archView(n)}
 	for _, c := range f.Configs {
 		v.Configs = append(v.Configs, c.Name)
 	}
