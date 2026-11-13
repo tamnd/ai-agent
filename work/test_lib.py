@@ -229,5 +229,19 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(report.next_patch(["v1.2.3"], datetime.date(2026, 11, 13)), "2026.11")
 
 
+class ExtractJSONTest(unittest.TestCase):
+    def test_fenced(self):
+        self.assertEqual(lib.extract_json('ok\n```json\n[{"id": 1}]\n```'), [{"id": 1}])
+
+    def test_control_character_in_a_quote(self):
+        # A PDF epsilon can come through as a raw control character inside a quoted string.
+        got = lib.extract_json('[{"id": 1, "quote": "with error \x08 and"}]')
+        self.assertEqual(got[0]["id"], 1)
+
+    def test_no_json(self):
+        with self.assertRaises(ValueError):
+            lib.extract_json("no list here")
+
+
 if __name__ == "__main__":
     unittest.main()
