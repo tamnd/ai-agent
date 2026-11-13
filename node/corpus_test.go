@@ -17,8 +17,8 @@ func TestLoad(t *testing.T) {
 	if n == nil {
 		t.Fatal("binary-search is missing")
 	}
-	if n.Kind != "algorithm" {
-		t.Errorf("kind is %q, want algorithm", n.Kind)
+	if n.Kind != "method" {
+		t.Errorf("kind is %q, want method", n.Kind)
 	}
 	if c.ByTag["2B7QDX"] != n {
 		t.Error("the tag 2B7QDX does not give binary-search")
@@ -29,13 +29,18 @@ func TestLoad(t *testing.T) {
 }
 
 func TestIsKind(t *testing.T) {
-	for _, k := range []string{"algorithm", "problem", "concept", "definition", "model", "theorem"} {
+	if len(KindTable) != 28 {
+		t.Errorf("the kind table has %d kinds, want 28", len(KindTable))
+	}
+	for _, k := range []string{"method", "architecture", "task", "concept", "definition", "model", "theorem", "result"} {
 		if !IsKind(k) {
 			t.Errorf("IsKind(%q) is false", k)
 		}
 	}
-	if IsKind("recipe") {
-		t.Error(`IsKind("recipe") is true`)
+	for _, k := range []string{"recipe", "algorithm", "problem", "data-structure"} {
+		if IsKind(k) {
+			t.Errorf("IsKind(%q) is true", k)
+		}
 	}
 }
 

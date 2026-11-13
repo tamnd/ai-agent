@@ -33,10 +33,13 @@ type searchEntry struct {
 	Rank    int      `json:"-"`
 }
 
-var kindRank = map[string]int{
-	"algorithm": 50, "data-structure": 48, "problem": 46, "technique": 44, "abstract-type": 40,
-	"concept": 38, "theorem": 36, "definition": 34, "model": 32, "person": 20, "exercise": 10,
-}
+var kindRank = func() map[string]int {
+	out := map[string]int{}
+	for _, k := range node.KindTable {
+		out[k.ID] = k.Rank
+	}
+	return out
+}()
 
 var levelRank = map[string]int{"intro": 6, "core": 4, "advanced": 2}
 
@@ -141,7 +144,16 @@ func (b *builder) items(ns []*node.Node) []Item {
 	return out
 }
 
-var kindOrder = []string{"problem", "algorithm", "data-structure", "abstract-type", "technique", "concept", "definition", "theorem", "model", "person", "exercise"}
+// kindOrder is the order of the kinds in lists: the order of spec 04.2, with the areas left out.
+var kindOrder = func() []string {
+	var out []string
+	for _, k := range node.KindTable {
+		if k.ID != "area" {
+			out = append(out, k.ID)
+		}
+	}
+	return out
+}()
 
 // byKind groups nodes by kind, in the order of kindOrder.
 func (b *builder) byKind(ns []*node.Node) []Group {
@@ -178,7 +190,7 @@ func (b *builder) home() error {
 	p.Tiles = b.areaTiles()
 	var start []*node.Node
 	for _, n := range b.c.Nodes {
-		if n.Level == "intro" && (n.Kind == "algorithm" || n.Kind == "data-structure" || n.Kind == "concept" || n.Kind == "problem") {
+		if n.Level == "intro" && (n.Kind == "method" || n.Kind == "architecture" || n.Kind == "concept" || n.Kind == "task") {
 			start = append(start, n)
 		}
 	}
@@ -268,40 +280,34 @@ func (b *builder) areaPage(a node.Area, parent *node.Area) error {
 	return b.page("list", "/"+a.ID+"/", p)
 }
 
-func (b *builder) problems() error {
-	p := ListPage{Base: b.base("Problems", "Computational problems, with the known algorithms that solve each one.", "/problems/")}
-	p.Section, p.Heading = "problems", "Problems"
-	p.Lead = "A problem says what to compute. It does not say how. Each problem page lists the algorithms that solve it, with their costs."
-	ps := append([]*node.Node(nil), b.c.Kind("problem")...)
+func (b *builder) tasks() error {
+	p := ListPage{Base: b.base("Tasks", "The tasks that AI systems solve, with the methods that solve each one.", "/tasks/")}
+	p.Section, p.Heading = "tasks", "Tasks"
+	p.Lead = "A task says what a system must do and how success is measured. It does not say how. Each task page lists the methods that solve it."
+	ps := append([]*node.Node(nil), b.c.Kind("task")...)
 	sort.Slice(ps, func(i, j int) bool { return ps[i].Name < ps[j].Name })
-	g := Group{ID: "all", Title: "All problems"}
+	g := Group{ID: "all", Title: "All tasks"}
 	for _, n := range ps {
 		it := b.item(n)
 		k := len(b.c.Solvers(n.Slug))
-		it.Meta = fmt.Sprintf("%d known %s", k, map[bool]string{true: "algorithm", false: "algorithms"}[k == 1])
+		it.Meta = fmt.Sprintf("%d known %s", k, map[bool]string{true: "method", false: "methods"}[k == 1])
 		g.Items = append(g.Items, it)
 	}
 	if len(g.Items) > 0 {
 		p.Groups = []Group{g}
 	} else {
-		p.Empty = "No problem pages exist yet."
+		p.Empty = "No task pages exist yet."
 	}
-	return b.page("list", "/problems/", p)
+	return b.page("list", "/tasks/", p)
 }
 
-var kindIntro = map[string]string{
-	"algorithm":      "An algorithm is a finite procedure that solves a problem. Each page has pseudocode, a proof of correctness, the costs and code with tests.",
-	"data-structure": "A data structure keeps data so that some operations are fast. Each page gives the invariant, the operations and their costs.",
-	"problem":        "A problem says what to compute from an input. It does not say how.",
-	"technique":      "A technique is a way to design algorithms, such as divide and conquer. Many algorithms use the same technique.",
-	"concept":        "A concept is an idea that many pages use, such as a loop invariant.",
-	"definition":     "A definition gives the exact meaning of a term.",
-	"theorem":        "A theorem is a statement with a proof.",
-	"model":          "A model of computation says which operations cost one step. A bound has meaning only in a model.",
-	"abstract-type":  "An abstract type gives the operations and their meaning, but not the data structure. A stack and a priority queue are examples.",
-	"person":         "The people who made the field.",
-	"exercise":       "Exercises with hints and solutions.",
-}
+var kindIntro = func() map[string]string {
+	out := map[string]string{}
+	for _, k := range node.KindTable {
+		out[k.ID] = k.Intro
+	}
+	return out
+}()
 
 func (b *builder) kinds() error {
 	for _, k := range node.Kinds {
@@ -313,8 +319,8 @@ func (b *builder) kinds() error {
 		name := title(kindName(k, true))
 		p := ListPage{Base: b.base(name, kindIntro[k], "/kind/"+k+"/")}
 		p.Heading, p.Lead = name, kindIntro[k]
-		if k == "technique" {
-			p.Section = "techniques"
+		if k == "method" {
+			p.Section = "methods"
 		}
 		if len(ns) > 0 {
 			p.Groups = []Group{{ID: "all", Title: fmt.Sprintf("All %s", kindName(k, true)), Items: b.items(ns)}}
@@ -440,7 +446,7 @@ func (b *builder) matrix() error {
 	ns := slices.Clone(b.c.Nodes)
 	sort.Slice(ns, func(i, j int) bool { return ns[i].Name < ns[j].Name })
 	for _, n := range ns {
-		if n.Kind != "algorithm" && n.Kind != "data-structure" {
+		if n.Kind != "method" && n.Kind != "architecture" && n.Kind != "metric" {
 			continue
 		}
 		s := b.status[n.Slug]

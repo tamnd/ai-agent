@@ -48,7 +48,7 @@ func TestFlagsAfterArguments(t *testing.T) {
 	if err := os.CopyFS(root, os.DirFS(corpus)); err != nil {
 		t.Fatal(err)
 	}
-	if got := run([]string{"new", "algorithm", "heap-sort", "-area", "sorting/comparison-sorts", "-root", root}); got != 0 {
+	if got := run([]string{"new", "method", "heap-sort", "-area", "sorting/comparison-sorts", "-root", root}); got != 0 {
 		t.Fatalf("aik new exits with %d", got)
 	}
 	if _, err := os.Stat(filepath.Join(root, "nodes/sorting/comparison-sorts/heap-sort/node.md")); err != nil {

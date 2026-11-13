@@ -1,6 +1,6 @@
 ---
 tag: 6SRCHA
-kind: problem
+kind: task
 slug: search-in-sorted-array
 name: Search in a sorted array
 aliases: [sorted search, ordered search]

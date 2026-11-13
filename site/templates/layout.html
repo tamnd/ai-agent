@@ -35,8 +35,8 @@
 <nav class="nav" aria-label="Main">
 <a href="/learn/"{{if eq .Section "learn"}} aria-current="page"{{end}}>Learn</a>
 <a href="/areas/"{{if eq .Section "areas"}} aria-current="page"{{end}}>Areas</a>
-<a href="/problems/"{{if eq .Section "problems"}} aria-current="page"{{end}}>Problems</a>
-<a href="/kind/technique/"{{if eq .Section "techniques"}} aria-current="page"{{end}}>Techniques</a>
+<a href="/tasks/"{{if eq .Section "tasks"}} aria-current="page"{{end}}>Tasks</a>
+<a href="/kind/method/"{{if eq .Section "methods"}} aria-current="page"{{end}}>Methods</a>
 <a href="/visualize/"{{if eq .Section "visualize"}} aria-current="page"{{end}}>Visualize</a>
 </nav>
 <a class="find" href="/search/" data-palette><span>Search</span><kbd>⌘K</kbd></a>
@@ -48,7 +48,7 @@
 </main>
 <footer class="foot">
 <div class="cols">
-<div><h2>Learn</h2><ul><li><a href="/learn/">Reading path</a></li><li><a href="/areas/">Areas</a></li><li><a href="/problems/">Problems</a></li><li><a href="/kind/algorithm/">Algorithms</a></li><li><a href="/kind/data-structure/">Data structures</a></li><li><a href="/visualize/">Visualize</a></li></ul></div>
+<div><h2>Learn</h2><ul><li><a href="/learn/">Reading path</a></li><li><a href="/areas/">Areas</a></li><li><a href="/tasks/">Tasks</a></li><li><a href="/kind/method/">Methods</a></li><li><a href="/kind/architecture/">Architectures</a></li><li><a href="/visualize/">Visualize</a></li></ul></div>
 <div><h2>Reference</h2><ul><li><a href="/languages/">Languages</a></li><li><a href="/matrix/">Matrix</a></li><li><a href="/badges/">Badges</a></li><li><a href="/spec/">Specification</a></li><li><a href="/search/">Search</a></li></ul></div>
 <div><h2>Project</h2><ul><li><a href="/about/">About</a></li><li><a href="/contribute/">Contribute</a></li><li><a href="{{.Meta.Repo}}">Content on GitHub</a></li><li><a href="{{.Meta.AgentURL}}">Toolchain on GitHub</a></li><li><a href="{{.Meta.Repo}}/issues">Issues</a></li></ul></div>
 <div><h2>Data</h2><ul><li><a href="/llms.txt">llms.txt</a></li><li><a href="/api/nodes.json">nodes.json</a></li><li><a href="/search.json">search.json</a></li><li><a href="/sitemap.xml">Sitemap</a></li></ul></div>

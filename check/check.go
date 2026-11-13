@@ -311,13 +311,13 @@ func (r *run) target(n *node.Node, field, slug string, kinds ...string) {
 
 func (r *run) edges(n *node.Node) {
 	for _, s := range n.Solves {
-		r.target(n, "solves", s.Problem, "problem")
+		r.target(n, "solves", s.Problem, "task")
 	}
 	for _, s := range n.Implements {
-		r.target(n, "implements", s, "abstract-type")
+		r.target(n, "implements", s, "method", "architecture")
 	}
 	for _, s := range n.Techniques {
-		r.target(n, "techniques", s, "technique")
+		r.target(n, "techniques", s, "method", "concept")
 	}
 	for _, s := range n.Uses {
 		r.target(n, "uses", s)
@@ -341,7 +341,7 @@ func (r *run) edges(n *node.Node) {
 		r.add("G07", Warn, n.Rel+"/node.md", 0, "see_also has %d targets; the limit is 8", len(n.SeeAlso))
 	}
 	if n.Model != "" {
-		r.target(n, "model", n.Model, "model")
+		r.target(n, "model", n.Model, "concept")
 	}
 }
 
@@ -415,23 +415,21 @@ func (r *run) complexity(n *node.Node) {
 			}
 		}
 	}
-	if len(c.Time) > 0 && n.Model == "" && (n.Kind == "algorithm" || n.Kind == "data-structure") {
+	if len(c.Time) > 0 && n.Model == "" && (n.Kind == "method" || n.Kind == "architecture") {
 		r.add("E04", Block, p, 0, "the node has complexity claims but no model")
 	}
 }
 
 // Order lists the headings of each kind in their order (spec 06.3).
-var Order = map[string][]string{
-	"algorithm":      {"In plain words", "The problem", "The algorithm", "Example", "Correctness", "Complexity", "Properties", "Variants and improvements", "When to use it", "Pitfalls", "Implementations", "Formal proof", "History", "Exercises", "References"},
-	"data-structure": {"In plain words", "The abstract type", "Representation", "Operations", "Example", "Correctness", "Complexity", "Variants", "When to use it", "Pitfalls", "Implementations", "Formal proof", "History", "Exercises", "References"},
-	"problem":        {"In plain words", "Definition", "Variants", "Examples", "Known algorithms", "Bounds", "Reductions", "Applications", "References"},
-	"abstract-type":  {"In plain words", "Operations", "Laws", "Implementations", "Lower bounds", "References"},
-	"technique":      {"In plain words", "When it applies", "The template", "Classic examples", "Variations", "Pitfalls", "Exercises", "References"},
-	"concept":        {"In plain words", "The idea", "Examples", "Where it is used", "References"},
-	"definition":     {"Definition", "Examples and non-examples", "Related definitions", "References"},
-	"model":          {"The machine", "What it counts", "Relation to other models", "Known results in the model", "References"},
-	"theorem":        {"Statement", "In plain words", "Proof", "Consequences", "Tightness", "History", "References"},
-}
+var Order = func() map[string][]string {
+	out := map[string][]string{}
+	for _, k := range node.KindTable {
+		if !k.CardOnly() {
+			out[k.ID] = k.Sections
+		}
+	}
+	return out
+}()
 
 func (r *run) sections(n *node.Node) {
 	order, ok := Order[n.Kind]
@@ -440,8 +438,12 @@ func (r *run) sections(n *node.Node) {
 	}
 	p := n.Rel + "/node.md"
 	last := -1
-	// The build fills these sections, so an empty heading only marks the place.
-	filled := map[string]bool{"Implementations": true, "Known algorithms": true, "References": true}
+	// The build fills the generated sections, so an empty heading only marks the place.
+	k, _ := node.Kind(n.Kind)
+	filled := map[string]bool{}
+	for _, h := range k.Generated {
+		filled[h] = true
+	}
 	for _, h := range status.Sections(n.Body) {
 		i := slices.Index(order, h)
 		if i < 0 {

@@ -75,7 +75,7 @@ type Meta struct {
 
 // Counts are the numbers of the home page.
 type Counts struct {
-	Nodes, Algorithms, Structures, Problems, Impls, Langs, Proofs, Scenes, Areas int
+	Nodes, Methods, Architectures, Tasks, Impls, Langs, Proofs, Scenes, Areas int
 }
 
 // Link is a link with a name.
@@ -195,7 +195,7 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	for _, n := range c.Nodes {
 		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls})
 	}
-	steps := []func() error{b.nodes, b.home, b.areas, b.problems, b.kinds, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
+	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
 	for _, f := range steps {
 		if err := f(); err != nil {
 			return nil, err
@@ -236,12 +236,12 @@ func (b *builder) counts() {
 	for _, n := range b.c.Nodes {
 		k.Nodes++
 		switch n.Kind {
-		case "algorithm":
-			k.Algorithms++
-		case "data-structure":
-			k.Structures++
-		case "problem":
-			k.Problems++
+		case "method":
+			k.Methods++
+		case "architecture":
+			k.Architectures++
+		case "task":
+			k.Tasks++
 		}
 		k.Impls += len(n.Impls)
 		for _, im := range n.Impls {
@@ -293,23 +293,15 @@ func comma(n int) string {
 	return s
 }
 
-var kindNames = map[string][2]string{
-	"area": {"area", "areas"}, "concept": {"concept", "concepts"}, "definition": {"definition", "definitions"},
-	"model": {"model", "models"}, "problem": {"problem", "problems"}, "abstract-type": {"abstract type", "abstract types"},
-	"algorithm": {"algorithm", "algorithms"}, "data-structure": {"data structure", "data structures"},
-	"technique": {"technique", "techniques"}, "theorem": {"theorem", "theorems"}, "exercise": {"exercise", "exercises"},
-	"person": {"person", "people"},
-}
-
 func kindName(k string, many ...bool) string {
-	n, ok := kindNames[k]
+	n, ok := node.Kind(k)
 	if !ok {
 		return k
 	}
 	if len(many) > 0 && many[0] {
-		return n[1]
+		return n.Plural
 	}
-	return n[0]
+	return n.Name
 }
 
 func (b *builder) parseTemplates() error {
