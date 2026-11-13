@@ -1,4 +1,4 @@
-The build gives each page a level on each of five ladders. A level comes from evidence in the repository. Nobody writes a level by hand. If the evidence goes away, the level goes down.
+The build gives each page a level on each of its ladders. A level comes from evidence in the repository. Nobody writes a level by hand. If the evidence goes away, the level goes down.
 
 A review counts only for the exact file that the reviewer read. The review record keeps the SHA-256 hash of the file. When the file changes, the hash does not match, and the level goes down until a new review.
 
@@ -43,6 +43,29 @@ The shared cases and the adapter that runs them do not exist yet. Until they exi
 | V3 | V2, and a person reviewed it for clarity and accessibility. |
 
 The scene checks that exist now are these: the scene builds, it imports only `@aik/viz`, it gives the same trace twice, it has at least 3 presets and its presets reach each line of the pseudocode. The checks against a reference and the budgets come later. Until then, a scene stays at V1.
+
+## D: the data facts
+
+A model, a dataset, a benchmark, a hardware item, a policy and a system have facts, such as the number of parameters or the release date. Each fact is in the file `facts.yaml` of the page, with its sources.
+
+| Level | What it needs |
+| :-- | :-- |
+| D0 | A name and a source. |
+| D1 | Each required fact of the kind has a value from a source, and each number has a unit. |
+| D2 | D1, and each fact has a primary source with a locator, or says why no primary source exists. Each fact that is true only at a date has `as_of`. |
+| D3 | D2, and a person reviewed this exact fact file. |
+
+The build also computes the status of each fact from its sources.
+
+| Status | What it means |
+| :-- | :-- |
+| agreed | A primary source and at least one other source give the same value. |
+| primary-only | Only primary sources give the value. |
+| secondary-only | Only secondary sources, such as a database, give the value. |
+| disputed | The sources give different values. The page shows each value with its source. |
+| estimated | No primary source gives the value. An estimator computes it with a named method. |
+
+Two numbers are the same value when they differ by 1% or less. Two dates are the same when they agree to the precision of the less precise date, so 2024-07 and 2024-07-23 agree.
 
 ## W: the writing
 

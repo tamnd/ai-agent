@@ -74,7 +74,7 @@ These names are fixed for all documents.
 | Lean | package `AI`, modules `AI.<Area>.<Name>` |
 | Ladders | W0–W5 writing; G0–G3 grounding; X0–X4 execution per framework; R0–R4 reproduction; F0–F3 formal; V0–V3 visualization; D0–D3 data facts; C0–C6 coverage |
 | Evidence labels | `proved`, `measured-here`, `replicated`, `reported`, `contested` (07) |
-| Fact status | `agreed`, `primary-only`, `disputed`, `estimated` (04.9) |
+| Fact status | `agreed`, `primary-only`, `secondary-only`, `disputed`, `estimated` (04.9) |
 | Rule families (15.3) | T structure; E edges; S style and sections; G grounding and citations; K claims and time; X implementations; R experiments; M metrics and results; F formal; V visualization; D data facts; C copying and licences; P people and privacy; N neutrality; L links |
 | Frameworks (08.2) | tier 1: `numpy`, `pytorch`, `jax`; tier 2: `c`, `cpp`, `rust`, `julia`, `typescript` |
 | Budget classes (09.4) | `cpu-small`, `gpu-small`, `gpu-medium` |

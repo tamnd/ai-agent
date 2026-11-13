@@ -1,4 +1,4 @@
-// Package status computes the ladders of a node (spec 04.8): H for the human proof, L for Lean, I for each language, V for the visualization and W for the writing.
+// Package status computes the ladders of a node (spec 04.10): H for the human proof, L for Lean, I for each language, V for the visualization, W for the writing and D for the data facts.
 //
 // Nobody writes a level by hand. Each level comes with the reasons that it is not higher, so that a page can say what it needs next.
 package status
@@ -32,12 +32,14 @@ type Rung struct {
 
 // Status is the set of ladders of one node.
 type Status struct {
-	Slug  string          `json:"slug"`
-	H     Rung            `json:"h"`
-	L     Rung            `json:"l"`
-	I     map[string]Rung `json:"i"`
-	V     Rung            `json:"v"`
-	W     Rung            `json:"w"`
+	Slug string          `json:"slug"`
+	H    Rung            `json:"h"`
+	L    Rung            `json:"l"`
+	I    map[string]Rung `json:"i"`
+	V    Rung            `json:"v"`
+	W    Rung            `json:"w"`
+	// D is the ladder of the data facts. It is nil for a kind that carries no facts.
+	D     *Rung           `json:"d,omitempty"`
 	Tests map[string]Test `json:"tests,omitempty"`
 }
 
@@ -262,6 +264,7 @@ func Of(n *node.Node, env Env) Status {
 	}
 	s.V = visual(n, env)
 	s.W = Writing(n, env)
+	s.D = Data(n, env)
 	return s
 }
 

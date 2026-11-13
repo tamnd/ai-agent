@@ -320,21 +320,37 @@ AI facts change, disagree and age. "GPT-3 has 175 billion parameters" is stable.
   sources:
     - {src: "S:meta-llama31-paper", loc: "Table 3", value: 4.05e11, kind: primary}
     - {src: "S:epoch-ai-models", row: "Llama 3.1-405B", value: 4.05e11, kind: secondary, as_of: 2026-11-12}
-  status: agreed                     # computed: agreed | primary-only | disputed | estimated
 - id: training.compute_flop
   value: 3.8e25
   unit: FLOP
   sources:
     - {src: "S:meta-llama31-paper", loc: "Section 3.3.1", value: 3.8e25, kind: primary}
     - {src: "S:epoch-ai-models", value: 3.8e25, kind: secondary, method: "reported", as_of: 2026-11-12}
-  status: agreed
+- id: training.tokens
+  value: 1.5e13
+  unit: tokens
+  no_primary: "The developer gives only an approximate count in a blog post."
+  sources:
+    - {src: "S:epoch-ai-models", row: "Example model", value: 1.5e13, kind: secondary, as_of: 2026-11-12}
 ```
+
+The build computes the status of each fact from its sources, and the page and `/api/nodes.json` show it. The file never holds a status (T05). The statuses:
+
+| Status | When |
+|---|---|
+| `agreed` | a primary source and at least one other source give the same value |
+| `primary-only` | only primary sources give the value |
+| `secondary-only` | only secondary sources give the value, and no estimator computes it |
+| `disputed` | two sources differ beyond the tolerance |
+| `estimated` | no primary source gives the value, and an estimator computes it |
+
+A fact with no primary source says why in `no_primary`, for example when the developer never published the number. Rule D04 then accepts it. When the file gives no `value`, the build takes the value of the best source: the first primary source, else the first estimate, else the first secondary source.
 
 Rules:
 
-- **Source order.** A primary source (the developer's paper, model card, documentation or official text) wins over a secondary source (Epoch AI, the AI Index, Wikipedia, news). When they differ by more than the tolerance of the field (`schema/facts.v1.yaml`: 1% for counts, the stated precision for dates), the status is `disputed`, and the page shows both values with their sources.
+- **Source order.** A primary source (the developer's paper, model card, documentation or official text) wins over a secondary source (Epoch AI, the AI Index, Wikipedia, news). When they differ by more than the tolerance of the field (`schema/facts.v1.yaml`: 1% for numbers, the precision of the less precise date for dates, case for text and order for lists), the status is `disputed`, and the page shows both values with their sources.
 - **Estimates.** A value that no primary source gives but that an estimator computes (Epoch AI's compute estimates) has status `estimated`, with the estimator and its method. The page says "estimated by Epoch AI".
-- **Time.** A fact that is true only at a date (a price, a rank, an "in force" status, a count of users) has `as_of`, and the page prints the date next to the value. Rule K04 rejects a time-bound fact without `as_of`.
+- **Time.** A fact that is true only at a date (a price, a rank, an "in force" status, a count of users) has `as_of`, and the page prints the date next to the value. Rule D07 rejects a time-bound fact without `as_of`. The time-bound ids are `access`, `licence`, `status`, `price`, `users`, `downloads`, `likes`, `stars` and `rank`, and the ids under them.
 - **Computed facts.** Ranks, "first", "largest", "most cited" and similar facts are computed by the build from the registers (`aik facts compute`), with the date and the population ("the largest open-weights dense model by total parameters among the model cards, as of 2026-11-13"). They are never written by hand.
 
 ## 4.10 The computed ladders

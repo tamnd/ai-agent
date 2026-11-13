@@ -12,6 +12,7 @@
 {{with .Card}}{{template "card" .}}{{end}}
 {{with .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .}}{{template "link" .}}{{end}}</nav>{{end}}
 <div class="prose">{{.Body}}</div>
+{{with .Facts}}{{template "fact-table" .}}{{end}}
 {{with .Leads}}<section class="leads"><h2 class="small">Where this leads</h2><ul class="chips">{{range .}}<li style="--hue: {{.Hue}}">{{template "link" .}}</li>{{end}}</ul></section>{{end}}
 {{with .Related}}<section class="related"><h2 class="small">Related</h2><ul class="chips">{{range .}}<li style="--hue: {{.Hue}}">{{template "link" .}}</li>{{end}}</ul></section>{{end}}
 <section class="about-page" aria-labelledby="about-this-page">
@@ -86,3 +87,9 @@
 
 {{define "refs-section"}}<h2 id="references">References</h2>
 {{template "refs-list" .}}{{end}}
+
+{{define "fact-table"}}<section class="fact-list" aria-labelledby="facts"><h2 id="facts">Facts</h2>
+<p>Each fact names its sources. The build computes the status: agreed, primary-only, secondary-only, disputed or estimated. <a href="/badges/#d-the-data-facts">Read what the statuses mean</a>.</p>
+<div class="table-wrap"><table class="fact-table"><thead><tr><th scope="col">Fact</th><th scope="col">Value</th><th scope="col">Status</th><th scope="col">As of</th><th scope="col">Sources</th></tr></thead><tbody>
+{{range .}}<tr id="fact-{{.ID}}"><th scope="row">{{.Label}}</th><td>{{.Value}}{{with .Note}}<p class="fact-note">{{.}}</p>{{end}}</td><td><span class="chip status-{{.Status}}">{{.Status}}</span></td><td>{{.AsOf}}</td><td><ul>{{$disputed := eq .Status "disputed"}}{{range .Sources}}<li><code>{{.Src}}</code> ({{.Kind}}){{with .Loc}}, {{.}}{{end}}{{if $disputed}}: {{.Value}}{{end}}{{with .AsOf}}, as of {{.}}{{end}}</li>{{end}}</ul></td></tr>{{end}}
+</tbody></table></div></section>{{end}}
