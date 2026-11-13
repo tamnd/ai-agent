@@ -44,6 +44,15 @@ func TestFrameworksAgree(t *testing.T) {
 	}
 }
 
+func TestHead(t *testing.T) {
+	if got := head("a\nbb\nccc", 6); got != "a\nbb\n..." {
+		t.Errorf("got %q", got)
+	}
+	if got := head("short", 10); got != "short" {
+		t.Errorf("got %q", got)
+	}
+}
+
 func TestLintFirst(t *testing.T) {
 	in := "/t/a.py\n  /t/a.py:3:1 - error: bad\n1 error"
 	if got := lintFirst(in); !strings.HasPrefix(got, "/t/a.py:3:1 - error: bad\n") {

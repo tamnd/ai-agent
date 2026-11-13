@@ -202,11 +202,23 @@ func (r *Runner) lint(ctx context.Context, tree Tree, im node.Impl) []status.Lin
 		case errors.Is(err, exec.ErrNotFound), errors.As(err, &exit) && exit.ExitCode() == 127:
 			l.Missing = true
 		default:
-			l.Output = tail(lintFirst(tree.Rewrite(buf.String())), 2000)
+			l.Output = head(lintFirst(tree.Rewrite(buf.String())), 2000)
 		}
 		out = append(out, l)
 	}
 	return out
+}
+
+// head keeps the first k bytes of a tool's output, where the first findings are, at a line break.
+func head(s string, k int) string {
+	if len(s) <= k {
+		return s
+	}
+	s = s[:k]
+	if i := strings.LastIndexByte(s, '\n'); i > 0 {
+		s = s[:i]
+	}
+	return s + "\n..."
 }
 
 var lintLoc = regexp.MustCompile(`:\d+:\d+`)
