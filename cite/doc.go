@@ -18,7 +18,7 @@ import (
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-2"
+const ExtractorVersion = "aik-doc-3"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
