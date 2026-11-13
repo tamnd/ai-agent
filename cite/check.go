@@ -85,8 +85,18 @@ const (
 	Unreadable   = "unreadable"
 )
 
-// Key is the cache key of a check (spec 7.5): the claim text, the snapshot, the locator, and the versions of the
-// extractor and of the checker.
+// Judged is what the verifier of 15.4 judges of a claim, and so what its record is keyed on: the text, and the type and
+// the scope when the claim states them. A change of the scope makes the verdict stale, as a change of the text does.
+func Judged(c *claims.Claim) string {
+	if c.Scope.Empty() {
+		return c.Text
+	}
+	b, _ := json.Marshal(c.Scope)
+	return c.Text + "\x00" + c.Type + "\x00" + string(b)
+}
+
+// Key is the cache key of a check (spec 7.5): the claim as it is judged, the snapshot, the locator, and the versions of
+// the extractor and of the checker.
 func Key(claim, snapshot, locator, extractor string) string {
 	return Hash([]byte(strings.Join([]string{claim, snapshot, locator, extractor, CheckerVersion}, "\x00")))[:32]
 }
@@ -94,7 +104,7 @@ func Key(claim, snapshot, locator, extractor string) string {
 // Check runs the steps of 13.6 for one source of a claim against the text of its snapshot. The words of exempt, as
 // the names of the authors of the work, are not key terms.
 func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...string) Record {
-	r := Record{Claim: c.ID, Work: e.Work, Locator: e.Locator, Snapshot: snap.Hash, Key: Key(c.Text, snap.Hash, e.Locator, snap.Extractor)}
+	r := Record{Claim: c.ID, Work: e.Work, Locator: e.Locator, Snapshot: snap.Hash, Key: Key(Judged(c), snap.Hash, e.Locator, snap.Extractor)}
 	refs, err := ParseLocator(e.Locator)
 	if err != nil {
 		r.NotLocated = []string{err.Error()}
@@ -282,7 +292,7 @@ func (ix *Index) Current(tag string, c *claims.Claim, e claims.Evidence) (Record
 		return Record{}, false
 	}
 	s, ok := ix.Snapshots[e.Work]
-	if !ok || r.Key != Key(c.Text, s.Hash, e.Locator, s.Extractor) {
+	if !ok || r.Key != Key(Judged(c), s.Hash, e.Locator, s.Extractor) {
 		return Record{}, false
 	}
 	return r, true

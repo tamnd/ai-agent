@@ -21,13 +21,15 @@ func TestGroundingLadder(t *testing.T) {
 	}
 	rec := func(x cl.Claim, pass bool, verdict string) *cite.Index {
 		e := x.Evidence[0]
-		r := cite.Record{Claim: x.ID, Work: e.Work, Locator: e.Locator, Key: cite.Key(x.Text, snap.Hash, e.Locator, snap.Extractor), Pass: pass, Verdict: verdict}
+		r := cite.Record{Claim: x.ID, Work: e.Work, Locator: e.Locator, Key: cite.Key(cite.Judged(&x), snap.Hash, e.Locator, snap.Extractor), Pass: pass, Verdict: verdict}
 		return &cite.Index{Snapshots: map[string]cite.Snapshot{"w-2014": snap},
 			Records: map[string]map[string]cite.Record{"T": {cite.RecordID(r.Claim, r.Work, r.Locator): r}}}
 	}
 	good := claim("Section 6")
 	stale := good
 	stale.Text = "Dropout lowers the error a lot."
+	rescoped := good
+	rescoped.Scope = &cl.Scope{Data: []string{"mnist"}}
 	proof := cl.Claim{ID: "c-m", Type: cl.Mathematical, Text: "x", Derivation: "derivations/x.md"}
 	other := claim("Section 6")
 	other.Evidence[0].Work = "no-card"
@@ -44,6 +46,7 @@ func TestGroundingLadder(t *testing.T) {
 		{"not checked", []cl.Claim{good}, nil, 1, "aik cite"},
 		{"check fails", []cl.Claim{good}, rec(good, false, ""), 1, "aik cite"},
 		{"stale record", []cl.Claim{stale}, rec(good, true, cite.Supported), 1, "aik cite"},
+		{"rescoped", []cl.Claim{rescoped}, rec(good, true, cite.Supported), 1, "aik cite"},
 		{"checked", []cl.Claim{good}, rec(good, true, ""), 2, "not judged"},
 		{"contradicted", []cl.Claim{good}, rec(good, true, cite.Contradicted), 2, "contradicts"},
 		{"verified", []cl.Claim{good}, rec(good, true, cite.Supported), 3, ""},
