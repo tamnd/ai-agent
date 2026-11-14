@@ -10,6 +10,7 @@
 <aside class="toc-col"><nav class="toc" aria-label="On this page"><p>On this page</p><ol>{{range .TOC}}<li><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}<li><a href="#about-this-page">About this page</a></li></ol></nav></aside>
 <div class="content">
 {{with .Withdrawn}}<p class="notice withdrawn" role="note">{{.}}</p>{{end}}
+{{with .Legal}}<p class="notice legal" role="note">This page is a summary, not legal advice. Only the {{with .Official}}<a href="{{.}}" rel="external">official text</a>{{else}}official text{{end}} of the law has legal effect.</p>{{end}}
 {{with .Card}}{{template "card" .}}{{end}}
 {{with .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .}}{{template "link" .}}{{end}}</nav>{{end}}
 <div class="prose">{{.Body}}</div>
@@ -156,6 +157,13 @@
 <p class="page-links">{{range .Links}}<a href="{{.URL}}">{{.Name}}</a> {{end}}<span>Run it yourself: <code>{{.Command}}</code></span></p>
 </section>
 {{end}}{{end}}
+
+{{define "provision-section"}}<h2 id="main-provisions">Main provisions</h2>
+{{template "provision-list" .}}{{end}}
+
+{{define "provision-list"}}<div class="table-wrap"><table class="card-table provision-table"><caption>The provision cards of {{.N.Name}}, in the order of the articles</caption><thead><tr><th scope="col">Provision</th><th scope="col">Summary</th><th scope="col">Applies from</th></tr></thead><tbody>
+{{range .Provisions}}<tr><th scope="row"><a href="{{.URL}}">{{.Name}}</a> <code class="card-tag">{{.Tag}}</code></th><td>{{.Summary}}</td><td>{{range $i, $a := .Applies}}{{if $i}}<br>{{end}}{{$a.Value}}{{with $a.Label}} <span class="card-loc">({{.}})</span>{{end}}{{end}}</td></tr>{{end}}
+</tbody></table></div>{{end}}
 
 {{define "evidence-section"}}<h2 id="evidence">Evidence</h2>
 {{template "claim-table" .}}{{end}}
