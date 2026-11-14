@@ -85,7 +85,7 @@ var Sources = []Source{
 		Facts:  "QIDs, labels, aliases and the identifiers of other sources",
 		Credit: "Wikidata (CC0)",
 	},
-	{
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "openalex", Name: "OpenAlex",
 		URL: "https://openalex.org/", Owner: "OurResearch",
 		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
