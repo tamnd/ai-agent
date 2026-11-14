@@ -726,10 +726,12 @@ func (b *builder) machine() error {
 	fmt.Fprintf(&llms, "# AI\n\n> Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.\n\nEach written page has a Markdown copy at /<slug>.md, and each page has its JSON record at /<slug>.json: the fields, the dated facts with their sources, the claims with their evidence labels, the ladders and the edges both ways. All the records are in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
 	groups := map[string][]*node.Node{}
 	g := NewGraph(b.c, b.opt.BaseURL)
+	var recs []Record
 	for _, n := range b.c.Nodes {
 		rec := g.Record(Thing{Node: n}, b.meta.Date)
 		st := b.status[n.Slug]
 		rec.Status = &st
+		recs = append(recs, rec)
 		data, err := json.Marshal(rec)
 		if err != nil {
 			return err
@@ -778,6 +780,11 @@ func (b *builder) machine() error {
 	}
 	if err := b.write("/api/nodes.json", data); err != nil {
 		return err
+	}
+	if b.opt.Data != "" {
+		if err := b.datasets(b.opt.Data, g, recs); err != nil {
+			return err
+		}
 	}
 	return b.write("/llms.txt", []byte(llms.String()))
 }

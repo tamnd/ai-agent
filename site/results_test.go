@@ -41,8 +41,26 @@ func TestResultsPage(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := filepath.Join(t.TempDir(), "site")
-	if _, err := Build(c, Options{Out: out}); err != nil {
+	dataDir := filepath.Join(t.TempDir(), "data")
+	if _, err := Build(c, Options{Out: out, Data: dataDir}); err != nil {
 		t.Fatal(err)
+	}
+	// The datasets keep only the results that the citation check found (10.6.2), like the table.
+	for _, f := range []string{"results.jsonl", "items/result.jsonl"} {
+		raw, err := os.ReadFile(filepath.Join(dataDir, filepath.FromSlash(f)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n := strings.Count(string(raw), "\n"); n != 4 || strings.Contains(string(raw), "9R0005") {
+			t.Errorf("%s has %d rows or the result that was not found", f, n)
+		}
+	}
+	raw, err := os.ReadFile(filepath.Join(dataDir, "results.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), `"url":"https://ai.tamnd.com/benchmarks/mmlu/original-test/"`) || !strings.Contains(string(raw), `"group":"`) {
+		t.Errorf("results.jsonl lacks the table URL or the group: %.300s", raw)
 	}
 	b, err := os.ReadFile(filepath.Join(out, "benchmarks", "mmlu", "original-test", "index.html"))
 	if err != nil {
