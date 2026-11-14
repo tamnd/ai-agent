@@ -238,6 +238,7 @@ type Universe struct {
 type Pending struct {
 	ID   string `json:"id"`
 	Days int    `json:"days,omitempty"`
+	Area string `json:"area,omitempty"` // the top area of the file of the row
 }
 
 // Promise is a row whose outcome promises a node or a card that is absent or below its target.
@@ -248,6 +249,7 @@ type Promise struct {
 	Core    bool   `json:"core,omitempty"`
 	Gap     string `json:"gap"` // missing-node, missing-card or below-target
 	Level   string `json:"level,omitempty"`
+	Area    string `json:"area,omitempty"` // the top area of the file of the row
 }
 
 // Levels are the counts of C0 to C6.
@@ -384,8 +386,12 @@ func Compute(in Input) *Report {
 	// The universe and the promises.
 	harvested := map[string]bool{}
 	for _, row := range in.Rows {
+		area := strings.TrimSuffix(row.File, ".jsonl")
 		r.Universe.ByOutcome[row.Outcome]++
-		r.Universe.ByArea[strings.TrimSuffix(row.File, ".jsonl")]++
+		r.Universe.ByArea[area]++
+		if area == "_" {
+			area = "" // the file of the rows that no area holds yet
+		}
 		for _, s := range row.Sources {
 			src, _, _ := strings.Cut(s, ":")
 			harvested[src] = true
@@ -393,7 +399,7 @@ func Compute(in Input) *Report {
 		}
 		switch row.Outcome {
 		case "pending":
-			p := Pending{ID: row.ID}
+			p := Pending{ID: row.ID, Area: area}
 			if t, err := time.Parse("2006-01-02", row.Added); err == nil {
 				p.Days = int(in.Now.Sub(t).Hours() / 24)
 			}
@@ -401,7 +407,7 @@ func Compute(in Input) *Report {
 			r.Gaps["pending"] = append(r.Gaps["pending"], row.ID)
 		case "node":
 			it, ok := bySlug[targetID(row.Target)]
-			p := Promise{Row: row.ID, Outcome: row.Outcome, Target: row.Target, Core: row.Core}
+			p := Promise{Row: row.ID, Outcome: row.Outcome, Target: row.Target, Core: row.Core, Area: area}
 			switch {
 			case !ok:
 				p.Gap = "missing-node"
@@ -421,7 +427,7 @@ func Compute(in Input) *Report {
 				cd = cardByTag[targetID(row.Target)]
 			}
 			if cd == nil || len(cd.Bad) > 0 {
-				r.Promises = append(r.Promises, Promise{Row: row.ID, Outcome: row.Outcome, Target: row.Target, Core: row.Core, Gap: "missing-card"})
+				r.Promises = append(r.Promises, Promise{Row: row.ID, Outcome: row.Outcome, Target: row.Target, Core: row.Core, Gap: "missing-card", Area: area})
 				r.Gaps["missing-card"] = append(r.Gaps["missing-card"], row.ID)
 			}
 		}

@@ -37,7 +37,6 @@ type command struct {
 // planned are the commands of spec 18.3 that are not built yet, with the milestone that builds them.
 var planned = map[string]string{
 	"bench":      "M2",
-	"queue":      "M1",
 	"agent":      "M1",
 	"prov":       "M1",
 	"quarantine": "M1",
@@ -76,6 +75,7 @@ func init() {
 		{"site", "render and preview the site: site build | serve | check", cmdSite},
 		{"build", "build the whole tree with a cache: check, Lean, tests, facts, results tables, scenes, ladders and coverage", cmdBuild},
 		{"coverage", "compute the coverage levels C0 to C6 and the coverage report of 18.7", cmdCoverage},
+		{"queue", "build the work queue of 14.5 into work/state/queue.jsonl: the promised items, the items below the milestone's targets, the pending rows, the failing results", cmdQueue},
 		{"release", "freeze a monthly release: release cut <YYYY.MM>", cmdRelease},
 		{"version", "print the version", func([]string) error { fmt.Println("aik", ver()); return nil }},
 		{"help", "show this help", func([]string) error { usage(os.Stdout); return nil }},
