@@ -100,7 +100,7 @@ var Rules = map[string]string{
 	"F10": "each module builds in at most 60 seconds; aik lean build -time reports it, and a module above 300 seconds blocks",
 	"L01": "each link in a node to /<slug>/ names a node, an area or a site page",
 	"L02": "every neighbour link resolves through a current bridge card (5.9)",
-	"T04": "no node slug is a reserved word, a language id or an area id",
+	"T04": "no node slug is a reserved word, a language id or a top-area id",
 	"R01": "experiment.yaml is valid, names claims that exist in claims.yaml, and has a control arm for each comparative test",
 	"R02": "every input of an experiment is a generator in its directory or a dataset of registers/data-pins.yaml with a resolved licence and hashed files",
 	"R03": "scale_note states the scale of the experiment and the scale of the claim of the source",
@@ -275,11 +275,9 @@ func (r *run) front(n *node.Node) {
 	if r.c.Reserved[n.Slug] || r.c.LangByID[n.Slug] != nil {
 		r.add("T04", Block, p, 0, "the slug %q is a reserved word or a language id (14.2)", n.Slug)
 	}
-	for _, a := range r.c.AreaByID {
-		if a.ID == n.Slug {
-			r.add("T04", Block, p, 0, "the slug %q is the id of an area, and the area page uses the same URL (14.2)", n.Slug)
-			break
-		}
+	// A top area is at /<top>/, the URL of a global slug; a sub-area is at /<top>/<sub>/, so its id is free (16.2).
+	if r.c.AreaByID[n.Slug] != nil {
+		r.add("T04", Block, p, 0, "the slug %q is the id of a top area, and the area page uses the same URL (16.2)", n.Slug)
 	}
 	switch {
 	case provRE.MatchString(n.Tag):

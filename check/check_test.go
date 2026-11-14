@@ -129,3 +129,28 @@ func TestGroups(t *testing.T) {
 		t.Errorf("got %d findings, want 3: %v", len(r.out), r.out)
 	}
 }
+
+// A global slug is at /<slug>/, the URL of a top area; a sub-area is at /<top>/<sub>/, so only a top area's id is
+// taken (16.2).
+func TestSlugOfAnArea(t *testing.T) {
+	for _, tc := range []struct {
+		slug string
+		want bool
+	}{{"searching", true}, {"sequential-and-binary-search", false}} {
+		c, err := node.Load("../testdata/corpus")
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := c.BySlug["binary-search"]
+		n.Slug = tc.slug
+		r := &run{c: c, root: c.Root}
+		r.front(n)
+		var got bool
+		for _, f := range r.out {
+			got = got || (f.Rule == "T04" && strings.Contains(f.Msg, "top area"))
+		}
+		if got != tc.want {
+			t.Errorf("slug %q: T04 %v, want %v", tc.slug, got, tc.want)
+		}
+	}
+}
