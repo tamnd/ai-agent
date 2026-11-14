@@ -98,7 +98,7 @@ As in algorithm's 13:
 | T01 | front matter, cards and registers are valid against their schemas in `schema/` | block |
 | T02 | every item has a minted tag; no `NEW-` placeholder id on `main` | block |
 | T03 | a slug is unique in its namespace (global, or under its catalogue route, 16.2) | block |
-| T04 | no global slug is a reserved word of `registers/reserved.yaml`, a language id or the id of a top area (a sub-area is at `/<top>/<sub>/` and does not clash), and no top-area slug equals a policy slug | block |
+| T04 | no global slug is a reserved word of `registers/reserved.yaml`, a language id (except the software page of that language or framework, as `/pytorch/`, since a language's page is at `/languages/<id>/`) or the id of a top area (a sub-area is at `/<top>/<sub>/` and does not clash), and no top-area slug equals a policy slug | block |
 | T05 | no hand-written status, level, badge, rank or evidence label in front matter, cards or prose | block |
 | T06 | fields that do not apply to the kind are absent, not empty (04.5) | block |
 | T07 | the `level` of a node is sampled against its canon and its prerequisites; an item less than 2 years old starts at `research` | sample |
