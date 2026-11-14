@@ -5,7 +5,9 @@
 //
 // The prose check has two tests. The shingle test takes the word 8-grams of each section of the page and of each
 // source, and a section that shares more than [SectionShare] of its 8-grams with one source, and at least [MinShared]
-// of them, fails. The alignment test looks for close paraphrase in the same order: a sentence of the page is close to
+// of them, fails. Only the 8-grams of the page with [Telling] or more plain words count: a name, a number or a stop word
+// is not plain, so that a list of authors, the title of a law or a row of figures, which a page cannot say otherwise,
+// is not taken for copied prose. The alignment test looks for close paraphrase in the same order: a sentence of the page is close to
 // a sentence of a source when [CloseShare] or more of its content words are in it, and a run of [AlignRun] or more
 // consecutive sentences of the page, each close to a sentence of one source that comes after the last one by at most
 // [AlignGap] sentences, fails.
@@ -33,6 +35,7 @@ const (
 	Shingle      = 8    // the words of a shingle
 	SectionShare = 0.05 // the share of the shingles of a section that one source may have
 	MinShared    = 3    // the shared shingles below which a short section passes: one common phrase is not a copy
+	Telling      = 3    // the plain words a shingle of the page needs to count
 	AlignRun     = 3    // the consecutive close sentences that make a paraphrase in the same order
 	AlignGap     = 3    // the most sentences of the source between two sentences of a run
 	CloseShare   = 0.7  // the share of the content words of a sentence that make it close to a sentence of a source
@@ -110,29 +113,51 @@ func clean(s string) string {
 
 // words gives the words of a text in lower case: the runs of letters and digits, with brk where a run of words ends.
 func words(s string) []string {
-	var out []string
-	var w strings.Builder
+	ws, _ := plainWords(s)
+	return ws
+}
+
+// plainWords gives the words of a text in lower case, and for each word whether it is plain: a content word that is
+// not a name or a number. A word with a capital letter is a name, unless it starts a sentence and only its first letter
+// is a capital.
+func plainWords(s string) (out []string, plain []bool) {
+	var w []rune
+	start := true // the next word starts a sentence
 	flush := func() {
-		if w.Len() > 0 {
-			out = append(out, w.String())
-			w.Reset()
+		if len(w) == 0 {
+			return
 		}
+		lw := strings.ToLower(string(w))
+		upper := 0
+		for i, r := range w {
+			if unicode.IsUpper(r) && (i > 0 || !start) {
+				upper++
+			}
+		}
+		out = append(out, lw)
+		plain = append(plain, upper == 0 && len(w) >= 3 && !stop[lw] && !numberWord[lw] && strings.IndexFunc(lw, unicode.IsDigit) < 0)
+		w = w[:0]
+		start = false
 	}
 	for _, r := range s {
 		switch {
 		case unicode.IsLetter(r) || unicode.IsDigit(r):
-			w.WriteRune(unicode.ToLower(r))
+			w = append(w, r)
 		case r == 0:
 			flush()
 			if len(out) > 0 && out[len(out)-1] != brk {
 				out = append(out, brk)
+				plain = append(plain, false)
 			}
 		default:
 			flush()
+			if strings.ContainsRune(".?!", r) {
+				start = true
+			}
 		}
 	}
 	flush()
-	return out
+	return out, plain
 }
 
 // shingles gives the hashes of the word 8-grams of the words, none across brk.
@@ -177,7 +202,14 @@ func init() {
 		who whom whose why will with within without would yet you your`) {
 		stop[w] = true
 	}
+	for _, w := range strings.Fields(`zero three four five six seven eight nine ten eleven twelve twenty thirty forty fifty
+		hundred thousand million billion trillion first second third half percent times`) {
+		numberWord[w] = true
+	}
 }
+
+// numberWord are the words of numbers and units, which are facts like the numbers.
+var numberWord = map[string]bool{}
 
 // content gives the stems of the content words of a run of words: no stop word, no number and no word of one or two
 // letters.
@@ -209,18 +241,46 @@ func stem(w string) string {
 
 // lines gives the words of the lines of a section, with brk at the end of each line: a sentence of the page is a line
 // (6.2), and no shingle spans two of them.
-// It also gives the index of the line of each word.
-func lines(text string) (ws []string, at []int) {
+// It also gives the index of the line of each word, and which words are plain.
+func lines(text string) (ws []string, at []int, plain []bool) {
 	for i, l := range strings.Split(text, "\n") {
-		if lw := words(clean(l)); len(lw) > 0 {
+		if lw, lp := plainWords(clean(l)); len(lw) > 0 {
 			ws = append(ws, lw...)
 			ws = append(ws, brk)
+			plain = append(plain, lp...)
+			plain = append(plain, false)
 			for range len(lw) + 1 {
 				at = append(at, i)
 			}
 		}
 	}
-	return ws, at
+	return ws, at, plain
+}
+
+// telling gives the hashes of the shingles of the page that have Telling or more plain words.
+func telling(ws []string, plain []bool) map[uint64]bool {
+	out := map[uint64]bool{}
+	run := 0
+	for i, w := range ws {
+		if w == brk {
+			run = 0
+			continue
+		}
+		run++
+		if run < Shingle {
+			continue
+		}
+		n := 0
+		for j := i - Shingle + 1; j <= i; j++ {
+			if plain[j] {
+				n++
+			}
+		}
+		if n >= Telling {
+			out[hash(ws[i-Shingle+1:i+1])] = true
+		}
+	}
+	return out
 }
 
 // Run is a run of words of the page that a source has too, as the page writes it, with the line where it starts.
@@ -229,8 +289,9 @@ type Run struct {
 	Text string `json:"text"`
 }
 
-// runs gives the longest runs of words of the page that the shingles of the source cover.
-func runs(sec Section, ws []string, at []int, src map[uint64]bool) []Run {
+// runs gives the longest runs of words of the page that the shingles of the source cover, of the shingles of the
+// page in sh.
+func runs(sec Section, ws []string, at []int, sh, src map[uint64]bool) []Run {
 	cover := make([]bool, len(ws))
 	n := 0
 	for i, w := range ws {
@@ -239,7 +300,10 @@ func runs(sec Section, ws []string, at []int, src map[uint64]bool) []Run {
 			continue
 		}
 		n++
-		if n >= Shingle && src[hash(ws[i-Shingle+1:i+1])] {
+		if n < Shingle {
+			continue
+		}
+		if h := hash(ws[i-Shingle+1 : i+1]); sh[h] && src[h] {
 			for j := i - Shingle + 1; j <= i; j++ {
 				cover[j] = true
 			}
@@ -374,8 +438,8 @@ func Prose(sections []Section, sources []Source) []Finding {
 	}
 	var out []Finding
 	for _, sec := range sections {
-		ws, at := lines(sec.Text)
-		sh := shingles(ws)
+		ws, at, plain := lines(sec.Text)
+		sh := telling(ws, plain)
 		sents := sentences(sec)
 		for _, r := range refs {
 			shared := 0
@@ -385,7 +449,7 @@ func Prose(sections []Section, sources []Source) []Finding {
 				}
 			}
 			if shared >= MinShared && float64(shared) > SectionShare*float64(len(sh)) {
-				out = append(out, Finding{Test: "shingles", File: sec.File, Line: sec.Line, Section: sec.Name, Source: r.src.Name, URI: r.src.URI, Share: float64(shared) / float64(len(sh)), Shared: shared, Of: len(sh), Runs: runs(sec, ws, at, r.shing)})
+				out = append(out, Finding{Test: "shingles", File: sec.File, Line: sec.Line, Section: sec.Name, Source: r.src.Name, URI: r.src.URI, Share: float64(shared) / float64(len(sh)), Shared: shared, Of: len(sh), Runs: runs(sec, ws, at, sh, r.shing)})
 			}
 			out = append(out, r.aligned(sec, sents)...)
 		}

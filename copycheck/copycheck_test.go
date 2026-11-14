@@ -41,6 +41,15 @@ func TestShingles(t *testing.T) {
 	if f := fs[0]; f.Shared != f.Of || f.Share != 1 {
 		t.Errorf("a copied sentence shares %d of %d shingles", f.Shared, f.Of)
 	}
+	cite := []Source{{Name: "papineni-2002", Text: "Kishore Papineni, Salim Roukos, Todd Ward, and Wei-Jing Zhu. 2002. BLEU: a Method for Automatic Evaluation of Machine Translation. In Proceedings of the 40th Annual Meeting of the Association for Computational Linguistics, pages 311 to 318, Philadelphia, July 2002."}}
+	names := Section{Name: "History", File: "f", Line: 1, Text: "Kishore Papineni, Salim Roukos, Todd Ward and Wei-Jing Zhu presented it at the 40th Annual Meeting of the Association for Computational Linguistics, in Philadelphia, July 2002.\n"}
+	if fs := Prose([]Section{names}, cite); len(fs) != 0 {
+		t.Errorf("names, a title and numbers: %+v", fs)
+	}
+	if ws, plain := plainWords("Dropout drops Units in GPT 2 at a rate of 0.5. Then it stops."); strings.Join(ws, " ") != "dropout drops units in gpt 2 at a rate of 0 5 then it stops" ||
+		!plain[0] || !plain[1] || plain[2] || plain[4] || plain[5] || !plain[8] || plain[12] || !plain[14] {
+		t.Errorf("plainWords %q %v", ws, plain)
+	}
 }
 
 func TestAligned(t *testing.T) {
