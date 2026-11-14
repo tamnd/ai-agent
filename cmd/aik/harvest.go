@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -14,12 +15,13 @@ import (
 	"github.com/tamnd/ai-agent/harvest"
 )
 
-// cmdHarvest is the harvester of spec 13: aik harvest <source>... | -all. Each source writes its inventory, the
+// cmdHarvest is the harvester of spec 13: aik harvest <source>... | -all | -due <period>. Each source writes its inventory, the
 // manifest of its snapshots, its run record and its row of registers/sources.yaml.
 func cmdHarvest(args []string) error {
-	f := newFlags("harvest", "[flags] <source>... | -all | sources")
+	f := newFlags("harvest", "[flags] <source>... | -all | -due <period> | sources")
 	root := f.String("root", ".", "the root of the content repository")
 	all := f.Bool("all", false, "harvest every source")
+	due := f.String("due", "", "harvest the sources whose schedule is this period: "+strings.Join(harvest.Periods, ", "))
 	limit := f.Int("limit", 0, "keep at most this many rows of each kind; a partial run removes no rows")
 	since := f.String("since", "", "keep only rows from this date (YYYY-MM-DD); a partial run removes no rows")
 	offline := f.Bool("offline", false, "do not fetch; read the newest snapshots of the manifest from the store")
@@ -38,6 +40,16 @@ func cmdHarvest(args []string) error {
 	names := f.Args()
 	if *all {
 		names = harvest.Names()
+	}
+	if *due != "" {
+		if !slices.Contains(harvest.Periods, *due) || *all || len(names) > 0 {
+			return usageError{"-due takes one of " + strings.Join(harvest.Periods, ", ") + ", and no source and no -all"}
+		}
+		names = harvest.Due(*due)
+		if len(names) == 0 {
+			fmt.Println("no source is due " + *due)
+			return nil
+		}
 	}
 	if len(names) == 0 {
 		return usageError{"give a source (" + strings.Join(harvest.Names(), ", ") + ") or -all"}

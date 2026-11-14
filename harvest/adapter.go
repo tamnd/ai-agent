@@ -63,6 +63,25 @@ func Names() []string {
 	return out
 }
 
+// Periods are the schedules that a scheduled harvest runs (20.5): a source whose schedule starts with one of them is
+// due each such period.
+var Periods = []string{"daily", "weekly", "monthly"}
+
+// Due lists the sources with an adapter whose schedule starts with the period ("monthly; a project gets a new release a
+// few times a year" is monthly). A source harvested once, per conference or at each change of a register is never due:
+// a person starts its harvest.
+func Due(period string) []string {
+	var out []string
+	for _, s := range Sources {
+		w, _, _ := strings.Cut(s.Schedule, ";")
+		if _, ok := Adapters[s.ID]; ok && strings.TrimSpace(w) == period {
+			out = append(out, s.ID)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
 // ErrSchema means that a source changed the shape of its data, so the adapter stops before it writes a row (13.4).
 type ErrSchema struct {
 	Source string
