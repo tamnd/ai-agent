@@ -37,7 +37,6 @@ type command struct {
 // planned are the commands of spec 18.3 that are not built yet, with the milestone that builds them.
 var planned = map[string]string{
 	"bench":      "M2",
-	"ingest":     "M1",
 	"queue":      "M1",
 	"agent":      "M1",
 	"prov":       "M1",
@@ -67,6 +66,7 @@ func init() {
 		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
 		{"universe", "join the inventories into the universe register: universe merge", cmdUniverse},
+		{"ingest", "make the result cards of 10.6 from the result rows of the inventories: ingest results", cmdIngest},
 		{"card", "write the cards of the card outcomes and update their facts: card sync [<catalog.jsonl>...]", cmdCard},
 		{"cite", "check each claim against the stored text of its source: cite <slug>... | -all | show <work> [<locator>]", cmdCite},
 		{"results", "print the computed results table of a benchmark version: results table benchmark@version", cmdResults},
