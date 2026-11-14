@@ -739,5 +739,55 @@ func TestPercentile(t *testing.T) {
 		if p := Percentile(OpenAlexNeed(n), n); p < 98 {
 			t.Errorf("the last work of the top 2%% of %d has the percentile %v", n, p)
 		}
+func TestGitHub(t *testing.T) {
+	total, items, err := GitHubPage(fixture(t, "github-page.json"))
+	if err != nil || total != 2 || len(items) != 2 {
+		t.Fatal(total, len(items), err)
+	}
+	if _, _, err := GitHubPage([]byte(`{"message":"API rate limit exceeded"}`)); err == nil || !strings.Contains(err.Error(), "rate limit") {
+		t.Errorf("a rate limit answer: %v", err)
+	}
+	ai := map[string]bool{"machine-learning": true, "deep-learning": true, "tensorflow": true}
+	tf := GitHubRow(items[0], ai, "b3:g")
+	if tf.ID != "tensorflow/tensorflow" || tf.Kind != "software" || tf.URL != "https://github.com/tensorflow/tensorflow" || tf.SameAs["github_id"] != "45717250" {
+		t.Errorf("row %+v", tf)
+	}
+	if !reflect.DeepEqual(tf.Labels, []string{"deep-learning", "machine-learning", "tensorflow"}) || tf.Fields["licence"] != "Apache-2.0" || tf.Fields["language"] != "C++" || tf.Fields["owner_type"] != "organization" {
+		t.Errorf("tensorflow %+v", tf)
+	}
+	if tf.Facts["created"].V != "2015-11-07" || tf.Signals["stars"] != 201592 || tf.Signals["pushed"] != "2026-11-14" {
+		t.Errorf("tensorflow facts %v signals %v", tf.Facts, tf.Signals)
+	}
+	old := GitHubRow(items[1], ai, "")
+	if old.Fields["licence"] != nil || old.Fields["archived"] != true || old.Labels != nil || old.Fields["language"] != nil {
+		t.Errorf("old %+v", old)
+	}
+	lo, hi, ok := Stars{5000, 0}.Split()
+	if !ok || lo != (Stars{5000, 9999}) || hi != (Stars{10000, 0}) {
+		t.Errorf("split open: %v %v", lo, hi)
+	}
+	lo, hi, ok = Stars{5000, 9999}.Split()
+	if !ok || lo != (Stars{5000, 7499}) || hi != (Stars{7500, 9999}) {
+		t.Errorf("split closed: %v %v", lo, hi)
+	}
+	if _, _, ok := (Stars{7, 7}).Split(); ok {
+		t.Error("a range of one number splits")
+	}
+	u := GitHubURL("llm", Stars{5000, 9999}, 2)
+	if !strings.Contains(u, "q=topic%3Allm+stars%3A5000..9999+fork%3Afalse") || !strings.Contains(u, "page=2") || !strings.Contains(u, "per_page=100") {
+		t.Errorf("URL %s", u)
+	}
+	root := t.TempDir()
+	if ts, err := gitHubTopics(root); err != nil || len(ts) != len(GitHubTopics) {
+		t.Errorf("default topics %v %v", len(ts), err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "crosswalk"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, GitHubTopicsFile), []byte("topics: [llm, \"bad topic\"]\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gitHubTopics(root); err == nil {
+		t.Error("a bad topic gives no error")
 	}
 }

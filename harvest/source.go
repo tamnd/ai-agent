@@ -105,6 +105,16 @@ var Sources = []Source{
 		Credit: "Hugging Face Hub, https://huggingface.co",
 		Note:   "The metadata is facts (19.3); each repository's card and files keep their own licence, D by default.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "github", Name: "GitHub",
+		URL: "https://github.com/", Owner: "GitHub",
+		Licence: "facts only", Checked: "2026-11-14", Class: "D",
+		Access: "the repository search of the REST API (api.github.com/search/repositories) with no token, one query per AI topic of crosswalk/github-topics.yaml with at least 5,000 stars (S-S1), split by stars past 1,000 results; api.github.com has no robots.txt", Rate: "1 request per 7 s (the API allows 10 searches a minute without a token)",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "repository names, ids, owners, stars, forks, AI topics, languages, licence ids and dates; never the descriptions or the READMEs",
+		Credit: "GitHub, https://github.com",
+		Note:   "The metadata is facts (19.3); the code and the READMEs keep their own licences.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.
