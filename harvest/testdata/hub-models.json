@@ -1,0 +1,9 @@
+[
+{"_id":"6500000000000000000000a1","id":"other/base-ft","downloads":200000,"likes":10,"tags":["transformers","base_model:acme/base","base_model:finetune:acme/base","license:mit"],"createdAt":"2024-02-01T00:00:00.000Z","sha":"bbb","gated":false,"pipeline_tag":"text-generation","library_name":"transformers"},
+{"_id":"6500000000000000000000a2","id":"acme/base","downloads":100000,"likes":900,"tags":["transformers","dataset:acme/corpus","arxiv:2401.00001","doi:10.57967/HF/1","license:apache-2.0","region:us"],"createdAt":"2024-01-15T10:00:00.000Z","sha":"aaa","gated":"auto","pipeline_tag":"text-generation","library_name":"transformers"},
+{"_id":"6500000000000000000000a3","id":"other/base-gguf","downloads":50000,"likes":3,"tags":["gguf","base_model:acme/base","base_model:quantized:acme/base"],"createdAt":"2024-01-20T00:00:00.000Z","sha":"ccc","gated":false},
+{"_id":"6500000000000000000000a4","id":"acme/base-instruct","downloads":40000,"likes":300,"tags":["base_model:acme/base","base_model:finetune:acme/base"],"createdAt":"2024-01-16T00:00:00.000Z","sha":"ddd","gated":false},
+{"_id":"6500000000000000000000a5","id":"x/orphan-q","downloads":20000,"likes":1,"tags":["base_model:quantized:y/notthere"],"createdAt":"2024-03-01T00:00:00.000Z","sha":"eee","gated":false},
+{"_id":"6500000000000000000000a6","id":"third/base-ft-q","downloads":15000,"likes":0,"tags":["base_model:quantized:other/base-ft"],"createdAt":"2024-03-02T00:00:00.000Z","sha":"fff","gated":false},
+{"_id":"6500000000000000000000a7","id":"tiny/below","downloads":9999,"likes":5,"tags":[],"createdAt":"2024-03-03T00:00:00.000Z","sha":"ggg","gated":false}
+]
