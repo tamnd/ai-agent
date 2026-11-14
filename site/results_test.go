@@ -84,3 +84,47 @@ func TestResultsPage(t *testing.T) {
 		t.Errorf("a version with no results has no page: %v", err)
 	}
 }
+
+// A benchmark node with versions and no benchmark card gets the catalogue /benchmarks/, which the crumbs of its
+// results pages link to.
+func TestResultsCatalogueWithoutCards(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "corpus")
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "nodes", "searching", "sequential-and-binary-search", "toy-bench")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"node.md":       "---\ntag: 6TQX4P\nkind: benchmark\nslug: toy-bench\nname: Toy bench\narea: searching/sequential-and-binary-search\nlevel: intro\nsummary: A small benchmark.\n---\n\nA small benchmark.\n",
+		"releases.yaml": "- id: full\n  name: Toy bench, full set\n  metric: accuracy\n",
+	}
+	for p, s := range files {
+		if err := os.WriteFile(filepath.Join(dir, p), []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	if _, err := Build(c, Options{Out: out}); err != nil {
+		t.Fatal(err)
+	}
+	v, err := os.ReadFile(filepath.Join(out, "benchmarks", "toy-bench", "full", "index.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(v), `href="/benchmarks/"`) {
+		t.Error("the results page has no crumb to /benchmarks/")
+	}
+	cat, err := os.ReadFile(filepath.Join(out, "benchmarks", "index.html"))
+	if err != nil {
+		t.Fatalf("a benchmark node with no card has no catalogue: %v", err)
+	}
+	if !strings.Contains(string(cat), `href="/toy-bench/"`) || !strings.Contains(string(cat), "0 cards, 1 page") {
+		t.Error("the catalogue does not list the benchmark page")
+	}
+}

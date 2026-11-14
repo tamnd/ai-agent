@@ -124,13 +124,21 @@ func cardRow(c *card.Card) CardRow {
 }
 
 // collections writes the catalogue of each kind that has cards, in pages of PageSize rows, and the JSON file of its cards.
+// A kind with a catalogue route and node pages but no cards gets a catalogue too, so that the links to its route, such
+// as the crumbs of a results table, point at a page.
 func (b *builder) collections() error {
-	for kind, cs := range b.cardKinds() {
+	kinds := b.cardKinds()
+	for kind := range collections {
+		if _, ok := kinds[kind]; !ok && len(b.c.Kind(kind)) > 0 {
+			kinds[kind] = nil
+		}
+	}
+	for kind, cs := range kinds {
 		base := collection(kind)
 		name := title(kindName(kind, true))
 		ns := b.c.Kind(kind)
 		sortNodes(ns)
-		pages := (len(cs) + PageSize - 1) / PageSize
+		pages := max(1, (len(cs)+PageSize-1)/PageSize)
 		jsonPath := "/api/cards/" + kind + ".json"
 		for i := range pages {
 			p := base
