@@ -21,8 +21,8 @@ func TestGraphRules(t *testing.T) {
 		// A record kind with a full page has no prerequisites to check.
 		dir + "kay/node.md": strings.Replace(core("kay", "Kay", "", "A person."), "kind: concept", "kind: person", 1),
 		// A path through math2, and a related node named in the text.
-		dir + "near/node.md": core("near", "Near", "prereqs: [far, matrix-multiplication@m2]\nrelated_to: [loop-invariant]\n",
-			"Unlike a loop invariant, it is a toy."),
+		dir + "near/node.md": core("near", "Near", "prereqs: [far, matrix-multiplication@m2]\nrelated_to: [loop-invariant, comparison-model]\n",
+			"Unlike a loop invariant, it is a toy. It is also not [[comparison-model|the model of comparisons]]."),
 		"cards/bridge/m2/_.jsonl": `{"tag":"M2MM01","site":"m2","kind":"theorem","slug":"matrix-multiplication","name":"Matrix multiplication","url":"https://math2.tamnd.com/matrix-multiplication/"}` + "\n",
 		"cards/benchmark/_.jsonl": `{"tag":"9MMLU0","kind":"benchmark","slug":"mmlu","name":"MMLU","versions":[{"id":"original-test","name":"MMLU, test set"}]}` + "\n",
 		"cards/model/_.jsonl": `{"tag":"9MA000","kind":"model","slug":"model-a","name":"Model A","fine_tuned_from":"model-c"}` + "\n" +
