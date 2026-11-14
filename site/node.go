@@ -46,9 +46,12 @@ type NodePage struct {
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
 	// Withdrawn is the notice of a page that the quarantine hides, whole or in part (15.7).
 	Withdrawn string
-	History   string
-	Report    string
-	Tests     string // the summary line of the native tests
+	// Legal is the notice of a policy page that it is a summary, not legal advice (spec 06, policy).
+	Legal      *LegalNotice
+	Provisions []ProvisionRow
+	History    string
+	Report     string
+	Tests      string // the summary line of the native tests
 }
 
 // RungView is one row of the ladder table of "About this page".
@@ -200,6 +203,21 @@ func insertAfterSection(html, extra, id string, fallback ...string) string {
 	}
 	j += i + 4
 	return html[:j] + extra + html[j:]
+}
+
+// insertAtSection puts extra at the start of the section with the id, after its heading, before the prose: a generated
+// list that the prose of the section then comments on.
+func insertAtSection(html, extra, id string) string {
+	i := strings.Index(html, `<h2 id="`+id+`"`)
+	if i < 0 {
+		return html
+	}
+	j := strings.Index(html[i:], "</h2>")
+	if j < 0 {
+		return html
+	}
+	j += i + len("</h2>")
+	return html[:j] + "\n" + extra + html[j:]
 }
 
 // dropEmptyH2 removes the heading of a section that the build fills, when the build had nothing to put in it.
@@ -369,6 +387,17 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 			html = insertAfterSection(html, b.snippet("claim-table", p), "evidence")
 		} else {
 			html = insertBefore(html, b.snippet("evidence-section", p), "history", "exercises", "references")
+		}
+	}
+	p.Legal = legalNotice(n)
+	if n.Kind == "policy" {
+		p.Provisions = b.provisionRows(n)
+		if len(p.Provisions) > 0 {
+			if hasH2(html, "main-provisions") {
+				html = insertAtSection(html, b.snippet("provision-list", p), "main-provisions")
+			} else {
+				html = insertBefore(html, b.snippet("provision-section", p), "obligations-by-actor", "timeline", "enforcement-and-penalties", "amendments-and-implementing-acts", "interpretation-and-debate", "relation-to-other-laws-and-standards", "references")
+			}
 		}
 	}
 	p.Exps = b.expViews(n)
