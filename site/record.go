@@ -4,7 +4,6 @@ package site
 
 import (
 	"encoding/json"
-	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/facts"
+	"github.com/tamnd/ai-agent/graph"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/results"
 	"github.com/tamnd/ai-agent/status"
@@ -22,9 +22,6 @@ var LineageTypes = []string{
 	"fine_tuned_from", "distilled_from", "merged_from", "member_of",
 	"introduced_by", "variant_of", "generalizes", "uses", "responds_to", "components",
 }
-
-// cardRefs are the fields of a card that name other items, besides the lineage types.
-var cardRefs = []string{"developer", "architecture", "family", "task", "benchmark", "model", "policy", "organization", "authors", "people"}
 
 // Thing is a node or a card.
 type Thing struct {
@@ -60,7 +57,9 @@ type Graph struct {
 	cites map[string][]string // the tags of the result cards that name the item
 }
 
-// NewGraph finds the edges of each node and card of a corpus. base is the URL of the site.
+// NewGraph takes the edges of each node and card of a corpus from package graph. base is the URL of the site. The
+// records and the MCP server show the edges as they are written, between items of the corpus; only the lineage keeps
+// an end that names nothing, which its views mark as unknown (16.9). Neighbours have their own links.
 func NewGraph(c *node.Corpus, base string) *Graph {
 	g := &Graph{c: c, base: strings.TrimRight(base, "/"), reg: results.Load(c),
 		out: map[string][]Edge{}, in: map[string][]Edge{}, cites: map[string][]string{}}
@@ -71,41 +70,27 @@ func NewGraph(c *node.Corpus, base string) *Graph {
 			}
 		}
 	}
-	add := func(from, typ string, vs []string) {
-		for _, to := range vs {
-			_, ok := g.Ref(to)
-			e := Edge{Type: typ, From: from, To: to, Known: ok}
-			if !ok && !slices.Contains(LineageTypes, typ) {
-				continue // a free-text field that names nothing; only the lineage keeps unknown ends
+	gr := graph.Build(c)
+	add := func(key string) {
+		for _, e := range gr.Out(key) {
+			if e.Derived || e.Site != "" || !e.Known && !slices.Contains(LineageTypes, e.Type) {
+				continue
 			}
-			g.out[from] = append(g.out[from], e)
-			if ok {
-				g.in[to] = append(g.in[to], e)
+			if _, ok := g.Ref(e.To); ok != e.Known {
+				continue // a benchmark version, which has no page of its own
+			}
+			se := Edge{Type: e.Type, From: e.From, To: e.To, Known: e.Known}
+			g.out[key] = append(g.out[key], se)
+			if se.Known {
+				g.in[se.To] = append(g.in[se.To], se)
 			}
 		}
 	}
 	for _, n := range c.Nodes {
-		front := frontMap(n)
-		for _, k := range node.EdgeKeys {
-			add(n.Slug, k, refs(front[k]))
-		}
-		for _, k := range LineageTypes {
-			if !slices.Contains(node.EdgeKeys, k) {
-				add(n.Slug, k, refs(n.Fields[k]))
-			}
-		}
+		add(n.Slug)
 	}
 	for _, cd := range c.Cards {
-		for _, k := range append(slices.Clone(LineageTypes), cardRefs...) {
-			raw, ok := cd.Fields[k]
-			if !ok {
-				continue
-			}
-			var v any
-			if json.Unmarshal(raw, &v) == nil {
-				add(cd.Key(), k, refs(v))
-			}
-		}
+		add(cd.Key())
 	}
 	for k := range g.in {
 		sort.SliceStable(g.in[k], func(i, j int) bool { return g.in[k][i].From < g.in[k][j].From })
@@ -121,39 +106,6 @@ func (g *Graph) Out(key string) []Edge { return g.out[key] }
 
 // In gives the edges to an item.
 func (g *Graph) In(key string) []Edge { return g.in[key] }
-
-func frontMap(n *node.Node) map[string]any {
-	var m map[string]any
-	b, _ := json.Marshal(n.Front)
-	_ = json.Unmarshal(b, &m)
-	return m
-}
-
-var refRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9.-]*)?$`)
-
-// refs gives the slugs that a field value names: a slug, a list of them, the problem of a solves entry, or the value
-// of a card fact.
-func refs(v any) []string {
-	switch t := v.(type) {
-	case string:
-		if refRE.MatchString(t) {
-			return []string{t}
-		}
-	case []any:
-		var out []string
-		for _, x := range t {
-			out = append(out, refs(x)...)
-		}
-		return out
-	case map[string]any:
-		for _, k := range []string{"problem", "slug", "v"} {
-			if x, ok := t[k]; ok {
-				return refs(x)
-			}
-		}
-	}
-	return nil
-}
 
 // Ref finds the item that a slug, an old slug or a card key names.
 func (g *Graph) Ref(s string) (Thing, bool) {
@@ -289,4 +241,12 @@ func FactsOf(it Thing) []RecordFact {
 		out = append(out, v)
 	}
 	return out
+}
+
+// frontMap gives the front matter of a node as a map, the fields of its record.
+func frontMap(n *node.Node) map[string]any {
+	var m map[string]any
+	b, _ := json.Marshal(n.Front)
+	_ = json.Unmarshal(b, &m)
+	return m
 }

@@ -59,9 +59,16 @@ var Rules = map[string]string{
 	"E01": "each edge target exists, as a node, a card or a bridge card",
 	"E02": "each implements target is an abstract type",
 	"E03": "prereqs edges form a DAG",
-	"E04": "variant_of and generalizes edges have no cycle",
+	"E04": "no cycle in variant_of and generalizes, in fine_tuned_from or in succeeded_by",
 	"E05": "each solves target is a problem node",
+	"E06": "evaluated_on is derived from the result cards only, never written by hand",
+	"E07": "architecture targets are architectures; the lineage edges fine_tuned_from, distilled_from and merged_from join models",
 	"E08": "no edge points to its own node; see_also has at most 8 targets",
+	"E09": "each core node has a path of prereqs back to ai-foundations, math-for-ai or deep-learning-foundations, or to a bridge card of math2 or algorithm",
+	"E10": "each related_to edge has a note on the difference: a note on the edge, or a sentence of the text that names the target",
+	"E11": "no reverse edge is written by hand; the build derives them",
+	"E13": "evidence_for and evidence_against edges carry a claim id and a role (07.3)",
+	"E14": "mitigates and regulates edges carry a source with a locator",
 	"D01": "every fact has a value, a unit and at least one source, and its value is the value of its best source",
 	"D02": "every model, dataset, benchmark, hardware item, policy and system has at least one source",
 	"D03": "the required facts of the kind are present (10.11)",
@@ -197,14 +204,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.leanNode(n)
 	}
 	r.leanDecls()
-	r.cycles("E03", "prereqs", func(n *node.Node) []string { return n.Prereqs })
-	r.cycles("E04", "variant_of and generalizes", func(n *node.Node) []string {
-		out := slices.Clone(n.Generalizes)
-		if n.VariantOf != "" {
-			out = append(out, n.VariantOf)
-		}
-		return out
-	})
+	r.graphRules()
 	sort.SliceStable(r.out, func(i, j int) bool {
 		if r.out[i].Path != r.out[j].Path {
 			return r.out[i].Path < r.out[j].Path
@@ -405,43 +405,6 @@ func article(kind string) string {
 		return "an " + kind
 	}
 	return "a " + kind
-}
-
-// cycles reports each cycle of the edges that next gives, once.
-func (r *run) cycles(rule, what string, next func(*node.Node) []string) {
-	const (
-		white = iota
-		grey
-		black
-	)
-	colour := map[string]int{}
-	var stack []string
-	var visit func(s string)
-	visit = func(s string) {
-		colour[s] = grey
-		stack = append(stack, s)
-		n := r.c.BySlug[s]
-		for _, t := range next(n) {
-			if _, ok := r.c.BySlug[t]; !ok {
-				continue
-			}
-			switch colour[t] {
-			case white:
-				visit(t)
-			case grey:
-				i := slices.Index(stack, t)
-				cyc := append(slices.Clone(stack[i:]), t)
-				r.add(rule, Block, r.c.BySlug[t].Rel+"/node.md", 0, "the %s edges have a cycle: %s", what, strings.Join(cyc, " -> "))
-			}
-		}
-		stack = stack[:len(stack)-1]
-		colour[s] = black
-	}
-	for _, n := range r.c.Nodes {
-		if colour[n.Slug] == white {
-			visit(n.Slug)
-		}
-	}
 }
 
 func sortedKeys[V any](m map[string]V) []string {
