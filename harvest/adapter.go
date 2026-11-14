@@ -45,6 +45,9 @@ var Adapters = map[string]Adapter{
 	"helm":                 {Source: "helm", Gap: time.Second, Run: harvestHELM},
 	"awards":               {Source: "awards", Gap: 2 * time.Second, Run: harvestAwards},
 	"standards":            {Source: "standards", Gap: time.Second, Run: harvestStandards},
+	"canon":                {Source: "canon", Run: harvestCanon},
+	"surveys":              {Source: "surveys", Run: harvestSurveys},
+	"courses":              {Source: "courses", Run: harvestCourses},
 }
 
 // Names are the source ids of the adapters, sorted.

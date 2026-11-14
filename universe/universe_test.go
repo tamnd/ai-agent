@@ -400,3 +400,45 @@ func TestResultsByName(t *testing.T) {
 		t.Errorf("two results of one name: %d items, %v", rep.Items, m)
 	}
 }
+
+// TestCanonMatch joins the headings of two canon works, and two headings of one work, that name one item; two rows of
+// one other source stay apart.
+func TestCanonMatch(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "registers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ScopeFile), []byte(scope), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	canon := []harvest.Row{
+		row("canon", "bishop-2006-prml:4.3.2", "Logistic regression", "concept", nil, nil),
+		row("canon", "bishop-2006-prml:4.5.1", "Logistic Regression", "concept", nil, nil),
+		row("canon", "murphy-2022-pml:1/10", "Logistic regression", "concept", nil, nil),
+	}
+	courses := []harvest.Row{row("courses", "machine-learning:3.2", "Logistic regression", "concept", nil, nil)}
+	other := []harvest.Row{
+		row("pwc-dump", "methods/a", "Dropout", "concept", nil, nil),
+		row("pwc-dump", "methods/b", "Dropout", "concept", nil, nil),
+	}
+	for src, rs := range map[string][]harvest.Row{"canon": canon, "courses": courses, "pwc-dump": other} {
+		if err := harvest.WriteInventory(root, src, rs); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rep, err := Merge(root, "2026-11-15")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Items != 3 {
+		t.Fatalf("%d items, want 3 (one logistic regression, two dropouts)", rep.Items)
+	}
+	for _, it := range byID(t, root) {
+		if it.Name == "Logistic regression" && len(it.Sources) != 4 {
+			t.Errorf("logistic regression has the sources %v", it.Sources)
+		}
+	}
+	if sourceKey("canon:a:1.2") != "canon:a:1.2" || sourceKey("arxiv:2303.18223") != "arxiv" {
+		t.Error("sourceKey")
+	}
+}

@@ -228,6 +228,8 @@ An item younger than two years starts at `research` unless the canon (5.10) alre
 | History of AI | the eras of `history-of-ai`, in time order | 120 nodes |
 | The proved core | the nodes with F2, in an order for reading the Lean proofs (11) | 80 nodes |
 
+A course file has an `id` (its file name), a `title`, a `basis` (the works and syllabi it follows), and `sections`, each with a `heading` and `items`. An item has a `name`, a `kind` (concept when it is not given) and the `node` slug when the node exists. Before the node exists the item is a name, so a course can be written before its nodes, and the harvest reads it into the inventory (13.2), where an item that two courses name is frontier core (5.10).
+
 A course page shows progress (stored in the reader's browser only, as in programming Q-15), and each node in a course shows a step strip with the previous and the next node.
 
 ## 5.8 Crosswalks

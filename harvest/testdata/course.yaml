@@ -1,0 +1,11 @@
+id: intro-ai
+title: Introduction to AI
+basis: the chapter order of AIMA 4e
+sections:
+  - heading: Agents
+    items:
+      - {name: Rational agent, node: rational-agent}
+      - {name: Turing test}
+  - heading: Search
+    items:
+      - {name: A* search, kind: method}

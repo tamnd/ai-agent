@@ -82,7 +82,7 @@ func TestCompute(t *testing.T) {
 		"overfitting": {W: rung(2), G: rung(1)},
 	}
 	rows := []Row{
-		{ID: "u:1", Outcome: "node", Target: "ai://NEW-dropout", Core: true, Sources: []string{"arxiv", "canon:goodfellow-2016-deep-learning:7.12"}, File: "deep-learning-training.jsonl"},
+		{ID: "u:1", Outcome: "node", Target: "ai://NEW-dropout", Core: true, Sources: []string{"arxiv", "canon:goodfellow-2016-deep-learning:7.12", "courses:deep-learning:4.2"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:2", Outcome: "node", Target: "ai://NEW-batch-norm", Core: true, Sources: []string{"canon:goodfellow-2016-deep-learning:8.7"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:3", Outcome: "card", Target: "srivastava-2014", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:4", Outcome: "card", Target: "hinton-2012", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
@@ -90,7 +90,7 @@ func TestCompute(t *testing.T) {
 		{ID: "u:5", Outcome: "pending", Added: "2026-11-01", Sources: []string{"pwc-dump:methods"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:7", Outcome: "card", Target: "srivastava-2014", Sources: []string{"epoch-ai:GPT-4", "huggingface:org/m", "helm:lite:x"}, File: "deep-learning-training.jsonl"},
 	}
-	in := Input{Corpus: c, Status: st, Rows: rows, Canon: []Canon{{ID: "goodfellow-2016-deep-learning"}},
+	in := Input{Corpus: c, Status: st, Rows: rows, Canon: []Canon{{ID: "goodfellow-2016-deep-learning"}}, Courses: []Canon{{ID: "deep-learning"}, {ID: "nlp"}},
 		Last: &Counts{0, 1, 1}, LastVersion: "2027.02", Now: time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)}
 	r := Compute(in)
 	if r.Levels.Total != (Counts{0, 1, 1, 1}) {
@@ -110,6 +110,9 @@ func TestCompute(t *testing.T) {
 	}
 	if r.Canon[0].Named != 2 || r.Canon[0].AtC2 != 1 {
 		t.Errorf("canon %+v", r.Canon[0])
+	}
+	if len(r.Courses) != 2 || r.Courses[0].Named != 1 || r.Courses[0].AtC2 != 1 || r.Courses[1].Named != 0 {
+		t.Errorf("courses %+v", r.Courses)
 	}
 	if r.Levels.Change == nil || r.Levels.Change[3] != 1 || r.Levels.Change[1] != 0 {
 		t.Errorf("change %v", r.Levels.Change)
@@ -181,5 +184,26 @@ func TestLoadUniverse(t *testing.T) {
 	write(`{"id": "u:1", "outcome": "maybe"}`)
 	if _, err := LoadUniverse(root); err == nil || !strings.Contains(err.Error(), "x.jsonl:1") {
 		t.Errorf("bad outcome: %v", err)
+	}
+}
+
+func TestLoadCourses(t *testing.T) {
+	root := t.TempDir()
+	if cs, err := LoadCourses(root); err != nil || cs != nil {
+		t.Fatalf("no course: %v %v", cs, err)
+	}
+	dir := filepath.Join(root, "topics", "courses")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "nlp.yaml"), []byte("id: nlp\ntitle: NLP\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "rl.yaml"), []byte("title: Reinforcement learning\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cs, err := LoadCourses(root)
+	if err != nil || len(cs) != 2 || cs[0].ID != "nlp" || cs[0].Title != "NLP" || cs[1].ID != "rl" {
+		t.Errorf("courses %+v %v", cs, err)
 	}
 }

@@ -213,7 +213,9 @@ type Report struct {
 	// Gaps holds the ids of each gap type of 18.7.
 	Gaps  map[string][]string `json:"gaps"`
 	Canon []Canon             `json:"canon"`
-	Items []Item              `json:"items"`
+	// Courses is the coverage of each course of 5.7, as Canon is of each canon work.
+	Courses []Canon `json:"courses"`
+	Items   []Item  `json:"items"`
 	// Fails are the promises of a person that are broken: a core node row below the milestone target after the
 	// milestone date. They are the only part of the report that fails the build.
 	Fails []string `json:"fails"`
@@ -320,8 +322,9 @@ type Input struct {
 	Corpus *node.Corpus
 	Status map[string]status.Status // by slug
 	Rows   []Row
-	// Canon are the canon works of registers/canon.yaml.
-	Canon []Canon
+	// Canon are the canon works of registers/canon.yaml, and Courses the courses of topics/courses.
+	Canon   []Canon
+	Courses []Canon
 	// Last is the coverage of the last release, and LastVersion its version. Last is nil before the first release.
 	Last        *Counts
 	LastVersion string
@@ -341,12 +344,12 @@ func Compute(in Input) *Report {
 		Core:     []Item{},
 		Gaps:     map[string][]string{},
 		Canon:    []Canon{},
+		Courses:  []Canon{},
 		Items:    []Item{},
 		Fails:    []string{},
 		NotComputed: []string{
 			"freshness: the refresh periods of the sources and the as_of periods of facts are not read yet",
 			"stale and demand gaps: the demand signals of 18.6 are not collected yet",
-			"courses: the course register of 5.7 is not read yet",
 		},
 	}
 	for _, g := range []string{"unharvested", "pending", "missing-node", "missing-card", "below-target", "stale", "broken-bridge", "demand"} {
@@ -482,11 +485,14 @@ func Compute(in Input) *Report {
 		}
 	}
 
-	// Canon coverage: the rows that a canon work names, and which of them have a node at C2 or higher.
-	for _, w := range in.Canon {
+	// Canon and course coverage: the rows that a canon work or a course names, and which of them have a node at C2
+	// or higher.
+	share := func(source string, w Canon) Canon {
 		w.Named, w.AtC2 = 0, 0
 		for _, row := range in.Rows {
-			if !slices.ContainsFunc(row.Sources, func(s string) bool { return s == "canon:"+w.ID || strings.HasPrefix(s, "canon:"+w.ID+":") }) {
+			if !slices.ContainsFunc(row.Sources, func(s string) bool {
+				return s == source+":"+w.ID || strings.HasPrefix(s, source+":"+w.ID+":")
+			}) {
 				continue
 			}
 			w.Named++
@@ -497,7 +503,13 @@ func Compute(in Input) *Report {
 		if w.Named > 0 {
 			w.Share = float64(w.AtC2) / float64(w.Named)
 		}
-		r.Canon = append(r.Canon, w)
+		return w
+	}
+	for _, w := range in.Canon {
+		r.Canon = append(r.Canon, share("canon", w))
+	}
+	for _, w := range in.Courses {
+		r.Courses = append(r.Courses, share("courses", w))
 	}
 	sort.Slice(r.Items, func(i, j int) bool {
 		return r.Items[i].Form > r.Items[j].Form || r.Items[i].Form == r.Items[j].Form && r.Items[i].ID < r.Items[j].ID
@@ -541,6 +553,35 @@ func LoadCanon(root string) ([]Canon, error) {
 	var out []Canon
 	for _, w := range reg.Works {
 		out = append(out, Canon{ID: w.ID, Title: w.Title})
+	}
+	return out, nil
+}
+
+// LoadCourses reads the ids and titles of the courses of topics/courses (5.7). It gives nil and no error when there is
+// no course.
+func LoadCourses(root string) ([]Canon, error) {
+	files, err := filepath.Glob(filepath.Join(root, "topics", "courses", "*.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(files)
+	var out []Canon
+	for _, f := range files {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			return nil, err
+		}
+		var c struct {
+			ID    string `yaml:"id"`
+			Title string `yaml:"title"`
+		}
+		if err := yaml.Unmarshal(b, &c); err != nil {
+			return nil, fmt.Errorf("topics/courses/%s: %w", filepath.Base(f), err)
+		}
+		if c.ID == "" {
+			c.ID = strings.TrimSuffix(filepath.Base(f), ".yaml")
+		}
+		out = append(out, Canon{ID: c.ID, Title: c.Title})
 	}
 	return out, nil
 }

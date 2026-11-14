@@ -80,7 +80,11 @@ func coverageReport(root string, c *node.Corpus, st map[string]status.Status, no
 	if err != nil {
 		return nil, err
 	}
-	in := coverage.Input{Corpus: c, Status: st, Rows: rows, Canon: works, Now: now}
+	courses, err := coverage.LoadCourses(root)
+	if err != nil {
+		return nil, err
+	}
+	in := coverage.Input{Corpus: c, Status: st, Rows: rows, Canon: works, Courses: courses, Now: now}
 	last, err := release.Latest(filepath.Join(root, filepath.FromSlash(release.Dir)), "")
 	if err != nil {
 		return nil, err
@@ -200,6 +204,11 @@ func printCoverage(r *coverage.Report, items bool) {
 		named += w.Named
 	}
 	fmt.Printf("Canon: %d works, %d named items in the universe\n", len(r.Canon), named)
+	cnamed := 0
+	for _, w := range r.Courses {
+		cnamed += w.Named
+	}
+	fmt.Printf("Courses: %d courses, %d named items in the universe\n", len(r.Courses), cnamed)
 	for _, s := range r.NotComputed {
 		fmt.Printf("Not computed: %s\n", s)
 	}

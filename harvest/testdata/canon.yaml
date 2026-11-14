@@ -1,0 +1,15 @@
+version: c-test
+works:
+  - id: bishop-2006-prml
+    title: Pattern Recognition and Machine Learning
+    url: https://www.microsoft.com/en-us/research/people/cmbishop/prml-book/
+    toc:
+      - {locator: "1", title: "Introduction", page: 1}
+      - {locator: "1.1", title: "Example: Polynomial Curve Fitting", page: 4}
+      - {locator: "1.2.4", title: "The  Gaussian distribution", page: 24}
+      - {locator: "2", title: "Exercises"}
+  - id: goodfellow-2016-deep-learning
+    title: Deep Learning
+    toc:
+      - {locator: "7.12", title: "Dropout"}
+      - {locator: "", title: "Notation"}

@@ -106,6 +106,16 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 |---|---|---|---|---|
 | algorithm.tamnd.com, programming.tamnd.com, math2 | bridge cards: tag, slug, name, summary, URL, kind (5.9) | the `.json` twins of each site | A (CC0 metadata, our own) | at each release of the neighbour |
 
+### Our own registers
+
+The registers of the content repository that name items are read like sources, with no request (`aik harvest canon surveys courses`): each file read is a snapshot under the URL `repo:<path>`, so a row cites the version of the register that named it.
+
+| Source | Gives | Access | Class | Schedule |
+|---|---|---|---|---|
+| canon (`registers/canon.yaml`) | a row for each named heading of the tables of contents of the canon works: id `<work>:<locator>`, the name (a lead such as "Example:" cut, the heading kept as an alias), the depth and the page; the headings that name a part of a book (Introduction, Summary, Exercises and the like) are skipped; the kind is a guess (`concept`) that the canon step (14.3) corrects | the file | A (CC0, our own; the headings are names only, 19.3) | at each change |
+| surveys (`registers/surveys.yaml`) | a row of kind `work` for each survey, with its sub-area, date, arXiv id or DOI, and reason; a survey with no reason, no date, no sub-area or no id stops the adapter, more than 5 in a sub-area is a note, and the age in years is a signal | the file | A | at each change |
+| courses (`topics/courses/*.yaml`) | a row for each item of each course in order: id `<course>:<section>.<item>`, the name, the kind, the section heading, the order and the node when it exists | the files | A | at each change |
+
 ## 13.3 The inventory, the canon and the surveys
 
 **The inventory.** Each adapter writes inventory rows: one per named item that the source lists, with the source id, the source's own id, the name, the kind as guessed by the adapter, the URL, the snapshot hash and the date.
@@ -118,6 +128,7 @@ It is never copied.
 Each area also has a **secondary canon** of works that the core rule does not count but the curate step reads for coverage, for example *Neural Network Methods for Natural Language Processing* (Goldberg), *Mathematics for Machine Learning* (Deisenroth, Faisal and Ong), *Algorithms for Decision Making* (Kochenderfer, Wheeler and Wray), *Reinforcement Learning: Theory and Algorithms* (Agarwal et al.), *Bandit Algorithms* (Lattimore and Szepesvári), *Elements of Causal Inference* (Peters, Janzing and Schölkopf), *Fairness and Machine Learning* (Barocas, Hardt and Narayanan), *Interpretable Machine Learning* (Molnar), *Artificial Intelligence: Foundations of Computational Agents* (Poole and Mackworth), *Machines Who Think* (McCorduck) and *The Quest for Artificial Intelligence* (Nilsson).
 
 **The surveys.** `registers/surveys.yaml` lists survey works by sub-area (for example a survey of parameter-efficient fine-tuning, of diffusion models, of LLM agents), at most 5 per sub-area, each with a date.
+An entry has an `id`, a `title`, `authors`, a `date` (YYYY-MM-DD, of the first version), the sub-area `area`, an `arxiv` id or a `doi`, and the editor's `reason`.
 Surveys feed the frontier core (5.10) and the catalog step for items younger than the canon.
 A survey older than three years in a sub-area with more than 50 new works a year is flagged for replacement.
 
