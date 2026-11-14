@@ -253,10 +253,10 @@ A card made by the daily job shows its harvest date, so a reader sees how fresh 
 | harvest refresh | weekly per source, or the source's own feed | re-harvest; diff the cards; changed facts go to review |
 | framework refresh | when a framework of 08.2 publishes a release | build and pin the image; run all tests of that framework; new failures go to the queue |
 | experiment refresh | monthly | F6 (03.5): experiments whose inputs or pins changed |
-| link check | weekly | every external URL; dead links go to the queue with an archive fallback |
+| link check | weekly | `aik audit -links`: every external URL of the nodes; a 404, a 410 or a host that does not resolve is dead, and goes to the queue with an archive fallback; another error is listed as unsure |
 | citation recheck | monthly | re-run the citation check against fresh snapshots; changed or vanished quotes go to the queue |
 | bridge refresh | at each release of a neighbour | `aik bridge sync al|m2|pg` (20.6) |
-| audit sweep | daily | the full audit; a PR when the report changes |
+| audit sweep | daily | `aik audit`, the full audit of 20.5; a PR when `reports/audit.json` changes |
 
 ## 14.10 Shipping: pr, ship, deploy, report, mkarea
 

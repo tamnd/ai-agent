@@ -111,7 +111,7 @@ The stores are fixed in 03.3. The layout rules:
 - **Large registers.** `row-only` universe rows (about 5 million, 18.8) and the full inventories of OpenAlex, the Hub and arXiv are Parquet in R2 `ai-data/universe/` and `ai-data/inventory/`, with their manifests in git. `registers/inventory/<source>.jsonl` in git holds only the rows that have an outcome other than `row-only`.
 - **Raw.** `ai-raw/<blake3>` holds each fetched object once, and `manifests/<source>.jsonl` maps source ids to hashes. Nothing in `ai-raw` is public, because many sources may be read but not redistributed (19).
 - **Runs.** `ai-runs/exp/<tag>/<name>/<run-id>/` and `ai-runs/agents/<run-id>/` (09.6, 14.7).
-- **Size alarm.** `aik audit` warns when the content repository passes 6 GB or a single directory passes 50 MB, so that a big file is found before it is merged.
+- **Size alarm.** `aik audit` warns when the content repository passes 6 GB or the files of a single directory pass 50 MB, so that a big file is found before it is merged. It counts the files outside `.git`, `build/` and other dot and cache directories.
 
 ## 20.4 The `aik` command tree
 
@@ -176,7 +176,7 @@ GitHub Actions of `tamnd/ai`, and the self-hosted build server for the heavy job
 | `harvest.yml` | weekly per source | `aik harvest`, `aik universe merge`, `aik card sync`; one PR per source | no |
 | `daily.yml` | 06:00 UTC | the daily freshness job of 14.9 | no |
 | `exp.yml` | monthly, and on demand with a label `exp: gpu` | `aik exp plan`, then `aik exp run -update` on the GPU pool under the cap (09.10); a PR with the new `results.json` | no |
-| `audit.yml` | daily | the full `aik check`, `aik cite -all`, link check; `reports/audit.json` in a PR when it changes | no |
+| `audit.yml` | daily | `aik cite -all`, then `aik audit` (`-links` on the weekly run): every rule with main's severities, the citation records of `prov/cite` with those that fail, the size alarm and the dead links, in `reports/audit.json`, in a PR when it changes. The report has no date, so it changes only when the state does | no |
 | `frameworks.yml` | a new framework release (08.2) | build the image, run all tests of that framework, open a PR with the new pin when they pass, or issues when they fail | no |
 | `release.yml` | the first Monday of each month | `aik release cut <YYYY.MM>` and the archive (20.6) | no |
 | `bridge.yml` | at each neighbour release, and weekly | `aik bridge sync al`, `m2`, `pg`; a PR | no |
