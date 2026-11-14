@@ -126,9 +126,27 @@ func TestCompute(t *testing.T) {
 	if !slices.Contains(r.Universe.Unharvested, "aiid") {
 		t.Errorf("aiid has no row but is not unharvested: %q", r.Universe.Unharvested)
 	}
+	// A closed source is named with its reason, and is not a gap.
+	if slices.Contains(r.Universe.Unharvested, "openreview") || !strings.Contains(r.Universe.Closed["openreview"], "ChallengeRequiredError") {
+		t.Errorf("openreview: unharvested %q, closed %q", r.Universe.Unharvested, r.Universe.Closed)
+	}
 	in.Now = M3End.Add(time.Hour)
 	if r := Compute(in); len(r.Fails) != 1 || !strings.Contains(r.Fails[0], "u:2") {
 		t.Errorf("fails after M3: %q", r.Fails)
+	}
+}
+
+// TestClosedSources checks that a closed source is a source of 18.4 with a reason and with no adapter.
+func TestClosedSources(t *testing.T) {
+	for s, why := range ClosedSources {
+		if !slices.Contains(Sources, s) || why == "" {
+			t.Errorf("closed source %s: in 18.4 %v, reason %q", s, slices.Contains(Sources, s), why)
+		}
+		for _, id := range harvest.Names() {
+			if SourceOf(id) == s {
+				t.Errorf("closed source %s has the adapter %s", s, id)
+			}
+		}
 	}
 }
 

@@ -186,7 +186,7 @@ func printCoverage(r *coverage.Report, items bool) {
 		}
 	}
 	u := r.Universe
-	fmt.Printf("\nUniverse: %d rows; %d pending; %d items with no row; %d of %d sources unharvested\n", u.Rows, len(u.Pending), u.Unregistered, len(u.Unharvested), len(coverage.Sources))
+	fmt.Printf("\nUniverse: %d rows; %d pending; %d items with no row; %d of %d sources unharvested, %d closed\n", u.Rows, len(u.Pending), u.Unregistered, len(u.Unharvested), len(coverage.Sources), len(u.Closed))
 	fmt.Printf("Promises: %d (missing-node %d, missing-card %d, below-target %d)\n", len(r.Promises),
 		len(r.Gaps["missing-node"]), len(r.Gaps["missing-card"]), len(r.Gaps["below-target"]))
 	fmt.Printf("Core items: %d\n", len(r.Core))

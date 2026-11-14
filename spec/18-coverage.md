@@ -110,6 +110,7 @@ Counts are from the research of 01 in November 2026 (Estimate where marked).
 | Award lists (Turing Award, the test-of-time and best paper awards of the main venues) | people, works | Estimate: about 1,500 entries | work, person, event | facts |
 
 A source that we know of and have not harvested is listed in the report as a gap of type `unharvested`, with its estimated size.
+A source that spec 13 gives no adapter, because the harvester cannot read it under the rules of 13.1 (a challenge, or a key that the project does not hold), is listed as `closed` with the reason instead (`coverage.ClosedSources`): OpenReview and Semantic Scholar on 2026-11-15. When such a source opens, it loses the entry and gets an adapter.
 
 ## 18.5 Scope rules
 

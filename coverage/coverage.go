@@ -229,6 +229,9 @@ type Universe struct {
 	ByArea      map[string]int `json:"by_area"`
 	Pending     []Pending      `json:"pending"`
 	Unharvested []string       `json:"unharvested"`
+	// Closed are the sources of 18.4 that spec 13 gives no adapter, each with the reason: a source that the harvester
+	// cannot read under its rules (13.1) is not a gap of harvest, but the report still names it.
+	Closed map[string]string `json:"closed"`
 	// Unregistered are the nodes and cards that no row names: an item that is not in the register is a failure of
 	// harvest (18.1).
 	Unregistered int `json:"unregistered"`
@@ -292,6 +295,15 @@ var sourceGroup = map[string]string{
 	"helm":                 "leaderboards",
 }
 
+// ClosedSources are the sources of 18.4 that have no adapter, by the rules of 13.1, with the reason (spec 13.2). They
+// are reported as closed, not as unharvested; when a source opens, its entry goes and its adapter comes.
+var ClosedSources = map[string]string{
+	"openreview": "the API answers a client with no account 403 ChallengeRequiredError, and the harvester never answers a " +
+		"challenge; ICLR and TMLR come from DBLP",
+	"semantic-scholar": "the API with no key answers 429 from a shared pool, and the datasets need a key (401); the works " +
+		"overlap OpenAlex, and S2 ids come in same_as from other sources",
+}
+
 // SourceOf gives the source of 18.4 of a harvest source id.
 func SourceOf(id string) string {
 	if g, ok := sourceGroup[id]; ok {
@@ -323,7 +335,7 @@ func Compute(in Input) *Report {
 		Date:    in.Now.UTC().Format("2006-01-02"),
 		Targets: "the defaults of spec 04.10; schema/targets.v1.yaml is not read yet",
 		Universe: Universe{Rows: len(in.Rows), BySource: map[string]int{}, ByOutcome: map[string]int{}, ByArea: map[string]int{},
-			Pending: []Pending{}, Unharvested: []string{}},
+			Pending: []Pending{}, Unharvested: []string{}, Closed: map[string]string{}},
 		Promises: []Promise{},
 		Levels:   Levels{ByArea: map[string]Counts{}, ByKind: map[string]Counts{}, ByCore: map[string]Counts{}},
 		Core:     []Item{},
@@ -455,7 +467,11 @@ func Compute(in Input) *Report {
 		}
 	}
 	for _, s := range Sources {
-		if !harvested[s] {
+		switch why, closed := ClosedSources[s]; {
+		case harvested[s]:
+		case closed:
+			r.Universe.Closed[s] = why
+		default:
 			r.Universe.Unharvested = append(r.Universe.Unharvested, s)
 		}
 	}
