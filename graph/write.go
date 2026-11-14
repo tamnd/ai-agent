@@ -75,12 +75,12 @@ func writeLines(p string, es []Edge) error {
 	enc := json.NewEncoder(w)
 	for _, e := range es {
 		if err := enc.Encode(e); err != nil {
-			f.Close()
+			_ = f.Close()
 			return err
 		}
 	}
 	if err := w.Flush(); err != nil {
-		f.Close()
+		_ = f.Close()
 		return err
 	}
 	return f.Close()
