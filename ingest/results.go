@@ -165,16 +165,31 @@ func NewResolver(c *node.Corpus) (*Resolver, error) {
 var (
 	caseRE  = regexp.MustCompile(`([a-z])([0-9])|([0-9])([a-z])`)
 	parenRE = regexp.MustCompile(`^(.*\S)\s*\(([^()]+)\)$`)
+	// sizeRE is a size of a model, a number with the letter of a unit and no letter before it: 7b, 1.5b, 350m, 2t.
+	sizeRE = regexp.MustCompile(`\b\d+(?:\.\d+)?[bmkt]\b`)
 )
 
-// NameKey is the key that two names of one model share: the words and numbers of the name in lowercase, in any
-// order, so "Claude 4.5 Opus" and "claude-opus-4.5" have one key.
+// NameKey is the key that two names of one model share: the words and the sizes ("7b", "1.5b", "350m") of the name in
+// lowercase in any order, then its other numbers in their order. So "Claude 4.5 Opus" and "claude-opus-4.5" have one
+// key, as do "Vicuna v1.3 (7B)" and "Vicuna-7B-v1.3", and "GPT-4.5" and "GPT-5.4" do not.
 func NameKey(name string) string {
 	s := strings.ToLower(name)
+	sizes := sizeRE.FindAllString(s, -1)
+	s = sizeRE.ReplaceAllString(s, " ")
 	s = caseRE.ReplaceAllString(caseRE.ReplaceAllString(s, "$1$3 $2$4"), "$1$3 $2$4")
-	words := strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
+	words, nums := sizes, []string(nil)
+	for _, w := range strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }) {
+		if unicode.IsDigit([]rune(w)[0]) {
+			nums = append(nums, w)
+		} else {
+			words = append(words, w)
+		}
+	}
 	sort.Strings(words)
-	return strings.Join(words, " ")
+	if len(nums) == 0 {
+		return strings.Join(words, " ")
+	}
+	return strings.TrimSpace(strings.Join(words, " ") + " | " + strings.Join(nums, " "))
 }
 
 // Model resolves the name of a model as a source writes it: the crosswalk, then the names of the models, then the
