@@ -207,7 +207,7 @@ func Compute(in Input) Report {
 	add(share("g3", "share of claims on W3 pages with the verifier's supported (G3)", g3, g3n, pct(0.90), pct(0.97),
 		"claims with a cited work on nodes at W3 or above; a claim counts when the verifier said supported for each of its works"))
 	add(share("headline", "share of claims with a headline label above reported on core nodes", head, headn, pct(0.30), pct(0.45),
-		"proved, measured_here or replicated; contested does not count"))
+		"proved, measured-here or replicated; contested does not count"))
 
 	if len(in.Audits) == 0 {
 		add(missing("audit-first-pass", "audit first-pass rate (pass with no fix round)", nil, nil,
