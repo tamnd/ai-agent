@@ -38,7 +38,6 @@ type command struct {
 var planned = map[string]string{
 	"bench":      "M2",
 	"agent":      "M1",
-	"prov":       "M1",
 	"quarantine": "M1",
 	"search":     "M1",
 	"bump":       "M1",
@@ -76,6 +75,7 @@ func init() {
 		{"build", "build the whole tree with a cache: check, Lean, tests, facts, results tables, scenes, ladders and coverage", cmdBuild},
 		{"coverage", "compute the coverage levels C0 to C6 and the coverage report of 18.7", cmdCoverage},
 		{"queue", "build the work queue of 14.5 into work/state/queue.jsonl: the promised items, the items below the milestone's targets, the pending rows, the failing results", cmdQueue},
+		{"prov", "read, check and append the provenance logs of the nodes (04.8): prov show <slug> | check [-strict] | record -author <login> <slug>...", cmdProv},
 		{"sample", "draw the weekly sample of 15.6 from the pages that changed in an ISO week: sample -week 2027-W14", cmdSample},
 		{"release", "freeze a monthly release: release cut <YYYY.MM>", cmdRelease},
 		{"version", "print the version", func([]string) error { fmt.Println("aik", ver()); return nil }},
