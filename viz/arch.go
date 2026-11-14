@@ -200,7 +200,12 @@ func CompileArch(slug string, f *shapes.File, s *ArchSpec, links Links) (*ArchDa
 	if ps := f.Check(); len(ps) > 0 {
 		return nil, []string{"shapes.yaml does not pass its own check: " + ps[0].Error() + " (X09)"}
 	}
-	d := &ArchData{Slug: slug, Title: s.Title, Stack: s.Stack}
+	// Every list starts empty, not nil, so that the JSON has [] and arch.js can map over it.
+	d := &ArchData{Slug: slug, Title: s.Title, Stack: s.Stack, Controls: []ArchControl{}, Presets: []ArchPreset{},
+		Derived: []ArchFormula{}, Axes: []ArchAxis{}, Blocks: []ArchBlock{}, Model: []ArchFormula{}}
+	if d.Stack == nil {
+		d.Stack = []string{}
+	}
 	free := f.Free()
 	for _, c := range s.Controls {
 		if !slices.Contains(free, c.Name) {
