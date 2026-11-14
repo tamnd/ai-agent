@@ -224,6 +224,16 @@ var Sources = []Source{
 		Credit: "MITRE ATLAS (Apache-2.0), https://atlas.mitre.org",
 		Note:   "Its LICENSE.txt reads: Copyright 2021-2026 MITRE, licensed under the Apache License, Version 2.0. A case study's actor can name a person, so it is never kept (19, P family). Techniques are risks (spec 04 names ATLAS as a risk taxonomy); an exercise case study is a finding, an incident one an incident.",
 	},
+	{
+		ID: "owasp-llm", Name: "OWASP Top 10 for LLM Applications",
+		URL: "https://genai.owasp.org/llm-top-10/", Owner: "the OWASP Gen AI Security Project",
+		Licence: "CC-BY-SA-4.0", Checked: "2026-11-15", Class: "B",
+		Access: "the project's GitHub repository: the GitHub contents API listing of each release directory (2_0_vulns for 2025, Archive/1_1_vulns for 1.1) and the heading of each LLMnn_*.md entry on raw.githubusercontent.com (both robots.txt files are 404s)", Rate: "1 request per 1 s, 22 a run",
+		Schedule: "monthly", Standing: "secondary-reference",
+		Facts:  "the id (LLM01:2025), the name, the rank and the release of each entry; never the text",
+		Credit: "OWASP Top 10 for LLM Applications (CC BY-SA 4.0), https://genai.owasp.org",
+		Note:   "Its LICENSE.md reads: This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (GitHub reports NOASSERTION, as it does not parse the file). Names and ids only, so the share-alike text never enters the graph (spec 13). The 1.1 headings carry no year; its ids take 2023, the year of the release.",
+	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "dblp", Name: "dblp computer science bibliography",
 		URL: "https://dblp.org/", Owner: "Schloss Dagstuhl - Leibniz Center for Informatics",
