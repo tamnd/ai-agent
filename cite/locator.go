@@ -32,6 +32,9 @@ var kinds = []struct {
 	{"appendix", []string{"appendix", "appendices"}, appNum},
 	{"chapter", []string{"chapter", "chapters"}, secNum},
 	{"equation", []string{"eq.", "eqs.", "equation", "equations"}, eqNum},
+	// Nature and its journals number the tables and figures of the online part apart: Extended Data Table 2.
+	{"extended-data-table", []string{"Extended Data Table", "Extended Data Tables"}, plainNum},
+	{"extended-data-figure", []string{"Extended Data Figure", "Extended Data Figures", "Extended Data Fig."}, plainNum},
 	{"table", []string{"table", "tables"}, plainNum},
 	{"figure", []string{"figure", "figures", "fig."}, plainNum},
 	{"algorithm", []string{"algorithm", "algorithms"}, plainNum},
@@ -79,7 +82,7 @@ func ParseLocator(s string) ([]Ref, error) {
 	var out []Ref
 	for _, p := range parts {
 		if m := cellRE.FindStringSubmatch(p); m != nil {
-			if len(out) == 0 || out[len(out)-1].Kind != "table" {
+			if len(out) == 0 || (out[len(out)-1].Kind != "table" && out[len(out)-1].Kind != "extended-data-table") {
 				return nil, fmt.Errorf("%s names a cell, but the place before it is not a table", p)
 			}
 			r := &out[len(out)-1]
@@ -157,6 +160,7 @@ func place(p string, before []Ref) (Ref, error) {
 	low := strings.ToLower(p)
 	for _, k := range kinds {
 		for _, w := range k.words {
+			w = strings.ToLower(w)
 			if k.num == nil {
 				if low == w {
 					return Ref{Kind: k.kind}, nil
