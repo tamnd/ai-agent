@@ -42,6 +42,7 @@ var Adapters = map[string]Adapter{
 	"open-llm-leaderboard": {Source: "open-llm-leaderboard", Gap: time.Second, Run: harvestOpenLLM},
 	"lmarena":              {Source: "lmarena", Gap: time.Second, Run: harvestLMArena},
 	"helm":                 {Source: "helm", Gap: time.Second, Run: harvestHELM},
+	"awards":               {Source: "awards", Gap: 2 * time.Second, Run: harvestAwards},
 }
 
 // Names are the source ids of the adapters, sorted.

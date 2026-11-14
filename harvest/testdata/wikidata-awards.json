@@ -1,0 +1,208 @@
+{
+ "head": {
+  "vars": [
+   "item",
+   "label",
+   "award",
+   "times",
+   "is",
+   "sitelinks"
+  ]
+ },
+ "results": {
+  "bindings": [
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q92894"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Geoffrey Hinton",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q18748042"
+    },
+    "times": {
+     "type": "literal",
+     "value": "1990-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "71"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q92894"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Geoffrey Hinton",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q5970364"
+    },
+    "times": {
+     "type": "literal",
+     "value": "2014-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "71"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q92894"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Geoffrey Hinton",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q2175611"
+    },
+    "times": {
+     "type": "literal",
+     "value": "2001-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "71"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q92894"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Geoffrey Hinton",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q5971528"
+    },
+    "times": {
+     "type": "literal",
+     "value": "2005-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "71"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q92894"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Geoffrey Hinton",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q185667"
+    },
+    "times": {
+     "type": "literal",
+     "value": "2018-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "71"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q6759197"
+    },
+    "label": {
+     "type": "literal",
+     "value": "Margaret Boden",
+     "xml:lang": "en"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q94282044"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "18"
+    }
+   },
+   {
+    "item": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q11773"
+    },
+    "award": {
+     "type": "uri",
+     "value": "http://www.wikidata.org/entity/Q30514449"
+    },
+    "times": {
+     "type": "literal",
+     "value": "1999-01-01T00:00:00Z"
+    },
+    "is": {
+     "type": "literal",
+     "value": "http://www.wikidata.org/entity/Q5"
+    },
+    "sitelinks": {
+     "datatype": "http://www.w3.org/2001/XMLSchema#int",
+     "type": "literal",
+     "value": "8"
+    }
+   }
+  ]
+ },
+ "meta": {
+  "query-time-ms": 13961,
+  "result-size-total": 655,
+  "warnings": []
+ }
+}
