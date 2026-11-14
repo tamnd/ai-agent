@@ -41,6 +41,7 @@ var assetFS embed.FS
 // Options control a build.
 type Options struct {
 	Out      string // the output directory; Build empties it first
+	Data     string // a directory for the datasets of 16.10, which Build replaces, or "" for none
 	BaseURL  string // for example https://ai.tamnd.com
 	Results  string // the directory of the test results, build/results
 	Decls    string // the declarations of the Lean package, build/lean/decls.jsonl

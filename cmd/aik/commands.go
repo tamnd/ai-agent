@@ -950,6 +950,7 @@ func cmdSite(args []string) error {
 	f := newFlags("site "+sub, "[flags]")
 	root := f.String("root", ".", "the root of the content repository")
 	out := f.String("out", "build/site", "the output directory")
+	data := f.String("data", "", "a directory for the datasets of 16.10 (JSON Lines and manifest.json), which the build replaces; none by default")
 	base := f.String("base", "https://ai.tamnd.com", "the base URL")
 	results := f.String("results", "build/results", "the directory of the test results")
 	decls := f.String("decls", "build/lean/decls.jsonl", "the declarations that aik lean build wrote")
@@ -982,6 +983,9 @@ func cmdSite(args []string) error {
 	}
 	if filepath.IsAbs(*out) {
 		opt.Out = *out
+	}
+	if *data != "" {
+		opt.Data = under(*root, *data)
 	}
 	if filepath.IsAbs(*results) {
 		opt.Results = *results
