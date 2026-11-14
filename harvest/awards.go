@@ -5,10 +5,15 @@ package harvest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"go.yaml.in/yaml/v3"
 )
 
 // Award is an award of the field whose recipients are notable (S-P1, 19.6): its Wikidata QID, its name, and a note
@@ -19,7 +24,44 @@ type Award struct {
 	Note string
 }
 
-// Awards are the awards that the adapter reads. The Turing Award covers all of computing; the others are AI awards.
+// AwardsFile is the register of the awards in the content repository (20.2). When it exists, the adapter reads its
+// awards instead of Awards, so that the editors change the list without a release of aik.
+const AwardsFile = "registers/awards.yaml"
+
+var qidRE = regexp.MustCompile(`^Q[1-9][0-9]*$`)
+
+// ReadAwards reads registers/awards.yaml: a list of {qid, name, note}. Each QID is a Wikidata item id and appears once,
+// and each award has a name.
+func ReadAwards(b []byte) ([]Award, error) {
+	var list []struct {
+		QID  string `yaml:"qid"`
+		Name string `yaml:"name"`
+		Note string `yaml:"note"`
+	}
+	if err := yaml.Unmarshal(b, &list); err != nil {
+		return nil, &ErrSchema{"awards", AwardsFile + " is not a list of awards: " + err.Error()}
+	}
+	var out []Award
+	seen := map[string]bool{}
+	for i, a := range list {
+		switch {
+		case !qidRE.MatchString(a.QID):
+			return nil, &ErrSchema{"awards", fmt.Sprintf("%s: award %d has the qid %q, not a Wikidata item id", AwardsFile, i+1, a.QID)}
+		case seen[a.QID]:
+			return nil, &ErrSchema{"awards", fmt.Sprintf("%s: %s is listed twice", AwardsFile, a.QID)}
+		case clean(a.Name) == "":
+			return nil, &ErrSchema{"awards", fmt.Sprintf("%s: %s has no name", AwardsFile, a.QID)}
+		}
+		seen[a.QID] = true
+		out = append(out, Award{QID: a.QID, Name: clean(a.Name), Note: clean(a.Note)})
+	}
+	if len(out) == 0 {
+		return nil, &ErrSchema{"awards", AwardsFile + " lists no award"}
+	}
+	return out, nil
+}
+
+// Awards are the awards that the adapter reads when the content repository has no AwardsFile. The Turing Award covers all of computing; the others are AI awards.
 // Each QID was checked on 2026-11-15 to have its recipients on P166 (award received).
 var Awards = []Award{
 	{"Q185667", "Turing Award", "all of computing: a node needs AI work"},
@@ -127,13 +169,25 @@ func AwardRows(b []byte, snap string, awards []Award) (rows []Row, skipped int, 
 	return rows, skipped, nil
 }
 
-// harvestAwards reads the recipients of Awards in one query. A limited run asks for that many recipient-award pairs.
+// harvestAwards reads the recipients of the awards of AwardsFile, or of Awards when the file does not exist, in one
+// query. A limited run asks for that many recipient-award pairs.
 func harvestAwards(ctx context.Context, r *Run, o Options) ([]Row, error) {
-	b, snap, err := r.Get(ctx, WikidataURL(AwardsQuery(Awards, o.Limit)), 64<<20)
+	awards := Awards
+	switch b, _, err := r.Local(AwardsFile); {
+	case err == nil:
+		if awards, err = ReadAwards(b); err != nil {
+			return nil, err
+		}
+	case errors.Is(err, fs.ErrNotExist):
+		r.Notes = append(r.Notes, AwardsFile+" does not exist; the awards of aik are read")
+	default:
+		return nil, fmt.Errorf("awards: %w", err)
+	}
+	b, snap, err := r.Get(ctx, WikidataURL(AwardsQuery(awards, o.Limit)), 64<<20)
 	if err != nil {
 		return nil, fmt.Errorf("awards: %w", err)
 	}
-	rows, skipped, err := AwardRows(b, snap, Awards)
+	rows, skipped, err := AwardRows(b, snap, awards)
 	if err != nil {
 		return nil, err
 	}

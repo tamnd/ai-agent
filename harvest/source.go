@@ -109,7 +109,7 @@ var Sources = []Source{
 		ID: "awards", Name: "Award lists (from Wikidata)",
 		URL: "https://www.wikidata.org/wiki/Property:P166", Owner: "Wikimedia Foundation",
 		Licence: "CC0-1.0", Checked: "2026-11-15", Class: "A",
-		Access: "one SPARQL query on the QLever endpoint (qlever.dev/api/wikidata) for the recipients (P166, with the year P585) of the awards of harvest.Awards; the robots.txt of query.wikidata.org disallows /sparql", Rate: "1 request per 2 s",
+		Access: "one SPARQL query on the QLever endpoint (qlever.dev/api/wikidata) for the recipients (P166, with the year P585) of the awards of registers/awards.yaml (harvest.Awards when the file does not exist); the robots.txt of query.wikidata.org disallows /sparql", Rate: "1 request per 2 s",
 		Schedule: "weekly", Standing: "secondary-reference",
 		Facts:  "the recipients of each award and the years",
 		Credit: "Wikidata (CC0)",
