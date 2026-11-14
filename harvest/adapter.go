@@ -28,6 +28,7 @@ var Adapters = map[string]Adapter{
 	"aiid":     {Source: "aiid", Gap: 2 * time.Second, Run: harvestAIID},
 	"arxiv":    {Source: "arxiv", Gap: 3 * time.Second, Run: harvestArxiv},
 	"wikidata": {Source: "wikidata", Gap: 2 * time.Second, Run: harvestWikidata},
+	"openalex": {Source: "openalex", Gap: time.Second, Run: harvestOpenAlex},
 }
 
 // Names are the source ids of the adapters, sorted.

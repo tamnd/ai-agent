@@ -576,3 +576,87 @@ func TestSources(t *testing.T) {
 		t.Errorf("adapters %v, sources %d", Names(), len(Sources))
 	}
 }
+
+func TestOpenAlexPage(t *testing.T) {
+	rows, err := OpenAlexPage(fixture(t, "openalex-page.json"), "b3:o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("got %d rows, want 2 (a work with no title is dropped)", len(rows))
+	}
+	a := rows[0]
+	if a.ID != "W2626778328" || a.Kind != "work" || a.Name != "Attention Is All You Need" || a.URL != "https://openalex.org/W2626778328" || a.Snapshot != "b3:o" {
+		t.Errorf("attention: %+v", a)
+	}
+	want := map[string]string{"openalex": "W2626778328", "doi": "10.48550/arxiv.1706.03762", "arxiv": "1706.03762", "mag": "2626778328"}
+	if !reflect.DeepEqual(a.SameAs, want) {
+		t.Errorf("same_as %v", a.SameAs)
+	}
+	if !reflect.DeepEqual(a.Fields["authors"], []string{"Ashish Vaswani", "Noam Shazeer"}) || a.Fields["year"] != "2017" || a.Fields["type"] != "preprint" {
+		t.Errorf("fields %v", a.Fields)
+	}
+	if !reflect.DeepEqual(a.Links["author"], []string{"A1", "A2"}) || !reflect.DeepEqual(a.Links["institution"], []string{"I1", "I2"}) {
+		t.Errorf("links %v", a.Links)
+	}
+	if !reflect.DeepEqual(a.Labels, []string{"T10181 Natural Language Processing Techniques"}) {
+		t.Errorf("labels %v", a.Labels)
+	}
+	if a.Facts["published"].V != "2017-06-12" || a.Signals["cited_by"] != 60000 {
+		t.Errorf("facts %v, signals %v", a.Facts, a.Signals)
+	}
+	d := rows[1]
+	if d.SameAs["doi"] != "10.1109/cvpr.2017.243" || d.SameAs["arxiv"] != "" || d.SameAs["mag"] != "" || d.Links != nil || d.Labels != nil {
+		t.Errorf("densenet: %+v", d)
+	}
+	if _, err := OpenAlexPage([]byte(`{"error":"x"}`), ""); err == nil {
+		t.Error("a page with no results gives no error")
+	}
+}
+
+func TestOpenAlexYears(t *testing.T) {
+	c, err := OpenAlexYears(fixture(t, "openalex-years.json"))
+	if err != nil || !reflect.DeepEqual(c, map[int]int{2017: 78526, 2016: 49}) {
+		t.Errorf("years %v %v", c, err)
+	}
+	if _, err := OpenAlexYears([]byte(`{"results":[]}`)); err == nil {
+		t.Error("an answer with no group_by gives no error")
+	}
+	for n, want := range map[int]int{0: 0, 1: 1, 49: 1, 50: 1, 51: 2, 78526: 1571, 1 << 30: OpenAlexDepth} {
+		if got := OpenAlexNeed(n); got != want {
+			t.Errorf("OpenAlexNeed(%d) = %d, want %d", n, got, want)
+		}
+	}
+}
+
+func TestOpenAlexParts(t *testing.T) {
+	root := t.TempDir()
+	ps, err := openAlexParts(root)
+	if err != nil || !reflect.DeepEqual(ps, []OpenAlexPart{{ID: "1702", Filter: "primary_topic.subfield.id:1702"}}) {
+		t.Errorf("default parts %v %v", ps, err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "crosswalk"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cw := "rows:\n  - id: subfields/1702\n  - id: T10036\n  - id: 1702\n  - id: concept\n"
+	if err := os.WriteFile(filepath.Join(root, OpenAlexCrosswalk), []byte(cw), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ps, err = openAlexParts(root)
+	want := []OpenAlexPart{{ID: "1702", Filter: "primary_topic.subfield.id:1702"}, {ID: "T10036", Filter: "primary_topic.id:T10036"}}
+	if err != nil || !reflect.DeepEqual(ps, want) {
+		t.Errorf("parts %v %v", ps, err)
+	}
+	u := OpenAlexPageURL(want[1], 2017, 3, 100)
+	for _, s := range []string{"filter=primary_topic.id%3AT10036%2Cpublication_year%3A2017", "page=3", "per_page=100", "sort=cited_by_count%3Adesc", "select="} {
+		if !strings.Contains(u, s) {
+			t.Errorf("page URL %s lacks %s", u, s)
+		}
+	}
+	if u := OpenAlexYearsURL(want[0], true); !strings.Contains(u, "publication_year%3A%3C2000") || !strings.Contains(u, "group_by=publication_year") {
+		t.Errorf("years URL %s", u)
+	}
+	if strings.Contains(u, "mailto") || strings.Contains(u, "api_key") {
+		t.Errorf("the URL sends an address or a key: %s", u)
+	}
+}

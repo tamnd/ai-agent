@@ -85,6 +85,16 @@ var Sources = []Source{
 		Facts:  "QIDs, labels, aliases and the identifiers of other sources",
 		Credit: "Wikidata (CC0)",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "openalex", Name: "OpenAlex",
+		URL: "https://openalex.org/", Owner: "OurResearch",
+		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
+		Access: "the REST API (api.openalex.org/works) with no key and no address; for each year of each part of crosswalk/openalex.yaml, the top 2% of works by citations (S-W1), by basic paging", Rate: "1 request per 1 s",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "work ids, titles, years, dates, authors, institutions, topics, DOIs and citation counts; never the abstracts",
+		Credit: "OpenAlex (CC0), https://openalex.org",
+		Note:   "Without a key the API gives a small daily budget, and cursor paging past the first page needs a key, so basic paging reads at most 10,000 works of a year. The API documentation asks agents to send a person's email address for a key; aik does not.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.
