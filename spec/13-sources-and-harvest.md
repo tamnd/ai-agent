@@ -70,7 +70,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 | Source | Gives | Access (adapter) | Class | Schedule |
 |---|---|---|---|---|
 | AI Incident Database | incidents, dates, reports (links to articles), classifications | snapshot exports (the backups listed on its research snapshots page); for a limited run, the page-data JSON of each incident | facts; text per its terms (checked at M1, Q-23) | daily |
-| OECD.AI | policy initiatives by country, the AI incidents monitor, principles | site and data downloads | per dataset (checked at M1) | weekly |
+| OECD.AI | policy initiatives by country, the AI incidents monitor, principles | the public API of the initiatives (api.oecd.ai/policy-initiatives/public, no key, 100 a page; `aik harvest oecd-ai`); the incidents monitor by its site | D: the site states no licence for the database, so names, ids, years and types only; the adapter never keeps the descriptions or the editors' names and emails that the API also gives | weekly |
 | MIT AI Risk Repository | risks with causal and domain taxonomies, source documents | spreadsheet download | C (CC BY 4.0, checked at M1) | monthly |
 | MITRE ATLAS | tactics, techniques, mitigations, case studies of attacks on AI | data repository | C (checked at M1) | monthly |
 | OWASP Top 10 for LLM Applications and the GenAI Security Project | risk classes and mitigations | site (`owasp-cli`) | B (CC BY-SA 4.0): names and ids only | per release |

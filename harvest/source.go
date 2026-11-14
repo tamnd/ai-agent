@@ -135,6 +135,16 @@ var Sources = []Source{
 		Credit: "Federal Register, https://www.federalregister.gov",
 		Note:   "The Federal Register covers the US federal government from 1994; the states and other countries come from their own gazettes (S-L1).",
 	},
+	{
+		ID: "oecd-ai", Name: "OECD.AI policy database",
+		URL: "https://oecd.ai/en/dashboards/policy-initiatives", Owner: "the OECD AI Policy Observatory",
+		Licence: "facts only", Checked: "2026-11-14", Class: "D",
+		Access: "the public API of the initiatives (api.oecd.ai/policy-initiatives/public) with no key, 100 a page; robots.txt of oecd.ai closes only French pages and api.oecd.ai has none", Rate: "1 request per 1 s",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "initiative ids, English and original names, types, categories, countries or organisations, binding or not, status, years, tags, sectors and websites; never the descriptions, and never the names or emails of the editors that the API also gives",
+		Credit: "OECD.AI Policy Observatory, https://oecd.ai",
+		Note:   "The site states no licence for the database, so it is D: names, ids, years and categories only. The initiatives are reported by the governments and organisations themselves.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.
