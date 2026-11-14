@@ -76,6 +76,7 @@ func init() {
 		{"build", "build the whole tree with a cache: check, Lean, tests, facts, results tables, scenes, ladders and coverage", cmdBuild},
 		{"coverage", "compute the coverage levels C0 to C6 and the coverage report of 18.7", cmdCoverage},
 		{"queue", "build the work queue of 14.5 into work/state/queue.jsonl: the promised items, the items below the milestone's targets, the pending rows, the failing results", cmdQueue},
+		{"sample", "draw the weekly sample of 15.6 from the pages that changed in an ISO week: sample -week 2027-W14", cmdSample},
 		{"release", "freeze a monthly release: release cut <YYYY.MM>", cmdRelease},
 		{"version", "print the version", func([]string) error { fmt.Println("aik", ver()); return nil }},
 		{"help", "show this help", func([]string) error { usage(os.Stdout); return nil }},
