@@ -152,6 +152,15 @@ Rules:
 | the final Papers with Code data dump | about seven years of results, linked to papers | the `pwc` adapter; each row becomes a candidate card whose source is the original paper (with the dump as the secondary source); a row whose number the citation check cannot find in the paper is kept as `pwc-unverified` and not shown in tables (Q-35) | `reported` after the citation check |
 | our harness | `measured-here` results (10.4) | experiment outputs | `measured-here` |
 
+`aik ingest results [source]...` makes the result cards from the result rows of the inventories (13.3), which the leaderboard adapters write (`aik harvest swe-bench`). For each row:
+
+- The model is the name that the source shows, resolved to one model node or card: first by the `models` of `crosswalk/results.yaml` (a name to a slug, or to `none` for a system that is not a model, whose rows are not ingested), then by the names, slugs and aliases of the models, compared by their words and numbers in any order ("Claude 4.5 Opus" is "claude-opus-4-5"), then by the name without a last part in parentheses, which becomes `model_variant` ("Claude 3.5 Sonnet (20241022)") unless it is the reasoning effort that the setting already has. A name that matches no model or more than one is never guessed: the row waits, and the report names it with its number of rows, the most first, as the work list of the curator.
+- The benchmark must be a benchmark node or card with the version (10.3), and the metric a metric node or card (M01, M02); else the row waits, named in the report. A source that names a benchmark and a metric in its own words (the datasets and metrics of Papers with Code) writes `benchmark_name` and `metric_name`: the `benchmarks` of the crosswalk give the benchmark and version of a name (`squad@1-1-dev`), and the `metrics` of the crosswalk, then the names and aliases of the metrics, give the metric.
+- The citation check of a structured snapshot (a leaderboard's JSON) finds the number in the record of the snapshot that has the entry id of the row (`checks.cite: found`); a record without the number is `not-found` (M08). A snapshot that is not JSON or not in the raw store is left to the citation check of 07.5.
+- A card is matched to the row by `same_as` (the source's id of the entry), else by the identity below; a matched card is updated in place and keeps its tag. A new card has a provisional tag `NEW-r…` until `aik mint`.
+
+The run writes `cards/result/` and its record `reports/ingest/results-<date>.json`: the rows, the new, updated and unchanged cards, the duplicates, the results of the citation check and the names that did not resolve; `-n` reports and writes nothing.
+
 Deduplication: two candidate cards are the same result when the model, the version, the metric, the setting and the source are the same. Two sources that report the same number for the same run (a paper and the model card) are one card with two sources. Two independent runs are two cards in one comparable group.
 
 ### 10.6.3 Comparability
