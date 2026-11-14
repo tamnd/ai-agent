@@ -38,7 +38,7 @@ func (d *Doc) resolve(r Ref) (Span, string) {
 	switch r.Kind {
 	case "section", "chapter", "appendix":
 		return d.heads(r)
-	case "table", "figure", "algorithm":
+	case "table", "figure", "algorithm", "extended-data-table", "extended-data-figure":
 		return d.captions(r)
 	case "equation", "footnote":
 		return d.marks(r)
@@ -245,7 +245,7 @@ func (d *Doc) printedNumbers() []int {
 			if k >= edgeLines && k < len(lines)-edgeLines {
 				continue
 			}
-			if pageNumRE.MatchString(l) {
+			if l = footNumber(l); l != "" {
 				v, _ := strconv.Atoi(l)
 				if v > 0 && !slices.Contains(cands[i], v) {
 					cands[i] = append(cands[i], v)
@@ -286,6 +286,27 @@ func (d *Doc) printedNumbers() []int {
 		}
 	}
 	return nums
+}
+
+// spacedNumRE is a number whose digits a journal's running line spaces out: "4 8 4".
+var spacedNumRE = regexp.MustCompile(`^[0-9]( ?[0-9]){0,4}$`)
+
+// footNumber gives the page number that a line at the edge of a page shows, or "": the line alone, or the first or
+// the last field of a running line cut by bars, as Nature's "4 8 4 | N AT U R E | VO L 5 2 9 | 2 8 JA N UA RY 2 0 1 6".
+func footNumber(l string) string {
+	if pageNumRE.MatchString(l) {
+		return l
+	}
+	f := strings.Split(l, "|")
+	if len(f) < 3 {
+		return ""
+	}
+	for _, e := range []string{f[0], f[len(f)-1]} {
+		if e = strings.TrimSpace(e); spacedNumRE.MatchString(e) {
+			return strings.ReplaceAll(e, " ", "")
+		}
+	}
+	return ""
 }
 
 func firstField(s string) string {

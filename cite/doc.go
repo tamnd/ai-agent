@@ -20,7 +20,7 @@ import (
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-5"
+const ExtractorVersion = "aik-doc-6"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
@@ -357,6 +357,16 @@ func htmlText(s string) string {
 	return html.UnescapeString(s)
 }
 
+// captionKind gives the kind of place that a caption's word names: "Fig." is a figure, "Extended Data Table" an
+// extended-data-table.
+func captionKind(w string) string {
+	k := strings.ToLower(strings.TrimSuffix(w, "."))
+	if k == "fig" || strings.HasSuffix(k, " fig") {
+		k = strings.TrimSuffix(k, "fig") + "figure"
+	}
+	return strings.ReplaceAll(k, " ", "-")
+}
+
 var (
 	// A heading line: a number, then a title that starts with a capital letter. "3.2 Attention", "6. Results", "A.4 Dropout Rate".
 	headRE = regexp.MustCompile(`^((?:[0-9]+|[A-Z])(?:\.[0-9]+)*)\.?(?:\s+([A-Z][^\n]{0,100}))?$`)
@@ -364,7 +374,7 @@ var (
 	appRE = regexp.MustCompile(`^Appendix\s+([A-Z])\b[.:]?\s*([^\n]{0,100})$`)
 	// "Table 1: Results" and "Figure 2. The model"; also "Table 1 Parameter counts", with no colon, where a word with
 	// a capital follows the number. "Table 1 shows" is a mention, not a caption.
-	captionRE = regexp.MustCompile(`^(Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+)(?:\s*[:.|]|\s+[A-Z][a-z]+\s)`)
+	captionRE = regexp.MustCompile(`^(Extended Data (?:Table|Figure|Fig\.)|Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+)(?:\s*[:.|]|\s+[A-Z][a-z]+\s)`)
 	// A caption that two-column text put in the middle of a line has a colon after its number: "error Figure 11:
 	// Monte-Carlo". "Figure 11 shows" is a mention, not a caption.
 	midCaptionRE = regexp.MustCompile(`\s(Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+):\s`)
@@ -421,10 +431,7 @@ func parse(text string) *Doc {
 			continue
 		}
 		if m := captionRE.FindStringSubmatch(s); m != nil {
-			k := strings.ToLower(strings.TrimSuffix(m[1], "."))
-			if k == "fig" {
-				k = "figure"
-			}
+			k := captionKind(m[1])
 			d.Marks = append(d.Marks, Mark{Kind: k, Num: strings.ReplaceAll(m[2], ".", ""), Start: l.off})
 			continue
 		}

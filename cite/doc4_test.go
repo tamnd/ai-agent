@@ -371,3 +371,38 @@ func TestCarryPageTopHeading(t *testing.T) {
 		t.Errorf("the verdict of a span up to the form feed is not carried")
 	}
 }
+
+// Silver et al. 2016 in Nature: the running line at the foot spaces out its digits, "4 8 4 | N AT U R E | VO L 5 2 9",
+// and the online part has its own tables, Extended Data Table 1 to 11.
+func TestNature(t *testing.T) {
+	foot := []string{"4 8 4 | N AT U R E | VO L 5 2 9 | 2 8 JA N UA RY 2 0 1 6", "2 8 JA N UA RY 2 0 1 6 | VO L 5 2 9 | N AT U R E | 4 8 5", "4 8 6 | N AT U R E | VO L 5 2 9 | 2 8 JA N UA RY 2 0 1 6"}
+	var pages []string
+	for i, f := range foot {
+		pages = append(pages, fmt.Sprintf("ARTICLE RESEARCH\nthe text of page %d\nmore text\nand more\n%s\n© 2016 Macmillan Publishers Limited. All rights reserved\n", i+1, f))
+	}
+	pages = append(pages, "RESEARCH ARTICLE\nMETHODS\nProblem setting.\n",
+		"ARTICLE RESEARCH\nExtended Data Table 1 | Details of match between AlphaGo and Fan Hui\nDate\n5 Oct 2015\n",
+		"RESEARCH ARTICLE\nExtended Data Figure 2 | Tree search in AlphaGo\nthe figure\n")
+	d := Parse(strings.Join(pages, "\f"))
+	for n, want := range map[int]int{484: 0, 485: 1, 486: 2} {
+		if got := d.printed(n); got != want {
+			t.Errorf("p. %d is the page %d, want %d", n, got, want)
+		}
+	}
+	if txt := resolve(t, d, "Extended Data Table 1"); !strings.Contains(txt, "Fan Hui") {
+		t.Errorf("Extended Data Table 1 = %q", txt)
+	}
+	if txt := resolve(t, d, "Extended Data Fig. 2"); !strings.Contains(txt, "Tree search") {
+		t.Errorf("Extended Data Fig. 2 = %q", txt)
+	}
+	if refs, err := ParseLocator("Table 1"); err != nil {
+		t.Fatal(err)
+	} else if _, fails := Resolve(d, refs); len(fails) == 0 {
+		t.Error("Table 1 resolved to an Extended Data table")
+	}
+	for in, want := range map[string]string{"4 8 4 | N AT U R E | VO L 5 2 9": "484", "12": "12", "A | B | 2016 Macmillan": "", "Table 3 | Results": ""} {
+		if got := footNumber(in); got != want {
+			t.Errorf("footNumber(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
