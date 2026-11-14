@@ -820,6 +820,9 @@ func TestBackoff(t *testing.T) {
 		{"a 429 with no header", 429, hdr(nil), 30 * time.Second, true},
 		{"a long Retry-After", 503, hdr(map[string]string{"Retry-After": "3600"}), 5 * time.Minute, true},
 		{"a 404", 404, hdr(map[string]string{"X-RateLimit-Remaining": "0"}), 0, false},
+		{"a bad gateway", 502, hdr(nil), 10 * time.Second, true},
+		{"a gateway timeout with Retry-After", 504, hdr(map[string]string{"Retry-After": "20"}), 20 * time.Second, true},
+		{"a 500", 500, hdr(nil), 0, false},
 	} {
 		got, ok := c.backoff(tc.code, tc.h)
 		if ok != tc.ok || ok && (got < tc.want-time.Second || got > tc.want+time.Second) {
