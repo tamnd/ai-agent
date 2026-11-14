@@ -700,3 +700,9 @@ var nonSlug = regexp.MustCompile(`[^a-z0-9]+`)
 func slugify(s string) string {
 	return strings.Trim(nonSlug.ReplaceAllString(strings.ToLower(s), "-"), "-")
 }
+
+// FindJS is the script that ranks the search results in the browser, which aik search eval runs too (17.10).
+func FindJS() []byte {
+	b, _ := assetFS.ReadFile("assets/find.js")
+	return b
+}

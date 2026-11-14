@@ -1007,6 +1007,13 @@ func cmdSite(args []string) error {
 		for _, m := range rep.MathErrors {
 			fmt.Fprintln(os.Stderr, "math: "+m)
 		}
+		if err := searchGate(*root, opt.Out); err != nil {
+			if sub == "serve" {
+				fmt.Fprintln(os.Stderr, "warn: "+err.Error())
+				return nil
+			}
+			return err
+		}
 		return nil
 	}
 	switch sub {

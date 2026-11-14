@@ -25,37 +25,10 @@
     if (!loading) loading = fetch("/search.json").then(function (r) { return r.json(); }).then(function (j) { index = j; return j; });
     return loading;
   }
-  function norm(s) { return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
-  function score(e, q, words) {
-    var n = norm(e.n), best = 0;
-    if (n === q) best = 1000;
-    else if (n.indexOf(q) === 0) best = 600;
-    else if (n.indexOf(q) > 0) best = 400;
-    (e.a || []).forEach(function (a) {
-      var x = norm(a);
-      if (x === q) best = Math.max(best, 900);
-      else if (x.indexOf(q) === 0) best = Math.max(best, 500);
-      else if (x.indexOf(q) >= 0) best = Math.max(best, 300);
-    });
-    if (!best) {
-      var hay = n + " " + norm((e.a || []).join(" ")) + " " + norm(e.s) + " " + norm(e.k) + " " + norm(e.r);
-      var all = words.every(function (w) { return hay.indexOf(w) >= 0; });
-      if (all) best = 100;
-    }
-    if (e.t && q.toUpperCase() === e.t) best = 1000;
-    return best;
-  }
+  // The ranking is in find.js, which the evaluation of the search runs too.
   function find(q) {
-    q = norm(q).trim();
-    if (!q || !index) return [];
-    var words = q.split(/\s+/);
-    var out = [];
-    for (var i = 0; i < index.length; i++) {
-      var s = score(index[i], q, words);
-      if (s) out.push([s - i / 10000, index[i]]);
-    }
-    out.sort(function (a, b) { return b[0] - a[0]; });
-    return out.map(function (x) { return x[1]; });
+    if (!index || !window.AlgoFind) return [];
+    return window.AlgoFind.rank(index, q).map(function (x) { return x[1]; });
   }
   window.AlgoSearch = { load: load, find: find };
 
