@@ -115,6 +115,26 @@ var Sources = []Source{
 		Credit: "GitHub, https://github.com",
 		Note:   "The metadata is facts (19.3); the code and the READMEs keep their own licences.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "acl", Name: "ACL Anthology",
+		URL: "https://aclanthology.org/", Owner: "the Association for Computational Linguistics",
+		Licence: "CC-BY-4.0", Checked: "2026-11-14", Class: "C",
+		Access: "the XML of the Anthology's repository (github.com/acl-org/acl-anthology, data/xml): the tree of data/xml by the GitHub API, then the file of each collection of the venues of crosswalk/acl.yaml from raw.githubusercontent.com; the volumes of other venues, such as the workshops in a conference's file, are not read", Rate: "1 request per 1 s",
+		Schedule: "per conference", Standing: "secondary-reference",
+		Facts:  "Anthology ids, titles, authors, venues, years, DOIs and awards; never the abstracts",
+		Credit: "ACL Anthology (CC BY 4.0), https://aclanthology.org",
+		Note:   "The metadata and the papers since 2016 are CC BY 4.0, the papers before 2016 CC BY-NC-SA 3.0; the code of the repository is Apache 2.0. The site lists awards only for some years.",
+	},
+	{
+		ID: "federal-register", Name: "Federal Register",
+		URL: "https://www.federalregister.gov/", Owner: "the Office of the Federal Register, US National Archives",
+		Licence: "public domain (a work of the US federal government)", Checked: "2026-11-14", Class: "A",
+		Access: "the documents API (federalregister.gov/api/v1/documents.json) with no key: the documents with the phrase \"artificial intelligence\", 1,000 a page, of which those with an AI title are rows; robots.txt closes only the search pages of the site", Rate: "1 request per 1 s",
+		Schedule: "daily", Standing: "primary",
+		Facts:  "document numbers, titles, types, executive order numbers, citations, agencies and the dates of publication, signing and effect; never the abstracts",
+		Credit: "Federal Register, https://www.federalregister.gov",
+		Note:   "The Federal Register covers the US federal government from 1994; the states and other countries come from their own gazettes (S-L1).",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.

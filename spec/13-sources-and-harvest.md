@@ -29,7 +29,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 | DBLP | venues, proceedings, authors, keys; the cleanest venue record | dumps and API (`dblp-cli`) | A | weekly |
 | Crossref, DataCite, Unpaywall | DOIs, publication metadata, open-access locations | APIs (`crossref-cli`, `datacite-cli`, `unpaywall-cli`) | facts | on demand |
 | OpenReview | ICLR, NeurIPS, TMLR and other submissions, decisions, reviews, versions | API (`openreview-cli`) | metadata facts; text D | per conference cycle |
-| ACL Anthology | NLP papers, venues, awards | data repository (`aclanthology-cli`) | papers since 2016 CC BY 4.0 (C); metadata C | per conference |
+| ACL Anthology | NLP papers, venues, awards | the XML of the data repository (`acl-org/acl-anthology`, `data/xml`): the tree by one call of the GitHub API, then the file of each collection of the venues of `crosswalk/acl.yaml` (the ACL conferences, Findings, TACL, CL, CoNLL, COLING) from `raw.githubusercontent.com`; a row for each paper with its DOI, and its awards as labels (`aik harvest acl`) | papers since 2016 CC BY 4.0 (C); metadata C | per conference |
 | CVF open access, NeurIPS proceedings, PMLR, JMLR, AAAI, IJCAI | papers of the main venues, awards | sites (`cvf-cli`, `neurips-cli`, others) | metadata facts; text D unless the paper states a licence | per conference |
 | ACM DL, IEEE Xplore, Springer, SSRN, NBER | metadata of papers outside arXiv, economics and policy papers | APIs where allowed (`acmdl-cli`, `ieee-cli`, `springer-cli`, `ssrn-cli`, `nber-cli`) | facts; text D | on demand |
 | OpenAIRE, ORCID, ROR | funders, author ids, institution ids | APIs (`openaire-cli`, `orcid-cli`, `ror-cli`) | A (ORCID public data CC0, ROR CC0) | weekly |
@@ -77,7 +77,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 | NVD and OSV | CVEs in AI software | APIs (`nvd-cli`, `osv-cli`) | A | daily for tracked software |
 | Alignment Forum, LessWrong | alignment research posts, concepts and debates | GraphQL API (`alignmentforum-cli`, `lesswrong-cli`) | per post licence (checked at M1); default D | weekly |
 | EUR-Lex | the EU AI Act, the Digital Omnibus on AI, implementing and delegated acts, guidelines, harmonized standards references; CELEX numbers and ELI ids | API and SPARQL | C (EU reuse policy, Decision 2011/833/EU, with attribution) | daily (the official journal) |
-| US Federal Register, Congress.gov, GovInfo | executive orders, agency rules, bills, hearings | APIs (`federalregister-cli`, `congress-cli`, `govinfo-cli`) | A (US federal works) | daily |
+| US Federal Register, Congress.gov, GovInfo | executive orders, agency rules, bills, hearings | APIs (`congress-cli`, `govinfo-cli`); the Federal Register by its documents API with no key: the documents with the phrase "artificial intelligence", of which those with an AI title are rows (`aik harvest federal-register`) | A (US federal works) | daily |
 | NIST | the AI RMF, NIST AI 600-1, AI 100 series, terms | site | A | weekly |
 | UK legislation and Parliament | acts, bills, the AI Security Institute's publications | APIs (`ukparliament-cli`) | C (Open Government Licence v3.0) | weekly |
 | other national registers (China's CAC and NPC texts, Korea, Japan, Canada, Brazil, India and others) | national AI laws and rules | official sites; translations from licensed sources only | per jurisdiction (19.3) | weekly |

@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<collection id="P19">
+  <volume id="1" ingest-date="2019-07-01" type="proceedings">
+    <meta>
+      <booktitle>Proceedings of the 57th Annual Meeting of the <fixed-case>A</fixed-case>ssociation for Computational Linguistics</booktitle>
+      <year>2019</year>
+      <venue>acl</venue>
+    </meta>
+    <frontmatter><bibkey>acl-2019-frontmatter</bibkey></frontmatter>
+    <paper id="78">
+      <title>Transferable Multi-Domain State Generator for Task-Oriented Dialogue Systems</title>
+      <author id="chien-sheng-wu"><first>Chien-Sheng</first><last>Wu</last></author>
+      <author><first>Andrea</first><last>Madotto</last></author>
+      <abstract>Not read.</abstract>
+      <award name="Outstanding Paper"/>
+      <doi>10.18653/v1/P19-1078</doi>
+    </paper>
+    <paper id="2">
+      <title>Learning with <tex-math>\ell_1</tex-math>   norms</title>
+      <author><first>A.</first><last>B</last></author>
+    </paper>
+  </volume>
+  <volume id="50" type="proceedings">
+    <meta><booktitle>A workshop</booktitle><year>2019</year><venue>ws</venue></meta>
+    <paper id="1"><title>Not read</title></paper>
+  </volume>
+</collection>
