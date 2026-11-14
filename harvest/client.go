@@ -71,6 +71,47 @@ func (c *Client) Get(ctx context.Context, rawURL string, limit int64) ([]byte, e
 	}
 }
 
+// Status sends a GET for a URL, as Get does, and returns the status code of the answer without reading the body: a
+// link check (spec 14.9). A 429 or a 503 is tried again, as in Get.
+func (c *Client) Status(ctx context.Context, rawURL string) (int, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return 0, err
+	}
+	rb, err := c.robotsFor(ctx, u)
+	if err != nil {
+		return 0, err
+	}
+	if !rb.allows(u.EscapedPath() + query(u)) {
+		return 0, fmt.Errorf("%s: %w", rawURL, ErrRobots)
+	}
+	for try := 0; ; try++ {
+		c.wait(u.Host, rb.delay)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
+		if err != nil {
+			return 0, err
+		}
+		req.Header.Set("User-Agent", c.UA)
+		c.mu.Lock()
+		c.Requests++
+		c.mu.Unlock()
+		resp, err := c.HTTP.Do(req)
+		if err != nil {
+			return 0, err
+		}
+		_ = resp.Body.Close() // only the status is read
+		if (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable) && try < 3 {
+			wait := 30 * time.Second
+			if s, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && s >= 0 {
+				wait = min(time.Duration(s)*time.Second, 5*time.Minute)
+			}
+			c.Sleep(max(wait, c.Gap))
+			continue
+		}
+		return resp.StatusCode, nil
+	}
+}
+
 func query(u *url.URL) string {
 	if u.RawQuery == "" {
 		return ""
