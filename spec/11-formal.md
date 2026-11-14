@@ -214,6 +214,8 @@ General definitions and lemmas (MDPs and Bellman operators, shattering and the S
 
 The pins move once a month, together with algorithm's (Q-34): `aik lean bump` updates `lean-toolchain` and the Mathlib tag, builds the package, and opens a pull request with the list of broken declarations. A bump merges only when every F2 theorem still builds; a node whose proof breaks drops to F1 until it is fixed, and the bump report lists it.
 
+The bump builds each module of `AI` on its own, so the report names every module that breaks, not only the first. When the library builds, it extracts the declarations again and compares them with the last `decls.jsonl`: a declaration that is lost, that now depends on `sorry` or on an axiom outside the policy, or whose type changed. A changed type can come from a change of a Mathlib definition, so the report asks for a fidelity review of the statement (11.7) even when the node keeps its level. The report is `build/lean/bump.md` and is the body of the pull request.
+
 ## 11.12 Rendering on the site
 
 - The statement section shows the theorem in math, then a "Lean" tab with the elaborated statement, the module, the axioms used and the build date.
