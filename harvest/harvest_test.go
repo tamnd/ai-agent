@@ -708,7 +708,7 @@ func TestHubSelect(t *testing.T) {
 		t.Errorf("bases %v", b)
 	}
 	row := HubRow(HubParts[0], repos["acme/base"], "b3:h")
-	if row.ID != "acme/base" || row.Kind != "model" || row.URL != "https://huggingface.co/acme/base" || row.SameAs["hf"] != "acme/base" {
+	if row.ID != "acme/base" || row.Kind != "model" || row.URL != "https://huggingface.co/acme/base" || row.SameAs["hub"] != "acme/base" {
 		t.Errorf("row %+v", row)
 	}
 	if row.Fields["licence"] != "apache-2.0" || row.Fields["gated"] != "auto" || row.Fields["commit"] != "aaa" || row.Fields["library"] != "transformers" {
@@ -721,7 +721,23 @@ func TestHubSelect(t *testing.T) {
 		t.Errorf("row %+v", row)
 	}
 	ds := HubRow(HubParts[1], HubRepo{OID: "1", ID: "HuggingFaceFW/fineweb", PwC: "fineweb"}, "")
-	if ds.ID != "datasets/HuggingFaceFW/fineweb" || ds.URL != "https://huggingface.co/datasets/HuggingFaceFW/fineweb" || ds.SameAs["hf_dataset"] != "HuggingFaceFW/fineweb" || ds.SameAs["pwc"] != "dataset/fineweb" {
+	if ds.ID != "datasets/HuggingFaceFW/fineweb" || ds.URL != "https://huggingface.co/datasets/HuggingFaceFW/fineweb" || ds.SameAs["hub_dataset"] != "HuggingFaceFW/fineweb" || ds.SameAs["pwc"] != "dataset/fineweb" {
 		t.Errorf("dataset row %+v", ds)
+	}
+}
+
+func TestPercentile(t *testing.T) {
+	for _, c := range []struct {
+		rank, n int
+		want    float64
+	}{{1, 100, 100}, {2, 100, 99}, {3, 100, 98}, {4, 100, 97}, {1571, 78526, 98}, {1, 1, 100}, {0, 5, 0}} {
+		if got := Percentile(c.rank, c.n); got != c.want {
+			t.Errorf("Percentile(%d, %d) = %v, want %v", c.rank, c.n, got, c.want)
+		}
+	}
+	for _, n := range []int{1, 49, 50, 51, 99, 101, 78526, 254808} {
+		if p := Percentile(OpenAlexNeed(n), n); p < 98 {
+			t.Errorf("the last work of the top 2%% of %d has the percentile %v", n, p)
+		}
 	}
 }

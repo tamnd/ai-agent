@@ -18,7 +18,7 @@ import (
 )
 
 // Priority orders the sources when two rows of one item disagree on a name or a kind: the first source wins.
-var Priority = []string{"epoch-ai", "aiid", "pwc-dump", "arxiv", "wikidata"}
+var Priority = []string{"epoch-ai", "aiid", "pwc-dump", "arxiv", "openalex", "wikidata", "huggingface", "github"}
 
 func priority(source string) int {
 	for i, s := range Priority {
@@ -171,6 +171,8 @@ func NormID(k, v string) string {
 		return arxivVersion.ReplaceAllString(strings.TrimPrefix(v, "arXiv:"), "")
 	case "wikidata":
 		return strings.ToUpper(v)
+	case "github":
+		return strings.ToLower(v) // GitHub names do not tell case apart
 	}
 	return v
 }
@@ -353,7 +355,7 @@ func (g *merger) keys(m member, pass int) []string {
 // idOrder is the order of the ids that name a new item: "u:arxiv:1207.0580" for a work, "u:epoch:GPT-4" for a model.
 var idOrder = map[bool][]string{
 	true:  {"arxiv", "doi", "wikidata", "openalex", "pwc"},
-	false: {"epoch", "aiid", "wikidata", "pwc", "hub", "arxiv", "doi"},
+	false: {"epoch", "aiid", "wikidata", "pwc", "hub", "hub_dataset", "github", "arxiv", "doi"},
 }
 
 func build(ms []member, rules []Rule, date string, taken map[string]bool) (*Item, string) {
@@ -440,10 +442,21 @@ func build(ms []member, rules []Rule, date string, taken map[string]bool) (*Item
 	}
 	if it.Outcome == "pending" {
 		for _, rule := range rules {
-			if !rule.Unconditional() || rule.Kind != it.Kind {
+			if rule.Kind != it.Kind || rule.Outcome == "" {
 				continue
 			}
-			if !hasSource(rows, rule.Source) {
+			// A rule decides when it has a source and the item has a row of it, and its thresholds, if any, are met
+			// by the signals of the item.
+			switch {
+			case rule.Unconditional():
+				if !hasSource(rows, rule.Source) {
+					continue
+				}
+			case len(rule.Thresholds) > 0:
+				if rule.Source != "" && !hasSource(rows, rule.Source) || !rule.Meets(it.Signals) {
+					continue
+				}
+			default:
 				continue
 			}
 			it.Outcome, it.DecidedBy, it.Decided, it.Reason = rule.Outcome, "rule:"+rule.ID, date, rule.ID+": "+firstSentence(rule.Rule)

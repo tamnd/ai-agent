@@ -115,6 +115,7 @@ A source that we know of and have not harvested is listed in the report as a gap
 
 The scope rules decide, in code, the default outcome of a row from its signals.
 They are in `registers/scope.yaml`, each with an id, so a `row-only` row names the rule that excluded it.
+`aik universe merge` applies a rule to a `pending` row of its kind: a rule with a source and no thresholds to each row of the source; a rule with thresholds when a signal of the row meets one of them (10,000 downloads or 100 likes), and, if the rule names a source, the row has a row of that source. The adapters write the signals: `downloads_30d` and `likes` (Hub), `citation_percentile` (OpenAlex), `stars` (GitHub).
 A curator or a person can override a rule for one item with a reason.
 
 **Models.**
