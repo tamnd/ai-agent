@@ -180,3 +180,32 @@ func TestMintCards(t *testing.T) {
 		t.Fatalf("aik check after mint of the cards exits with %d", got)
 	}
 }
+
+// A result card writes no slug: its key is its benchmark and its tag in lowercase, so tags.reg gets the key with the
+// new tag.
+func TestMintResultCards(t *testing.T) {
+	root := copyCorpus(t)
+	shard := filepath.Join(root, "cards", "result", "_.jsonl")
+	if err := os.MkdirAll(filepath.Dir(shard), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	line := `{"tag":"NEW-r0123456789","kind":"result","model":"gpt-4","benchmark":"toy-bench","version":"full","metric":"accuracy","score":{"v":0.5,"unit":"fraction"},"setting":{"shots":0},"source":{"src":"S:x","loc":"Table 1"}}` + "\n"
+	if err := os.WriteFile(shard, []byte(line), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := run([]string{"mint", "-root", root, "-author", "tester"}); got != 0 {
+		t.Fatalf("aik mint exits with %d", got)
+	}
+	b, _ := os.ReadFile(shard)
+	m := regexp.MustCompile(`"tag":"([0-9A-HJKMNP-TV-Z]{6})"`).FindSubmatch(b)
+	if m == nil {
+		t.Fatalf("the result card has no permanent tag: %s", b)
+	}
+	reg, _ := os.ReadFile(filepath.Join(root, "registers", "tags.reg"))
+	if want := string(m[1]) + " toy-bench/" + strings.ToLower(string(m[1])) + "\n"; !strings.Contains(string(reg), want) {
+		t.Errorf("tags.reg has no line %q:\n%s", want, reg)
+	}
+	if strings.Contains(string(reg), "new-r") {
+		t.Errorf("tags.reg keeps the provisional key:\n%s", reg)
+	}
+}
