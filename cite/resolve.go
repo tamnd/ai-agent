@@ -264,9 +264,25 @@ func (d *Doc) printedNumbers() []int {
 		return nums
 	}
 	shows := func(i int) bool { return i >= 0 && i < len(cands) && slices.Contains(cands[i], i+off) }
+	held := make([]bool, len(nums))
+	lo, hi := -1, -1
 	for i := range nums {
 		if shows(i) || shows(i-1) || shows(i+1) {
-			nums[i] = i + off
+			nums[i], held[i] = i+off, true
+			if lo < 0 {
+				lo = i
+			}
+			hi = i
+		}
+	}
+	// A page between two that the difference holds is numbered by it too, and a number that the difference gives
+	// to a page is no other page's: the contents ends with a lone 50, and page 50 is the one that follows 49.
+	for i := lo + 1; i < hi; i++ {
+		nums[i], held[i] = i+off, true
+	}
+	for i := range nums {
+		if !held[i] && nums[i]-off >= lo && nums[i]-off <= hi && lo >= 0 {
+			nums[i] = 0
 		}
 	}
 	return nums
