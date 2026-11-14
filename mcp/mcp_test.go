@@ -14,6 +14,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/tamnd/ai-agent/node"
+	"github.com/tamnd/ai-agent/site"
 )
 
 // corpus is the test corpus with a benchmark, three models, one fine-tuned from another, and their results.
@@ -73,13 +74,13 @@ func TestResolve(t *testing.T) {
 			t.Errorf("Resolve(%q) found nothing, want %s", id, want)
 			continue
 		}
-		if it.key() != want {
-			t.Errorf("Resolve(%q) = %s, want %s", id, it.key(), want)
+		if it.Key() != want {
+			t.Errorf("Resolve(%q) = %s, want %s", id, it.Key(), want)
 		}
 	}
 	for _, id := range []string{"", "no-such-item", "arxiv:1"} {
 		if it, ok := d.Resolve(id); ok {
-			t.Errorf("Resolve(%q) = %s, want nothing", id, it.key())
+			t.Errorf("Resolve(%q) = %s, want nothing", id, it.Key())
 		}
 	}
 }
@@ -91,11 +92,11 @@ func TestRecord(t *testing.T) {
 	if r.URL != "https://ai.tamnd.com/binary-search/" || r.AsOf != "2026-11-15" || r.Markdown != "https://ai.tamnd.com/binary-search.md" {
 		t.Errorf("head = %+v, markdown %q", r.Head, r.Markdown)
 	}
-	if !slices.ContainsFunc(r.Out, func(e Edge) bool { return e.Type == "solves" && e.To == "search-in-sorted-array" && e.Known }) {
+	if !slices.ContainsFunc(r.Out, func(e site.Edge) bool { return e.Type == "solves" && e.To == "search-in-sorted-array" && e.Known }) {
 		t.Errorf("edges out = %+v, want solves search-in-sorted-array", r.Out)
 	}
 	task, _ := d.Resolve("search-in-sorted-array")
-	if !slices.ContainsFunc(d.Record(task).In, func(e Edge) bool { return e.From == "binary-search" && e.Type == "solves" }) {
+	if !slices.ContainsFunc(d.Record(task).In, func(e site.Edge) bool { return e.From == "binary-search" && e.Type == "solves" }) {
 		t.Errorf("edges in = %+v, want binary-search solves it", d.Record(task).In)
 	}
 	m, _ := d.Resolve("model-a")
@@ -106,7 +107,7 @@ func TestRecord(t *testing.T) {
 	if r.URL != "https://ai.tamnd.com/models/model-a/" {
 		t.Errorf("url = %q", r.URL)
 	}
-	fs := d.facts(m)
+	fs := site.FactsOf(m)
 	if len(fs) != 2 || fs[0].Sources[0].Src != "S:paper-a" {
 		t.Errorf("facts = %+v", fs)
 	}
@@ -202,7 +203,7 @@ func TestLineage(t *testing.T) {
 		}
 	}
 	l, _ = d.Lineage(b, LineageIn{Direction: "up"})
-	if len(l.Nodes) != 2 || len(l.Edges) != 1 || l.Edges[0] != (Edge{Type: "fine_tuned_from", From: "model-b", To: "model-a", Known: true}) {
+	if len(l.Nodes) != 2 || len(l.Edges) != 1 || l.Edges[0] != (site.Edge{Type: "fine_tuned_from", From: "model-b", To: "model-a", Known: true}) {
 		t.Errorf("up = %+v", l)
 	}
 	c, _ := d.Resolve("model-c")

@@ -723,9 +723,20 @@ func (b *builder) machine() error {
 	}
 	var all []apiNode
 	var llms strings.Builder
-	fmt.Fprintf(&llms, "# AI\n\n> Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.\n\nEach written page has a Markdown copy at /<slug>.md. The JSON record of every page is in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
+	fmt.Fprintf(&llms, "# AI\n\n> Artificial intelligence: each idea, method, model and result, with its sources, its date and its evidence.\n\nEach written page has a Markdown copy at /<slug>.md, and each page has its JSON record at /<slug>.json: the fields, the dated facts with their sources, the claims with their evidence labels, the ladders and the edges both ways. All the records are in /api/nodes.json. The text is CC BY-SA 4.0. The code is MIT.\n")
 	groups := map[string][]*node.Node{}
+	g := NewGraph(b.c, b.opt.BaseURL)
 	for _, n := range b.c.Nodes {
+		rec := g.Record(Thing{Node: n}, b.meta.Date)
+		st := b.status[n.Slug]
+		rec.Status = &st
+		data, err := json.Marshal(rec)
+		if err != nil {
+			return err
+		}
+		if err := b.write("/"+n.Slug+".json", data); err != nil {
+			return err
+		}
 		a := apiNode{Front: n.Front, URL: b.opt.BaseURL + "/" + n.Slug + "/", Path: n.Rel, Status: b.status[n.Slug], Scene: n.Scene != "", Facts: n.Facts, Claims: n.Claims}
 		for _, im := range n.Impls {
 			a.Langs = append(a.Langs, im.Lang)
