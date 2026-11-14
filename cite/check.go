@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -126,7 +127,7 @@ func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...
 		span.WriteByte('\n')
 	}
 	in := Numbers(span.String())
-	for _, n := range Numbers(c.Text) {
+	for _, n := range Numbers(ownIDs(c.Text, d)) {
 		r.Numbers++
 		if !Found(n, in) {
 			r.NumbersMiss = append(r.NumbersMiss, n.Text)
@@ -432,4 +433,32 @@ func WriteManifest(root string, snaps map[string]Snapshot) error {
 		return err
 	}
 	return os.WriteFile(p, b.Bytes(), 0o644)
+}
+
+// actIDRE is the number of an act or a document: "2024/1689", "2021/0106(COD)".
+var actIDRE = regexp.MustCompile(`\b[0-9]{2,4}/[0-9]{1,4}\b`)
+
+// ownIDs takes out of a claim the numbers that name the document itself, as "Regulation (EU) 2026/1744 states that…"
+// cited to a recital of that regulation: they are on its title page, not at the located place. A number of the
+// claim that is not on the title page, as a date, is still checked.
+func ownIDs(claim string, d *Doc) string {
+	ids := actIDRE.FindAllString(claim, -1)
+	if len(ids) == 0 {
+		return claim
+	}
+	refs, err := ParseLocator("the title page")
+	if err != nil {
+		return claim
+	}
+	spans, _ := Resolve(d, refs)
+	var title strings.Builder
+	for _, s := range spans {
+		title.WriteString(d.Text[s.Start:s.End])
+	}
+	for _, id := range ids {
+		if strings.Contains(title.String(), id) {
+			claim = strings.ReplaceAll(claim, id, " ")
+		}
+	}
+	return claim
 }

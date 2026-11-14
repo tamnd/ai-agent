@@ -239,9 +239,21 @@ func terms(claim string, exempt map[string]bool) []string {
 	return out
 }
 
-// stem cuts the common endings of English words, so that "regularizes", "regularized" and "regularizing" meet.
+// stem cuts the common endings of English words, so that "regularizes", "regularized" and "regularizing" meet. It cuts
+// until no ending is left, so that a word and its stem meet as well: "applies" gives "apply", and "apply" gives "app".
 func stem(w string) string {
-	for _, suf := range []string{"izations", "ization", "isations", "isation", "ational", "nesses", "ments", "ings", "ness", "ment", "ies", "ing", "ers", "ed", "es", "er", "ly", "s"} {
+	for range 4 {
+		s := stem1(w)
+		if s == w {
+			break
+		}
+		w = s
+	}
+	return w
+}
+
+func stem1(w string) string {
+	for _, suf := range []string{"izations", "ization", "isations", "isation", "ational", "nesses", "ments", "ings", "ness", "ment", "ies", "ied", "ing", "ers", "ed", "es", "er", "ly", "s"} {
 		if !strings.HasSuffix(w, suf) || len(w)-len(suf) < 3 {
 			continue
 		}
@@ -251,7 +263,7 @@ func stem(w string) string {
 			rest += "iz" // "normalization", "normalized" and "normalizing" meet at "normaliz"
 		case strings.HasPrefix(suf, "is"):
 			rest += "is"
-		case suf == "ies":
+		case suf == "ies" || suf == "ied":
 			rest += "y"
 		case suf == "es" && !strings.HasSuffix(rest, "s") && !strings.HasSuffix(rest, "x") && !strings.HasSuffix(rest, "z") && !strings.HasSuffix(rest, "ch") && !strings.HasSuffix(rest, "sh"):
 			rest += "e" // "pages" is "page", but "boxes" is "box"

@@ -10,8 +10,9 @@ import (
 
 // Provision is a place of a legal text (spec 13.6.1): a recital, an article or an annex, with the text up to the next
 // heading of its level or above. A division (a part, a title, a chapter or a section of the enacting terms), the
-// enacting formula ("HAVE ADOPTED THIS REGULATION:") and the final formula ("This Regulation shall be binding…",
-// "Done at…") are kept as well, because they end the provision before them, but a locator does not name them.
+// enacting formula ("HAVE ADOPTED THIS REGULATION:") and the final formula ("Done at…" and the signatures) are kept as
+// well, because they end the provision before them, but a locator does not name them. The binding formula ("This
+// Regulation shall be binding in its entirety…") stays with the last article, where readers cite it.
 type Provision struct {
 	Kind  string `json:"kind"` // recital, article, annex, division, enacting, final
 	Num   string `json:"num,omitempty"`
@@ -32,7 +33,8 @@ var (
 	recitalRE = regexp.MustCompile(`^\(([0-9]{1,3})\)(?:\s|$)`)
 	whereasRE = regexp.MustCompile(`^Whereas\s*:$`)
 	enactRE   = regexp.MustCompile(`^HA(?:VE|S) ADOPTED TH(?:IS|ESE)\b`)
-	finalRE   = regexp.MustCompile(`^(?:This (?:Regulation|Directive|Decision) (?:shall be binding|is addressed)|Done at\s)`)
+	finalRE   = regexp.MustCompile(`^Done at\s`)
+	bindingRE = regexp.MustCompile(`^This (?:Regulation|Directive|Decision) (?:shall be binding|is addressed)`)
 )
 
 // divisionReach is how many lines that are not empty may come between a division and the first article under it: its
@@ -173,12 +175,30 @@ func (d *Doc) legal(lines []line) {
 		}
 	}
 
-	// The final formula after the last article, and the annexes after it.
-	after := last + 1
+	// The final formula after the last article, and the annexes after it. The final formula starts at "Done at". In a
+	// text with no such line, as a consolidated text or a page of the Official Journal on the web, the last article
+	// keeps its binding formula and what follows it (the notes) is the final formula, unless an annex follows.
+	after, binding := last+1, -1
 	for i := last + 1; i < len(lines); i++ {
+		if binding < 0 && bindingRE.MatchString(lines[i].s) {
+			binding = i
+		}
 		if finalRE.MatchString(lines[i].s) {
 			add("final", "", i)
-			after = i + 1
+			after, binding = i+1, -1
+			break
+		}
+	}
+	if binding >= 0 {
+		after = binding + 1
+		for j := binding + 1; j < len(lines); j++ {
+			if lines[j].s == "" {
+				continue
+			}
+			if !annexHeadRE.MatchString(lines[j].s) {
+				add("final", "", j)
+				after = j + 1
+			}
 			break
 		}
 	}

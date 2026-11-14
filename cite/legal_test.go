@@ -170,8 +170,8 @@ func TestArticleHeadingIsNotAReference(t *testing.T) {
 	if !strings.HasPrefix(got, "Article 3\nEntry into force") || !strings.Contains(got, "(c)\nArticle 6(1) and the corresponding obligations") {
 		t.Errorf("Article 3 = %q", got)
 	}
-	if strings.Contains(got, "shall be binding") {
-		t.Errorf("Article 3 runs into the final formula: %q", got)
+	if !strings.Contains(got, "shall be binding in its entirety") || strings.Contains(got, "Done at") {
+		t.Errorf("Article 3, the last article, should hold the binding formula and end at the final formula: %q", got)
 	}
 
 	d = Parse(amending)
@@ -275,7 +275,7 @@ func TestExtractLegalHTML(t *testing.T) {
 	if strings.Contains(d.Text, "^1") {
 		t.Errorf("a note tag is read as a power: %q", d.Text)
 	}
-	if got := resolve(t, d, "Article 2"); !strings.Contains(got, "2 August 2026") || strings.Contains(got, "binding") {
+	if got := resolve(t, d, "Article 2"); !strings.Contains(got, "2 August 2026") || !strings.Contains(got, "binding") || strings.Contains(got, "OJ C 517") {
 		t.Errorf("Article 2 = %q", got)
 	}
 	if got := resolve(t, d, "Annex III"); !strings.Contains(got, "Biometrics") {
