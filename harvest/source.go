@@ -145,6 +145,16 @@ var Sources = []Source{
 		Credit: "ACL Anthology (CC BY 4.0), https://aclanthology.org",
 		Note:   "The metadata and the papers since 2016 are CC BY 4.0, the papers before 2016 CC BY-NC-SA 3.0; the code of the repository is Apache 2.0. The site lists awards only for some years.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "dblp", Name: "dblp computer science bibliography",
+		URL: "https://dblp.org/", Owner: "Schloss Dagstuhl - Leibniz Center for Informatics",
+		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
+		Access: "the SPARQL endpoint sparql.dblp.org/sparql: for each venue stream of crosswalk/dblp.yaml, the papers (key, title, year, DOI, Wikidata item) and their authors in order, two queries of 10,000 papers a page; the robots.txt of dblp.org disallows /search, the search API, and its other pages answer robots with a challenge", Rate: "1 request per 10 s",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "dblp keys, titles, venues, years, DOIs, Wikidata items, author names and dblp person ids",
+		Credit: "dblp computer science bibliography (CC0), https://dblp.org",
+		Note:   "The README of dblp.org/xml/ releases the metadata under CC0 1.0, and under ODC-BY 1.0 as a second licence. The robots.txt of sparql.dblp.org asks a Crawl-delay of 10 s. dblp's homonym numbers (Hu Xu 0001) are dropped from the names and kept in the person ids.",
+	},
 	{
 		ID: "federal-register", Name: "Federal Register",
 		URL: "https://www.federalregister.gov/", Owner: "the Office of the Federal Register, US National Archives",
