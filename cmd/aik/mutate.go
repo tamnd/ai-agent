@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/tamnd/ai-agent/contract"
@@ -85,7 +87,7 @@ func firstFailure(ss *lang.Session, cases []contract.Case, what string) (string,
 const mutantCaseTimeout = 2 * time.Second
 
 // runMutate runs the mutation test of each implementation (spec 09.6). It writes the result of each language to <out>/<lang>.mutate.json. A mutant that the tests do not kill is a survivor; the report names it with its id, as mutants.ignore lists it.
-func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problems func(*node.Node) []*sharedCases, d diffFlags, max int, tc *testCache, all bool) error {
+func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problems func(*node.Node) []*sharedCases, d diffFlags, max, jobs int, tc *testCache, all bool) error {
 	cache, err := newInputCache(d)
 	if err != nil {
 		return err
@@ -152,7 +154,7 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 					continue
 				}
 			}
-			m, err := mutateImpl(killer{r: r, n: n, problems: ps, inputs: cache.get}, im, max)
+			m, err := mutateImpl(killer{r: r, n: n, problems: ps, inputs: cache.get}, im, max, jobs)
 			if err != nil {
 				return fmt.Errorf("%s/%s: %w", n.Slug, im.Lang, err)
 			}
@@ -198,8 +200,23 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 	return nil
 }
 
-// mutateImpl runs the mutants of one implementation and prints the result.
-func mutateImpl(k killer, im node.Impl, max int) (status.Mutation, error) {
+// defaultJobs is half the processors of the machine: a test of a framework uses more than one.
+func defaultJobs() int { return max(1, runtime.NumCPU()/2) }
+
+// worker is a killer with a runner of its own: a runner in a sandbox reaps the containers it started, and two workers
+// must not reap each other's.
+func (k killer) worker() killer {
+	r := *k.r
+	if r.Box != nil {
+		r.Box = r.Box.Clone()
+	}
+	k.r = &r
+	return k
+}
+
+// mutateImpl runs the mutants of one implementation, jobs at a time, and prints the result. The result does not
+// depend on jobs: each mutant runs on its own copy of the code, and the survivors keep the order of the sample.
+func mutateImpl(k killer, im node.Impl, max, jobs int) (status.Mutation, error) {
 	start := time.Now()
 	var m status.Mutation
 	name := k.n.Slug + "/" + im.Lang
@@ -223,16 +240,20 @@ func mutateImpl(k killer, im node.Impl, max int) (status.Mutation, error) {
 		return m, nil
 	}
 	m.Mutants = len(set.Mutants)
+	var run []mutate.Mutant
 	for _, mu := range set.Mutants {
 		if _, ok := set.Ignore[mu.ID()]; ok {
 			m.Ignored++
 			continue
 		}
-		why, err := k.kill(withMutant(im, mu))
-		if err != nil {
-			return m, err
-		}
-		if why != "" {
+		run = append(run, mu)
+	}
+	killed, err := killAll(k, im, run, jobs)
+	if err != nil {
+		return m, err
+	}
+	for i, mu := range run {
+		if killed[i] {
 			m.Killed++
 			continue
 		}
@@ -247,6 +268,46 @@ func mutateImpl(k killer, im node.Impl, max int) (status.Mutation, error) {
 		fmt.Println("    survives: " + s)
 	}
 	return m, nil
+}
+
+// killAll runs the tests on each mutant, jobs at a time, and tells which mutants they kill. It stops at the first
+// error of a run, which is not a failing test but a test that cannot run.
+func killAll(k killer, im node.Impl, ms []mutate.Mutant, jobs int) ([]bool, error) {
+	killed := make([]bool, len(ms))
+	next := make(chan int)
+	var (
+		mu    sync.Mutex
+		first error
+		wg    sync.WaitGroup
+	)
+	for range min(max(jobs, 1), max(len(ms), 1)) {
+		w := k.worker()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				why, err := w.kill(withMutant(im, ms[i]))
+				mu.Lock()
+				if err != nil && first == nil {
+					first = err
+				}
+				killed[i] = why != ""
+				mu.Unlock()
+			}
+		}()
+	}
+	for i := range ms {
+		mu.Lock()
+		stop := first != nil
+		mu.Unlock()
+		if stop {
+			break
+		}
+		next <- i
+	}
+	close(next)
+	wg.Wait()
+	return killed, first
 }
 
 func firstLine(s string) string {

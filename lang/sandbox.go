@@ -188,6 +188,12 @@ func (s *Sandbox) Reap() {
 	_ = exec.Command(s.Engine, append([]string{"rm", "-f"}, names...)...).Run()
 }
 
+// Clone is a sandbox with the same engine, images and limits and no containers of its own, so that a worker can reap its
+// containers without the containers of another worker.
+func (s *Sandbox) Clone() *Sandbox {
+	return &Sandbox{Engine: s.Engine, Images: s.Images, Memory: s.Memory, CPUs: s.CPUs, Pids: s.Pids}
+}
+
 func randomHex(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
