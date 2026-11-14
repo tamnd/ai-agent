@@ -158,9 +158,36 @@ func ReadRules(root string) ([]Rule, error) {
 }
 
 // Unconditional tells if the rule decides from the source alone: "each model of Epoch AI is a card". A rule with
-// thresholds needs signals that the harvest does not have yet, and a rule with no source needs judgement.
+// thresholds decides by Meets, and a rule with neither a source nor thresholds needs judgement.
 func (r Rule) Unconditional() bool {
 	return r.Source != "" && len(r.Thresholds) == 0 && r.Outcome != ""
+}
+
+// Meets tells if the signals meet one of the thresholds of the rule: S-M2 makes a card of a model with 10,000
+// downloads or 100 likes. A signal that is missing or not a number meets nothing.
+func (r Rule) Meets(signals map[string]any) bool {
+	for k, t := range r.Thresholds {
+		want, ok1 := number(t)
+		got, ok2 := number(signals[k])
+		if ok1 && ok2 && got >= want {
+			return true
+		}
+	}
+	return false
+}
+
+func number(v any) (float64, bool) {
+	switch n := v.(type) {
+	case int:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case float64:
+		return n, true
+	case uint64:
+		return float64(n), true
+	}
+	return 0, false
 }
 
 // URI is the target of an item that names a tag: ai://5TQH2W, or ai://NEW-dropout before aik mint (04.2).

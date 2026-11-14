@@ -203,9 +203,9 @@ func HubSelect(repos map[string]HubRepo) (cards []HubRepo, derived map[string]ma
 // HubRow is the row of a repository of the part.
 func HubRow(p HubPart, r HubRepo, snap string) Row {
 	id := r.ID
-	key := "hf"
+	key := "hub" // the key of spec 04
 	if p.Kind == "dataset" {
-		id, key = "datasets/"+r.ID, "hf_dataset"
+		id, key = "datasets/"+r.ID, "hub_dataset"
 	}
 	row := Row{ID: id, Name: r.ID, Kind: p.Kind, URL: "https://huggingface.co/" + id,
 		SameAs: map[string]string{key: r.ID}, Snapshot: snap, Fields: map[string]any{}}

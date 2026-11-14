@@ -255,6 +255,15 @@ func OpenAlexNeed(count int) int {
 	return min(int(math.Ceil(float64(count)*OpenAlexTop)), OpenAlexDepth)
 }
 
+// Percentile is the citation percentile of the work of the rank among n works of its year, which S-W1 compares
+// with 98: 100 for the first, and at least 98 for each work of the top 2%. It has two decimals.
+func Percentile(rank, n int) float64 {
+	if n <= 0 || rank < 1 {
+		return 0
+	}
+	return math.Floor(10000-10000*float64(rank-1)/float64(n)) / 100
+}
+
 // harvestOpenAlex reads, for each part of the crosswalk and each year, the most cited works up to the top share of
 // S-W1. -since keeps the years from its year on; -limit keeps at most that many works of each year and part. A work
 // in two parts keeps the row of the first. Years after the year of the run are left out.
@@ -327,6 +336,7 @@ func harvestOpenAlex(ctx context.Context, r *Run, o Options) ([]Row, error) {
 					seen[row.ID] = true
 					setSignal(&row, "rank_in_year", got)
 					setSignal(&row, "works_in_year", counts[y])
+					setSignal(&row, "citation_percentile", Percentile(got, counts[y]))
 					out = append(out, row)
 				}
 			}

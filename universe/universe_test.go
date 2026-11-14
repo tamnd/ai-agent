@@ -112,7 +112,7 @@ func TestMerge(t *testing.T) {
 	}
 	// The arXiv id joins the work across versions; a method and a work of one id stay apart.
 	if w := m["u:arxiv:1207.0580"]; w == nil || w.Outcome != "pending" {
-		t.Errorf("the work is %+v; a rule with thresholds decides nothing yet", w)
+		t.Errorf("the work is %+v; no signal of it meets the thresholds of S-W1", w)
 	}
 	if d := m["u:wikidata:Q3"]; d == nil || strings.Join(d.Sources, " ") != "pwc-dump:method/dropout wikidata:Q3" {
 		t.Errorf("dropout is %+v", d)
@@ -299,5 +299,78 @@ func TestRetarget(t *testing.T) {
 	}
 	if g := byID(t, root)["u:epoch:GPT-4"]; g.Target != "ai://ABC123" {
 		t.Errorf("the target is %q", g.Target)
+	}
+}
+
+func TestThresholds(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "registers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rules := `- id: S-M2
+  kind: model
+  outcome: card
+  rule: A Hub repository is a card when it has 10,000 downloads or 100 likes.
+  source: huggingface
+  thresholds: {downloads_30d: 10000, likes: 100}
+- id: S-D1
+  kind: dataset
+  outcome: card
+  rule: A dataset is a card when it has 1,000 downloads or 50 likes.
+  thresholds: {downloads_30d: 1000, likes: 50}
+- id: S-S1
+  kind: software
+  outcome: card
+  rule: A repository with 5,000 stars is a card.
+  source: github
+  thresholds: {stars: 5000}
+`
+	if err := os.WriteFile(filepath.Join(root, ScopeFile), []byte(rules), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sig := func(r harvest.Row, s map[string]any) harvest.Row { r.Signals = s; return r }
+	inv := map[string][]harvest.Row{
+		"huggingface": {
+			sig(row("huggingface", "acme/big", "acme/big", "model", map[string]string{"hub": "acme/big"}, nil), map[string]any{"downloads_30d": 20000, "likes": 3}),
+			sig(row("huggingface", "acme/small", "acme/small", "model", map[string]string{"hub": "acme/small"}, nil), map[string]any{"downloads_30d": 50, "likes": 5}),
+			sig(row("huggingface", "datasets/acme/liked", "acme/liked", "dataset", map[string]string{"hub_dataset": "acme/liked"}, nil), map[string]any{"downloads_30d": 10, "likes": 60}),
+		},
+		"github": {
+			sig(row("github", "Acme/Tool", "Acme/Tool", "software", map[string]string{"github": "Acme/Tool"}, nil), map[string]any{"stars": 6000}),
+		},
+		// A software row of another source with stars meets S-S1, but has no row of github.
+		"wikidata": {
+			sig(row("wikidata", "Q9", "Other tool", "software", map[string]string{"wikidata": "Q9"}, nil), map[string]any{"stars": 9000}),
+		},
+	}
+	for s, rows := range inv {
+		if err := harvest.WriteInventory(root, s, rows); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := Merge(root, "2026-11-14"); err != nil {
+		t.Fatal(err)
+	}
+	m := byID(t, root)
+	for id, want := range map[string]string{
+		"u:hub:acme/big":           "rule:S-M2",
+		"u:hub:acme/small":         "",
+		"u:hub_dataset:acme/liked": "rule:S-D1",
+		"u:github:acme/tool":       "rule:S-S1",
+		"u:wikidata:Q9":            "",
+	} {
+		it := m[id]
+		if it == nil {
+			t.Errorf("no item %s in %v", id, m)
+			continue
+		}
+		if it.DecidedBy != want || (want == "") != (it.Outcome == "pending") {
+			t.Errorf("%s is decided by %q with %s, want %q", id, it.DecidedBy, it.Outcome, want)
+		}
+	}
+	// The signals read back from JSON are float64.
+	r := Rule{Thresholds: map[string]any{"citation_percentile": 98}}
+	if !r.Meets(map[string]any{"citation_percentile": 98.0}) || r.Meets(map[string]any{"citation_percentile": 97.99}) || r.Meets(map[string]any{"citation_percentile": "99"}) {
+		t.Error("Meets compares numbers wrongly")
 	}
 }
