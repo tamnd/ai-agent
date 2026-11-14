@@ -175,6 +175,16 @@ var Sources = []Source{
 		Credit: "SWE-bench, https://www.swebench.com",
 		Note:   "The site is CC BY-NC 4.0, so it is D: names and numbers only. An entry run by the maintainers with mini-SWE-agent is independent of the model's developer; an entry that a developer submits for its own model is self-reported (10.6.1).",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "open-llm-leaderboard", Name: "Open LLM Leaderboard v2, the archive of its results",
+		URL: "https://huggingface.co/datasets/open-llm-leaderboard/contents", Owner: "Hugging Face",
+		Licence: "none stated", Checked: "2026-11-14", Class: "D",
+		Access: "the rows of the dataset open-llm-leaderboard/contents from the dataset server of Hugging Face, 100 rows a request (46 requests)", Rate: "1 request per 1 s",
+		Schedule: "once; the leaderboard closed in March 2025", Standing: "secondary-reference",
+		Facts:  "the raw score of each open model on IFEval, BBH, MATH Level 5, GPQA, MuSR and MMLU-PRO, with its precision, revision and submission date",
+		Credit: "Open LLM Leaderboard (Hugging Face), https://huggingface.co/datasets/open-llm-leaderboard/contents",
+		Note:   "The dataset states no licence, so it is D: names and numbers only. Hugging Face ran every model on one harness and protocol, so its results are independent of the developers. The score is the raw score of the harness; the leaderboard's normalized score is in the notes.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.

@@ -72,7 +72,7 @@ func (c *Client) Get(ctx context.Context, rawURL string, limit int64) ([]byte, e
 }
 
 // Status sends a GET for a URL, as Get does, and returns the status code of the answer without reading the body: a
-// link check (spec 14.9). A 429 or a 503 is tried again, as in Get.
+// link check (spec 14.9). An answer that backoff retries is tried again, as in Get.
 func (c *Client) Status(ctx context.Context, rawURL string) (int, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -115,7 +115,7 @@ func query(u *url.URL) string {
 	return "?" + u.RawQuery
 }
 
-// get sends one request. On a 429 or a 503 it returns how long to wait before the next try.
+// get sends one request. On an answer that backoff retries it returns how long to wait before the next try.
 func (c *Client) get(ctx context.Context, u *url.URL, limit int64, delay time.Duration) ([]byte, time.Duration, error) {
 	c.wait(u.Host, delay)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -148,17 +148,20 @@ func (c *Client) get(ctx context.Context, u *url.URL, limit int64, delay time.Du
 }
 
 // backoff tells if the answer asks the client to slow down, and how long to wait: a 429 or a 503, or a 403 with
-// X-RateLimit-Remaining 0, which GitHub sends when a client passes its limit. Retry-After gives the wait, else
-// X-RateLimit-Reset, else 30 s; the wait is at most 5 minutes and at least the gap.
+// X-RateLimit-Remaining 0, which GitHub sends when a client passes its limit; or a 502 or a 504, the passing failure
+// of a gateway. Retry-After gives the wait, else X-RateLimit-Reset, else 30 s (10 s for a gateway); the wait is at
+// most 5 minutes and at least the gap.
 func (c *Client) backoff(code int, h http.Header) (time.Duration, bool) {
 	limited := h.Get("X-RateLimit-Remaining") == "0"
+	wait := 30 * time.Second
 	switch {
 	case code == http.StatusTooManyRequests, code == http.StatusServiceUnavailable:
+	case code == http.StatusBadGateway, code == http.StatusGatewayTimeout:
+		wait = 10 * time.Second
 	case code == http.StatusForbidden && (limited || h.Get("Retry-After") != ""):
 	default:
 		return 0, false
 	}
-	wait := 30 * time.Second
 	if s, err := strconv.Atoi(h.Get("Retry-After")); err == nil && s >= 0 {
 		wait = time.Duration(s) * time.Second
 	} else if r, err := strconv.ParseInt(h.Get("X-RateLimit-Reset"), 10, 64); err == nil && limited {
