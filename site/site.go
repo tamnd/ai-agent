@@ -45,6 +45,7 @@ type Options struct {
 	BaseURL  string // for example https://ai.tamnd.com
 	Results  string // the directory of the test results, build/results
 	Decls    string // the declarations of the Lean package, build/lean/decls.jsonl
+	Quality  string // the report of aik report quality -o for /about/quality/, or "" to compute what the build can (15.9)
 	SpecDir  string // a directory of the specification to publish at /spec/, or "" for the copy in the binary
 	Version  string // the version of aik
 	Commit   string // the commit of the content
@@ -130,6 +131,7 @@ type builder struct {
 	cards   map[string][]*card.Card // the cards of each kind, sorted by name; see cardKinds
 	// withdrawn are the nodes that the quarantine hides, whole or in part, by slug (15.7).
 	withdrawn map[string]withdrawn
+	cite      *cite.Index
 }
 
 // Build renders the corpus into opt.Out. It writes a new tree next to opt.Out and then puts it in place, so a server that reads opt.Out never sees a half-written site.
@@ -212,10 +214,11 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 		return nil, err
 	}
 	computeClaims(c, ix)
+	b.cite = ix
 	for _, n := range c.Nodes {
 		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls, Cite: ix})
 	}
-	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.resultTables, b.gallery, b.languages, b.matrix, b.pages, b.spec, b.machine}
+	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.resultTables, b.gallery, b.languages, b.matrix, b.pages, b.dashboards, b.spec, b.machine}
 	for _, f := range steps {
 		if err := f(); err != nil {
 			return nil, err

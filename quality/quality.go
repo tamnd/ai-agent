@@ -211,7 +211,7 @@ func Compute(in Input) Report {
 
 	if len(in.Audits) == 0 {
 		add(missing("audit-first-pass", "audit first-pass rate (pass with no fix round)", nil, nil,
-			"no writer state with an audit; give -state"))
+			"no writer state with an audit was given (aik report quality -state)"))
 	} else {
 		first, n := 0, 0
 		for _, vs := range in.Audits {
@@ -235,7 +235,7 @@ func Compute(in Input) Report {
 		"the quarantine lines do not name the finding they answer, so the time to hide is not known"))
 
 	if in.Issues == nil {
-		add(missing("s2-fixed", "S2 findings fixed within 7 days", pct(0.90), pct(0.95), "give -issues"))
+		add(missing("s2-fixed", "S2 findings fixed within 7 days", pct(0.90), pct(0.95), "the findings were not given (aik report quality -issues)"))
 	} else {
 		fixed, n := 0, 0
 		week := 7 * 24 * time.Hour
