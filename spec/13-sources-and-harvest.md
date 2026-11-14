@@ -45,7 +45,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 | Kaggle | datasets, competitions, leaderboards of finished competitions, notebooks as exercise links | API (`kaggle-cli`) | facts; text D | weekly |
 | UCI ML Repository, OpenML, Zenodo | classic and small datasets with licences and DOIs | APIs (`uci-cli`, `zenodo-cli`) | per dataset | monthly |
 | lab and developer pages | model cards, release posts, technical reports, system cards, licences, usage policies | fetched on citation, snapshotted (13.6) | primary sources; text D unless licensed | on citation and on release (14.9) |
-| GitHub | repositories of AI software and of papers' code, releases, licences, stars | API (`github-cli`) | facts; code per repository licence, never copied (C rules) | weekly |
+| GitHub | repositories of AI software and of papers' code, releases, licences, stars | the search API with no token (10 searches a minute, at most 1,000 results a query): for each topic of `crosswalk/github-topics.yaml`, the repositories that are not forks with 5,000 stars or more (S-S1), a range of stars split in two while it has more than 1,000; a 403 with no requests left waits until the reset (`aik harvest github`) | facts; code per repository licence, never copied (C rules) | weekly |
 | PyPI, conda, Docker Hub | releases of AI software | APIs (`pypi-cli`, `anaconda-cli`, `dockerhub-cli`) | facts | daily for tracked packages |
 | Weights & Biases public reports | public training runs cited by works | API (`wandb-cli`) | facts | on citation |
 | vendor hardware pages and datasheets | specs of GPUs, TPUs and accelerators | fetched on citation | primary; facts | on release |

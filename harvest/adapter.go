@@ -30,6 +30,7 @@ var Adapters = map[string]Adapter{
 	"wikidata":    {Source: "wikidata", Gap: 2 * time.Second, Run: harvestWikidata},
 	"openalex":    {Source: "openalex", Gap: time.Second, Run: harvestOpenAlex},
 	"huggingface": {Source: "huggingface", Gap: time.Second, Run: harvestHub},
+	"github":      {Source: "github", Gap: 7 * time.Second, Run: harvestGitHub},
 }
 
 // Names are the source ids of the adapters, sorted.
