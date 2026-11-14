@@ -53,7 +53,7 @@ func (b *builder) resultTables() error {
 		if n := b.c.BySlug[bench]; n != nil {
 			name, benchURL = n.Name, "/"+n.Slug+"/"
 		} else if c := b.c.CardByKey[bench]; c != nil {
-			name, benchURL = c.Name, cardURL(c)
+			name, benchURL = c.Name, b.cardLink(c)
 		}
 		ids := sortedKeys(vs)
 		for _, id := range ids {
@@ -122,7 +122,7 @@ func (b *builder) modelLink(slug string) Link {
 	}
 	for _, c := range b.c.Cards {
 		if c.Kind == "model" && c.Slug == slug {
-			return Link{Name: c.Name, URL: cardURL(c)}
+			return Link{Name: c.Name, URL: b.cardLink(c)}
 		}
 	}
 	return Link{Name: slug, Missing: true}

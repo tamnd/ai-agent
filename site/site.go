@@ -21,6 +21,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/tamnd/ai-agent/bridge"
+	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/check"
 	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/formal"
@@ -125,6 +126,7 @@ type builder struct {
 	report  Report
 	sitemap []string
 	search  []searchEntry
+	cards   map[string][]*card.Card // the cards of each kind, sorted by name; see cardKinds
 }
 
 // Build renders the corpus into opt.Out. It writes a new tree next to opt.Out and then puts it in place, so a server that reads opt.Out never sees a half-written site.
