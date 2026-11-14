@@ -862,3 +862,33 @@ func TestAwardRows(t *testing.T) {
 		t.Errorf("query:\n%s", q)
 	}
 }
+
+func TestNISTPage(t *testing.T) {
+	rows, next, n, skipped, err := NISTPage(fixture(t, "crossref-nist.json"), "b3:n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 7 || next != "NEXT" || skipped != 2 || len(rows) != 4 {
+		t.Fatalf("n %d, next %q, skipped %d, rows %d: want 7, NEXT, 2 (a translation and a placeholder), 4 (no fire report)", n, next, skipped, len(rows))
+	}
+	g := rows[0]
+	if g.ID != "NIST.AI.600-1" || g.Kind != "standard" || g.Name != "Artificial intelligence risk management framework: generative artificial intelligence profile" {
+		t.Errorf("600-1: %+v", g)
+	}
+	if g.Fields["series"] != "NIST AI" || g.Fields["status"] != "final" || g.Facts["issued"].V != "2024-07-26" || g.SameAs["doi"] != "10.6028/nist.ai.600-1" || g.URL != "https://doi.org/10.6028/nist.ai.600-1" {
+		t.Errorf("600-1 fields %v, facts %v, same_as %v", g.Fields, g.Facts, g.SameAs)
+	}
+	d := rows[1]
+	if d.ID != "NIST.IR.8605a.ipd" || d.Kind != "work" || d.Fields["status"] != "draft" || d.Fields["series"] != "NIST IR" || d.Facts["issued"].V != "2026" {
+		t.Errorf("8605a draft: %+v", d)
+	}
+	if rows[3].Name != "Optimization of neural network topology and information content using Boltzmann methods" {
+		t.Errorf("a title with a line break: %q", rows[3].Name)
+	}
+	if _, _, _, _, err := NISTPage([]byte(`{"status":"ok"}`), ""); err == nil {
+		t.Error("a page with no message is not a schema error")
+	}
+	if u := NISTURL("2026-01-01", "*"); !strings.Contains(u, "filter=type%3Areport%2Cfrom-pub-date%3A2026-01-01") || !strings.Contains(u, "cursor=%2A") {
+		t.Errorf("url %s", u)
+	}
+}

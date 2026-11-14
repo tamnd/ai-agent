@@ -1,0 +1,126 @@
+{
+ "status": "ok",
+ "message-type": "work-list",
+ "message-version": "1.0.0",
+ "message": {
+  "facets": {},
+  "next-cursor": "NEXT",
+  "total-results": 7,
+  "items": [
+   {
+    "DOI": "10.6028/nist.ai.600-1",
+    "title": [
+     "Artificial intelligence risk management framework :"
+    ],
+    "subtitle": [
+     "generative artificial intelligence profile"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2024,
+       7,
+       26
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.ai.100-1.jpn",
+    "title": [
+     "Artificial Intelligence Risk Management Framework (AI RMF 1.0) - Japanese translation"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2024
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.ir.8605a.ipd",
+    "title": [
+     "Control Overlays for Securing AI Systems: Using and Fine-tuning Predictive AI"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2026
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.xx.xxx",
+    "title": [
+     "Control Overlays for Securing AI Systems: Security Controls for AI Developers"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2026
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.ai.100-2e2023",
+    "title": [
+     "Adversarial machine learning :"
+    ],
+    "subtitle": [
+     "a taxonomy and terminology of attacks and mitigations"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2024,
+       1,
+       4
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.ir.4766",
+    "title": [
+     "Optimization of neural network topology and information content using\n                        Boltzmann methods"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       1992
+      ]
+     ]
+    },
+    "type": "report"
+   },
+   {
+    "DOI": "10.6028/nist.ir.7886",
+    "title": [
+     "Finite-element models of the National Fire Research Laboratory (NFRL) and modular support structure"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       2012,
+       10
+      ]
+     ]
+    },
+    "type": "report"
+   }
+  ],
+  "items-per-page": 1000,
+  "query": {
+   "start-index": 0,
+   "search-terms": null
+  }
+ }
+}

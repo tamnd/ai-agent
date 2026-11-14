@@ -116,6 +116,16 @@ var Sources = []Source{
 		Note:   "the Turing Award covers all of computing, so a recipient needs AI work to be a node (19.6)",
 	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "standards", Name: "Standards bodies (NIST, from Crossref)",
+		URL: "https://api.crossref.org/prefixes/10.6028/works", Owner: "Crossref; NIST",
+		Licence: "CC0-1.0", Checked: "2026-11-15", Class: "A",
+		Access: "the Crossref REST API with no key and no address: every report of NIST's DOI prefix 10.6028, 1,000 a page by cursor, of which the ones with an AI title are kept; the release files of NIST's metadata are on github.com/*/releases/download and data.nist.gov/od/ds, which robots.txt disallows", Rate: "1 request per 1 s",
+		Schedule: "monthly", Standing: "primary",
+		Facts:  "the series, number, title, status (draft or final) and date of the reports",
+		Credit: "Crossref metadata (CC0); NIST",
+		Note:   "ISO/IEC JTC 1/SC 42, CEN-CENELEC JTC 21 and IEEE have no open list of metadata yet; ISO is not read (19)",
+	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "openalex", Name: "OpenAlex",
 		URL: "https://openalex.org/", Owner: "OurResearch",
 		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
