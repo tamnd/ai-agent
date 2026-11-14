@@ -46,7 +46,7 @@ var Sources = []Source{
 		Facts:  "secondary for parameters, training compute, dates and hardware specifications",
 		Credit: "Data from Epoch AI, Data on AI Models (CC BY 4.0), https://epoch.ai/data/ai-models",
 	},
-	{
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "epoch-benchmarks", Name: "Epoch AI, Benchmarking Hub",
 		URL: "https://epoch.ai/benchmarks", Owner: "Epoch AI",
 		Licence: "CC-BY-4.0", Checked: "2026-11-14", Class: "C",
