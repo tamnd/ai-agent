@@ -1,0 +1,15 @@
+version: s-test
+surveys:
+  - id: zhao-2023-llm-survey
+    title: A Survey of Large Language Models
+    authors: [Wayne Xin Zhao]
+    date: 2023-03-31
+    area: large-language-models
+    arxiv: "2303.18223"
+    reason: the widest survey of LLMs, revised through 2025
+  - id: doi-survey
+    title: A Survey with a DOI
+    date: 2020-01-01
+    area: large-language-models
+    doi: 10.1145/3560815
+    reason: a test

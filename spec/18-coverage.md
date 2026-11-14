@@ -84,7 +84,7 @@ Rules:
 - An outcome is set by the curator (14.3) or a person, never by the harvester. A harvester may only add rows as `pending` or update `sources` and `signals`.
 - A `row-only` row is re-tested at every harvest, because signals change: a work that passes the citation threshold, a Hub model that passes the download threshold, or an item that a node starts to cite becomes `card` automatically (the rule is in code, so this is not a judgement).
 - A change of outcome from `node` or `card` to anything else needs a person, so that nothing disappears silently.
-- `same_as` ids are the join keys across sources: arXiv id, DOI, OpenAlex id, Wikidata QID, Epoch id, Hub repo id, AIID id, CELEX number, Semantic Scholar id, DBLP key, ORCID, ROR. Two rows with a shared id are merged by `aik universe merge`; conflicts go to the curator.
+- `same_as` ids are the join keys across sources: arXiv id, DOI, OpenAlex id, Wikidata QID, Epoch id, Hub repo id, AIID id, CELEX number, Semantic Scholar id, DBLP key, ORCID, ROR. Two rows with a shared id are merged by `aik universe merge`; conflicts go to the curator. A join that would put two rows of one source in one item is a conflict, since a source names a thing once, except for the sources of headings, canon and courses (13.2): two works or two sections that name one item are the canon match (14.3), so they join by the name and the kind.
 
 ## 18.4 Sources of the universe
 
@@ -201,7 +201,7 @@ It contains:
 - **The core:** the core items (5.10) and their levels; a core item below C3 at M3 is a failed promise.
 - **Freshness:** cards whose sources were harvested more than their refresh period ago; facts past `as_of` plus their period; the delay between a source's new item and its card (the one-day promise of 14.9).
 - **Gaps by type:** `unharvested`, `pending`, `missing-node`, `missing-card`, `below-target`, `stale`, `broken-bridge`, `demand` (from 18.6).
-- **Canon coverage:** for each canon work and each course, the share of its named items with a node at C2 or higher.
+- **Canon coverage:** for each canon work and each course, the share of its named items with a node at C2 or higher. The rows of a work are the rows with a source `canon:<work>:...` and those of a course the rows with a source `courses:<course>:...` (13.2, our own registers).
 
 The report fails the build only on promises that a person made (a `node` row of the core below its milestone target after the milestone date); everything else is shown, not blocked.
 The C family of rules (15.3) holds the copy and licence checks, not coverage; coverage is a report, not a lint.

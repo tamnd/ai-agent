@@ -289,6 +289,20 @@ func Merge(root, date string) (*Report, error) {
 	return rep, os.WriteFile(filepath.Join(root, ReportFile), append(b, '\n'), 0o644)
 }
 
+// headings are the sources whose rows are headings of works and courses, not things: two works or two sections that
+// name one item are the canon match (14.3), so their rows are never kept apart for sharing the source.
+var headings = map[string]bool{"canon": true, "courses": true}
+
+// sourceKey is the key of a source ref ("arxiv:2303.18223") in the rule that one item has at most one row of a source:
+// the source, or the whole ref for the sources of headings.
+func sourceKey(ref string) string {
+	src, _, _ := strings.Cut(ref, ":")
+	if headings[src] {
+		return ref
+	}
+	return src
+}
+
 func (g *merger) add(m member) {
 	c := &cluster{sameAs: map[string]string{}, sources: map[string]bool{}, kind: m.kind()}
 	var same map[string]string
@@ -296,12 +310,11 @@ func (g *merger) add(m member) {
 		c.items = 1
 		same = m.item.SameAs
 		for _, s := range m.item.Sources {
-			src, _, _ := strings.Cut(s, ":")
-			c.sources[src] = true
+			c.sources[sourceKey(s)] = true
 		}
 	} else {
 		same = m.row.SameAs
-		c.sources[m.row.Source] = true
+		c.sources[sourceKey(m.row.Source+":"+m.row.ID)] = true
 	}
 	for k, v := range same {
 		if v != "" {
