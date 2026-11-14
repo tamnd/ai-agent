@@ -185,6 +185,7 @@ main a.hero-search { text-decoration: none; }
 .claim .case { color: var(--muted); font-size: 0.86rem; }
 .badge { text-decoration: none !important; }
 .badge.tick { color: var(--ok); }
+.withdrawn { max-width: var(--measure); margin: 0 0 1.6rem; padding: 0.8rem 1rem; border-left: 3px solid currentColor; font-weight: 500; }
 .read-first { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: baseline; margin: 0 0 1.6rem; font-size: 0.95rem; max-width: var(--measure); }
 .read-first span:first-child { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 650; }
 

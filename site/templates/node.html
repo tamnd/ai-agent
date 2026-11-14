@@ -9,6 +9,7 @@
 <div class="node-grid">
 <aside class="toc-col"><nav class="toc" aria-label="On this page"><p>On this page</p><ol>{{range .TOC}}<li><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}<li><a href="#about-this-page">About this page</a></li></ol></nav></aside>
 <div class="content">
+{{with .Withdrawn}}<p class="notice withdrawn" role="note">{{.}}</p>{{end}}
 {{with .Card}}{{template "card" .}}{{end}}
 {{with .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .}}{{template "link" .}}{{end}}</nav>{{end}}
 <div class="prose">{{.Body}}</div>

@@ -127,6 +127,8 @@ type builder struct {
 	sitemap []string
 	search  []searchEntry
 	cards   map[string][]*card.Card // the cards of each kind, sorted by name; see cardKinds
+	// withdrawn are the nodes that the quarantine hides, whole or in part, by slug (15.7).
+	withdrawn map[string]withdrawn
 }
 
 // Build renders the corpus into opt.Out. It writes a new tree next to opt.Out and then puts it in place, so a server that reads opt.Out never sees a half-written site.
@@ -168,14 +170,17 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	if opt.AgentURL == "" {
 		opt.AgentURL = "https://github.com/tamnd/ai-agent"
 	}
-	b := &builder{opt: opt, c: c, scenes: map[string]viz.Report{}, arch: map[string]*viz.ArchData{}, status: map[string]status.Status{}, hue: map[string]int{}}
+	c, wd, err := withdraw(c)
+	if err != nil {
+		return nil, err
+	}
+	b := &builder{opt: opt, c: c, withdrawn: wd, scenes: map[string]viz.Report{}, arch: map[string]*viz.ArchData{}, status: map[string]status.Status{}, hue: map[string]int{}}
 	b.report.Scenes = b.scenes
 	short := opt.Commit
 	if len(short) > 7 {
 		short = short[:7]
 	}
 	b.meta = &Meta{BaseURL: opt.BaseURL, Version: opt.Version, Commit: opt.Commit, Short: short, Date: opt.Now.Format("2006-01-02"), Repo: opt.Repo, AgentURL: opt.AgentURL, Year: opt.Now.Year()}
-	var err error
 	if b.results, err = status.LoadResults(opt.Results); err != nil {
 		return nil, err
 	}

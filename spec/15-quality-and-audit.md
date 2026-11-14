@@ -332,7 +332,7 @@ A defect that a reader report (19.12), a sample, a reviewer, the audit of the au
 
 | Severity | Examples | Response |
 |---|---|---|
-| **S1** | a false claim in a main section, an invented source, a private fact about a person, copied text, hazardous content, a position in the site voice on a contested page | the affected part is hidden within 24 hours (it leaves the site at the next deploy, or at once by a person with the quarantine command); a fix is queued at the top weight; the page shows a "correction" badge |
+| **S1** | a false claim in a main section, an invented source, a private fact about a person, copied text, hazardous content, a position in the site voice on a contested page | the affected part is hidden within 24 hours (it leaves the site at the next deploy, or at once by a person with `aik quarantine`, which writes a `quarantine` line in the provenance log of the node (04.8) that the next build obeys); a fix is queued at the top weight; the page shows a "correction" badge |
 | **S2** | an overclaim, a wrong number in a fact or a result, a wrong date, a missing serious position, a retracted source still used | fixed within 7 days; the page shows the badge until then |
 | **S3** | a weak explanation, a missing variant, a style defect | the work queue at normal weight |
 
