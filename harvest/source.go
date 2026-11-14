@@ -135,7 +135,7 @@ var Sources = []Source{
 		Credit: "Federal Register, https://www.federalregister.gov",
 		Note:   "The Federal Register covers the US federal government from 1994; the states and other countries come from their own gazettes (S-L1).",
 	},
-	{
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "oecd-ai", Name: "OECD.AI policy database",
 		URL: "https://oecd.ai/en/dashboards/policy-initiatives", Owner: "the OECD AI Policy Observatory",
 		Licence: "facts only", Checked: "2026-11-14", Class: "D",
