@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tamnd/ai-agent/graph"
 	"github.com/tamnd/ai-agent/results"
 )
 
@@ -302,8 +303,18 @@ func cmdBuild(args []string) error {
 		run("scenes", "scenes"+base, "", "viz", "check", "-root", *root)
 	}
 
-	// 7. The graph of 03.4 is not in aik yet.
-	report(buildStep{Name: "graph", Status: "not built", Note: "aik has no graph package yet (03.4); the site builds its own links"})
+	// 7. The graph of 03.4: the edges, the reverse edges and the cycles.
+	start = time.Now()
+	gs, err := graph.Build(c).Write(filepath.Join(out, "graph"))
+	if err != nil {
+		return err
+	}
+	s = buildStep{Name: "graph", Status: "ok", Ms: time.Since(start).Milliseconds(),
+		Note: fmt.Sprintf("%d %s and %d reverse, in build/graph", gs.Edges, plural(gs.Edges, "edge", "edges"), gs.Reverse)}
+	if len(gs.Cycles) > 0 {
+		s.Status, s.Note = "failed", fmt.Sprintf("%d %s, such as %s (E03, E04)", len(gs.Cycles), plural(len(gs.Cycles), "cycle", "cycles"), strings.Join(gs.Cycles[0], " -> "))
+	}
+	report(s)
 
 	// 8. The ladders of every node and the coverage report (18.7), from the outputs of the steps above.
 	cov := []string{"coverage", "-root", *root, "-o", filepath.Join(out, "coverage.json"), "-ladders", filepath.Join(out, "status.json")}
