@@ -9,18 +9,20 @@ import (
 	"github.com/tamnd/ai-agent/cost"
 )
 
-// cmdReport prints the reports of 20.4. Only the cost report of 14.8 is built.
+// cmdReport prints the reports of 20.4: the cost report of 14.8 and the quality report of 15.9.
 func cmdReport(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik report cost"}
+		return usageError{"use aik report cost or aik report quality"}
 	}
 	switch args[0] {
 	case "cost":
 		return reportCost(args[1:])
-	case "levels", "tests", "experiments", "quality":
+	case "quality":
+		return reportQuality(args[1:])
+	case "levels", "tests", "experiments":
 		return fmt.Errorf("aik report %s is not built yet; aik coverage and aik status give the levels", args[0])
 	}
-	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost", args[0])}
+	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost or aik report quality", args[0])}
 }
 
 // reportCost sums the model calls of the agent runs by milestone, role, model and item (14.8).
