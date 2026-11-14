@@ -252,6 +252,15 @@ func TestStem(t *testing.T) {
 	}
 }
 
+// A word and the stem of another form of it meet: "applies" is "apply", whose own stem is shorter.
+func TestStemMeets(t *testing.T) {
+	for _, p := range [][2]string{{"applies", "apply"}, {"applied", "apply"}, {"supplies", "supply"}, {"families", "family"}} {
+		if stem(p[0]) != stem(p[1]) {
+			t.Errorf("stem(%q) = %q and stem(%q) = %q differ", p[0], stem(p[0]), p[1], stem(p[1]))
+		}
+	}
+}
+
 func TestVocabHas(t *testing.T) {
 	v := NewVocab("Batch normalizing and the scaled weights; well-known units.")
 	for _, w := range []string{"normalization", "scaling", "weight", "known", "unit"} {

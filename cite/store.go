@@ -99,6 +99,19 @@ func (s Store) Doc(hash string) *Doc {
 	return &d
 }
 
+// AnyDoc reads the extracted text of an object as it is stored, whatever extractor made it, or nil when there is none.
+func (s Store) AnyDoc(hash string) *Doc {
+	b, err := os.ReadFile(s.path(hash, ".doc.json"))
+	if err != nil {
+		return nil
+	}
+	var d Doc
+	if json.Unmarshal(b, &d) != nil {
+		return nil
+	}
+	return &d
+}
+
 // PutDoc stores the extracted text of an object.
 func (s Store) PutDoc(hash string, d *Doc) error {
 	b, err := json.Marshal(d)

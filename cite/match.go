@@ -5,8 +5,10 @@ package cite
 import (
 	"math"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Norm writes text in the form that the checks compare: lower case, one space between words, and the dashes and
@@ -28,39 +30,117 @@ var (
 	// mathRE finds inline math. Its numbers are read, but not its exponents and subscripts, which are symbols.
 	mathRE = regexp.MustCompile(`\$[^$]*\$`)
 	supRE  = regexp.MustCompile(`[_^](\{[^}]*\}|.)`)
+	// powRE finds a power of a number, in text or in math: "10^25", "10^{25}", "2**10", "3 × 10^-4", "3 \times
+	// 10^{-4}". A web page's superscript is written so by the extractor, and so is a superscript digit after a digit.
+	powRE = regexp.MustCompile(`(^|[^\w.])(?:([0-9]+(?:\.[0-9]+)?)\s*(?:×|\\times|\\cdot|x|\*)\s*)?([0-9]+)\s*(?:\^|\*\*)\s*(?:\{\s*([-−]?[0-9]{1,3})\s*\}|([-−]?[0-9]{1,3}))`)
+	// supDigits are the superscript digits and minus, which a power after a digit is written in: "10²⁵".
+	supDigits = strings.NewReplacer("⁰", "0", "¹", "1", "²", "2", "³", "3", "⁴", "4", "⁵", "5", "⁶", "6", "⁷", "7", "⁸", "8", "⁹", "9", "⁻", "-")
+	supRunRE  = regexp.MustCompile(`([0-9])([⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+)`)
 )
 
 var scales = map[string]float64{"%": 0.01, "percent": 0.01, "per cent": 0.01, "k": 1e3, "thousand": 1e3, "m": 1e6, "million": 1e6, "b": 1e9, "billion": 1e9, "t": 1e12, "trillion": 1e12}
 
-// Numbers finds the numbers of a text with their precision. "28.4", "65 million", "4.5%" and "1,024" are numbers;
-// the exponents and subscripts of inline math are not.
+// Numbers finds the numbers of a text with their precision. "28.4", "65 million", "4.5%" and "1,024" are numbers,
+// and so is a power of a number, "10^25" or "$10^{25}$" (1e25); the other exponents and subscripts of inline math
+// are not.
 func Numbers(s string) []Number {
-	s = mathRE.ReplaceAllStringFunc(s, func(m string) string {
-		m = supRE.ReplaceAllString(m, " ")
-		return strings.Trim(m, "$")
+	s = supRunRE.ReplaceAllStringFunc(s, func(m string) string {
+		_, size := utf8.DecodeRuneInString(m)
+		return m[:size] + "^" + supDigits.Replace(m[size:])
 	})
+	type at struct {
+		off int
+		n   Number
+	}
+	var found []at
+	b := []byte(s)
+	for _, m := range powRE.FindAllStringSubmatchIndex(s, -1) {
+		if n, ok := power(s, m); ok {
+			found = append(found, at{m[3], n})
+			copy(b[m[3]:m[1]], strings.Repeat(" ", m[1]-m[3]))
+		}
+	}
+	// The math keeps its length, so that the numbers stay in the order of the text.
+	s = mathRE.ReplaceAllStringFunc(string(b), func(m string) string {
+		m = supRE.ReplaceAllStringFunc(m, func(x string) string { return strings.Repeat(" ", len(x)) })
+		return strings.ReplaceAll(m, "$", " ")
+	})
+	for _, m := range numRE.FindAllStringSubmatchIndex(s, -1) {
+		if n, ok := plain(s, m); ok {
+			found = append(found, at{m[4], n})
+		}
+	}
+	slices.SortStableFunc(found, func(x, y at) int { return x.off - y.off })
 	var out []Number
-	for _, m := range numRE.FindAllStringSubmatch(s, -1) {
-		digits := strings.ReplaceAll(m[2], ",", "")
-		v, err := strconv.ParseFloat(digits, 64)
-		if err != nil {
-			continue
-		}
-		step := 1.0
-		if i := strings.IndexByte(digits, '.'); i >= 0 {
-			step = math.Pow(10, -float64(len(digits)-i-1))
-		}
-		scale, unit := 1.0, ""
-		if w := strings.ToLower(strings.TrimSpace(m[3])); w != "" {
-			// "1.5 M" and "1.5M" are a million; "M" after a big number is a unit, and only a lower-case k or a capital
-			// M, B or T after a number counts, so that "5 m" (metres) is not read as five million.
-			if raw := strings.TrimSpace(m[3]); len(raw) > 1 || raw == "%" || raw == "k" || raw == "M" || raw == "B" || raw == "T" {
-				scale, unit = scales[w], m[3]
-			}
-		}
-		out = append(out, Number{Text: strings.TrimSpace(m[2] + unit), Value: v * scale, Step: step * scale})
+	for _, f := range found {
+		out = append(out, f.n)
 	}
 	return out
+}
+
+// power reads a match of powRE: the value of "3 × 10^-4" is 3e-4, at the precision of its 3.
+func power(s string, m []int) (Number, bool) {
+	sub := func(k int) string {
+		if m[2*k] < 0 {
+			return ""
+		}
+		return s[m[2*k]:m[2*k+1]]
+	}
+	exp := strings.Replace(sub(4)+sub(5), "−", "-", 1)
+	e, err1 := strconv.Atoi(exp)
+	base, err2 := strconv.ParseFloat(sub(3), 64)
+	if err1 != nil || err2 != nil {
+		return Number{}, false
+	}
+	v := math.Pow(base, float64(e))
+	if math.IsInf(v, 0) || v == 0 {
+		return Number{}, false
+	}
+	step := v
+	if base != 10 {
+		step = 1 // 2^10 is 1024 exactly
+	}
+	text := sub(3) + "^" + exp
+	if c := sub(2); c != "" {
+		k, err := strconv.ParseFloat(c, 64)
+		if err != nil {
+			return Number{}, false
+		}
+		cstep := 1.0
+		if i := strings.IndexByte(c, '.'); i >= 0 {
+			cstep = math.Pow(10, -float64(len(c)-i-1))
+		}
+		v, step, text = k*v, cstep*step, c+"×"+text
+	}
+	return Number{Text: text, Value: v, Step: step}, true
+}
+
+// plain reads a match of numRE.
+func plain(s string, ix []int) (Number, bool) {
+	m := make([]string, len(ix)/2)
+	for k := range m {
+		if ix[2*k] >= 0 {
+			m[k] = s[ix[2*k]:ix[2*k+1]]
+		}
+	}
+	digits := strings.ReplaceAll(m[2], ",", "")
+	v, err := strconv.ParseFloat(digits, 64)
+	if err != nil {
+		return Number{}, false
+	}
+	step := 1.0
+	if i := strings.IndexByte(digits, '.'); i >= 0 {
+		step = math.Pow(10, -float64(len(digits)-i-1))
+	}
+	scale, unit := 1.0, ""
+	if w := strings.ToLower(strings.TrimSpace(m[3])); w != "" {
+		// "1.5 M" and "1.5M" are a million; "M" after a big number is a unit, and only a lower-case k or a capital
+		// M, B or T after a number counts, so that "5 m" (metres) is not read as five million.
+		if raw := strings.TrimSpace(m[3]); len(raw) > 1 || raw == "%" || raw == "k" || raw == "M" || raw == "B" || raw == "T" {
+			scale, unit = scales[w], m[3]
+		}
+	}
+	return Number{Text: strings.TrimSpace(m[2] + unit), Value: v * scale, Step: step * scale}, true
 }
 
 // Found tells if the number n of a claim is in the numbers of a source: a number of the source that rounds to n at
@@ -68,12 +148,30 @@ func Numbers(s string) []Number {
 // percentage of the claim also matches the bare number of a table whose header gives the unit: "74.6 percent" is the
 // 74.6 of a column headed "accuracy (%)".
 func Found(n Number, in []Number) bool {
+	if base, exp, ok := strings.Cut(n.Text, "^"); ok && !strings.Contains(base, "×") {
+		// A power is also found as its base and its exponent, which is how the text of a PDF writes it: "10^25" is
+		// "1025" in it, or "10 25", as the superscript is lost.
+		b, e := Numbers(base), Numbers(strings.TrimPrefix(exp, "-"))
+		if len(b) == 1 && len(e) == 1 && (Found(b[0], in) && Found(e[0], in) || foundJoined(base, exp, in)) {
+			return true
+		}
+	}
 	pct := percent(n)
 	for _, x := range in {
 		if rounds(x, n) {
 			return true
 		}
 		if pct && !percent(x) && rounds(x, Number{Value: n.Value * 100, Step: n.Step * 100}) {
+			return true
+		}
+	}
+	return false
+}
+
+// foundJoined tells if a power is in a text that lost its superscript and joined the exponent to the base: "1025".
+func foundJoined(base, exp string, in []Number) bool {
+	for _, x := range in {
+		if x.Text == base+exp {
 			return true
 		}
 	}
@@ -141,9 +239,21 @@ func terms(claim string, exempt map[string]bool) []string {
 	return out
 }
 
-// stem cuts the common endings of English words, so that "regularizes", "regularized" and "regularizing" meet.
+// stem cuts the common endings of English words, so that "regularizes", "regularized" and "regularizing" meet. It cuts
+// until no ending is left, so that a word and its stem meet as well: "applies" gives "apply", and "apply" gives "app".
 func stem(w string) string {
-	for _, suf := range []string{"izations", "ization", "isations", "isation", "ational", "nesses", "ments", "ings", "ness", "ment", "ies", "ing", "ers", "ed", "es", "er", "ly", "s"} {
+	for range 4 {
+		s := stem1(w)
+		if s == w {
+			break
+		}
+		w = s
+	}
+	return w
+}
+
+func stem1(w string) string {
+	for _, suf := range []string{"izations", "ization", "isations", "isation", "ational", "nesses", "ments", "ings", "ness", "ment", "ies", "ied", "ing", "ers", "ed", "es", "er", "ly", "s"} {
 		if !strings.HasSuffix(w, suf) || len(w)-len(suf) < 3 {
 			continue
 		}
@@ -153,7 +263,7 @@ func stem(w string) string {
 			rest += "iz" // "normalization", "normalized" and "normalizing" meet at "normaliz"
 		case strings.HasPrefix(suf, "is"):
 			rest += "is"
-		case suf == "ies":
+		case suf == "ies" || suf == "ied":
 			rest += "y"
 		case suf == "es" && !strings.HasSuffix(rest, "s") && !strings.HasSuffix(rest, "x") && !strings.HasSuffix(rest, "z") && !strings.HasSuffix(rest, "ch") && !strings.HasSuffix(rest, "sh"):
 			rest += "e" // "pages" is "page", but "boxes" is "box"

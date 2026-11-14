@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode/utf8"
@@ -126,7 +127,7 @@ func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...
 		span.WriteByte('\n')
 	}
 	in := Numbers(span.String())
-	for _, n := range Numbers(c.Text) {
+	for _, n := range Numbers(ownIDs(c.Text, d)) {
 		r.Numbers++
 		if !Found(n, in) {
 			r.NumbersMiss = append(r.NumbersMiss, n.Text)
@@ -163,50 +164,80 @@ func PassageHash(d *Doc, spans []Span) string {
 	return Hash([]byte(p + "\x00" + sec))[:32]
 }
 
-// PrevExtractorVersion is the extractor before ExtractorVersion. A record that it wrote has no hashes of the judged
-// text and passage, and Carry reads them from its key and its spans instead.
-const PrevExtractorVersion = "aik-doc-3"
+// HashlessExtractorVersion is the last extractor whose records have no hashes of the judged text and passage; Carry
+// reads them from the key and the spans of such a record instead.
+const HashlessExtractorVersion = "aik-doc-3"
 
 // Carry tells if the verdict of the old record of a source holds for the new one, r, whose key differs: the claim as
 // it is judged, the work, the locator and the snapshot are the same, and so is the passage and section that the
-// verifier read, so that only the extractor or the checker changed and not what was judged. A record written before
-// the hashes were stored is matched by its key under the previous extractor, and its passage is read from its spans
-// on the text of the snapshot, which that extractor bump left as it was.
-func Carry(old, r Record, c *claims.Claim, d *Doc, snap Snapshot) bool {
+// verifier read, so that only the extractor or the checker changed and not what was judged. d is the text of the
+// snapshot now and prev the text that the old record was made on, if the store still had it; nil means d. When the
+// hashes differ, the two passages are read and compared with no regard to white space, as an extractor that only
+// joins runs of spaces leaves the words that the verifier read as they were. A record written before the hashes were
+// stored is matched by its key under HashlessExtractorVersion, and its passage is read from its spans.
+func Carry(old, r Record, c *claims.Claim, d, prev *Doc, snap Snapshot) bool {
 	if old.Verdict == "" || !r.Pass || r.Passage == "" || old.Work != r.Work || old.Locator != r.Locator || old.Snapshot != r.Snapshot {
 		return false
 	}
-	judged, passage := old.Judged, old.Passage
+	if prev == nil {
+		prev = d
+	}
+	judged := old.Judged
 	if judged == "" {
-		prev := strings.Replace(snap.Extractor, "+"+ExtractorVersion, "+"+PrevExtractorVersion, 1)
-		if prev == snap.Extractor || old.Key != Key(Judged(c), snap.Hash, old.Locator, prev) {
+		v := snap.Extractor
+		if k := strings.LastIndexByte(v, '+'); k >= 0 {
+			v = v[:k+1] + HashlessExtractorVersion
+		}
+		if v == snap.Extractor || old.Key != Key(Judged(c), snap.Hash, old.Locator, v) {
 			return false
 		}
 		judged = r.Judged
 	}
-	if passage == "" {
-		// The previous extractor put a heading at the top of a page on the form feed before it: a span from there
-		// starts at the heading, and a span up to there ends at it.
-		spans := slices.Clone(old.Spans)
+	if judged != r.Judged {
+		return false
+	}
+	if old.Passage == r.Passage {
+		return true
+	}
+	spans := old.Spans
+	if old.Passage == "" {
+		// The extractor before the hashes put a heading at the top of a page on the form feed before it: a span from
+		// there starts at the heading, and a span up to there ends at it.
+		spans = slices.Clone(old.Spans)
 		for i := range spans {
 			sp := &spans[i]
-			for sp.Start < sp.End && sp.Start < len(d.Text) && blank(d.Text[sp.Start]) {
+			for sp.Start < sp.End && sp.Start < len(prev.Text) && blank(prev.Text[sp.Start]) {
 				sp.Start++
 			}
-			for sp.End > sp.Start && sp.End < len(d.Text) && blank(d.Text[sp.End]) {
+			for sp.End > sp.Start && sp.End < len(prev.Text) && blank(prev.Text[sp.End]) {
 				sp.End++
 			}
 		}
-		passage = PassageHash(d, spans)
+		if prev == d && PassageHash(d, spans) == r.Passage {
+			return true
+		}
+	} else if PassageHash(prev, spans) != old.Passage {
+		return false // the old text is not the one that the record was made on
 	}
-	return judged == r.Judged && passage == r.Passage
+	p0, s0 := Passage(prev, spans)
+	p1, s1 := Passage(d, r.Spans)
+	return squeeze(p0) == squeeze(p1) && squeeze(s0) == squeeze(s1)
+}
+
+// squeeze drops the white space of a text.
+func squeeze(s string) string {
+	return strings.Join(strings.Fields(s), "")
 }
 
 // blank tells if the byte is a space, a tab, a new line or a form feed.
 func blank(b byte) bool { return strings.IndexByte(" \t\n\f", b) >= 0 }
 
-// section is the deepest heading whose text holds the offset.
+// section is the deepest heading whose text holds the offset: in a legal text, the recital, the article or the annex
+// that holds it, so that a paragraph of an article is read with its article.
 func (d *Doc) section(off int) *Head {
+	if p := d.provisionAt(off); p != nil {
+		return &Head{Num: provisionTitle(*p), Start: p.Start, End: p.End}
+	}
 	var best *Head
 	for i := range d.Heads {
 		h := &d.Heads[i]
@@ -402,4 +433,32 @@ func WriteManifest(root string, snaps map[string]Snapshot) error {
 		return err
 	}
 	return os.WriteFile(p, b.Bytes(), 0o644)
+}
+
+// actIDRE is the number of an act or a document: "2024/1689", "2021/0106(COD)".
+var actIDRE = regexp.MustCompile(`\b[0-9]{2,4}/[0-9]{1,4}\b`)
+
+// ownIDs takes out of a claim the numbers that name the document itself, as "Regulation (EU) 2026/1744 states that…"
+// cited to a recital of that regulation: they are on its title page, not at the located place. A number of the
+// claim that is not on the title page, as a date, is still checked.
+func ownIDs(claim string, d *Doc) string {
+	ids := actIDRE.FindAllString(claim, -1)
+	if len(ids) == 0 {
+		return claim
+	}
+	refs, err := ParseLocator("the title page")
+	if err != nil {
+		return claim
+	}
+	spans, _ := Resolve(d, refs)
+	var title strings.Builder
+	for _, s := range spans {
+		title.WriteString(d.Text[s.Start:s.End])
+	}
+	for _, id := range ids {
+		if strings.Contains(title.String(), id) {
+			claim = strings.ReplaceAll(claim, id, " ")
+		}
+	}
+	return claim
 }

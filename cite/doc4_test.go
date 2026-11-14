@@ -238,7 +238,7 @@ func TestCarry(t *testing.T) {
 	}
 	old := r
 	old.Key, old.Verdict, old.Verifier, old.Run = "an older key", Supported, "codex:m", "r1"
-	if !Carry(old, r, c, d, snap) {
+	if !Carry(old, r, c, d, nil, snap) {
 		t.Errorf("the verdict of the same passage is not carried")
 	}
 	for name, f := range map[string]func(o *Record){
@@ -250,29 +250,29 @@ func TestCarry(t *testing.T) {
 	} {
 		o := old
 		f(&o)
-		if Carry(o, r, c, d, snap) {
+		if Carry(o, r, c, d, nil, snap) {
 			t.Errorf("the verdict is carried with %s changed", name)
 		}
 	}
 	// A record of the previous extractor has no hashes: its key and its spans tell what was judged.
 	legacy := old
 	legacy.Judged, legacy.Passage = "", ""
-	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+PrevExtractorVersion)
-	if !Carry(legacy, r, c, d, snap) {
-		t.Errorf("the verdict of a record of %s is not carried", PrevExtractorVersion)
+	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+HashlessExtractorVersion)
+	if !Carry(legacy, r, c, d, nil, snap) {
+		t.Errorf("the verdict of a record of %s is not carried", HashlessExtractorVersion)
 	}
 	changed := *c
 	changed.Text = "At test time the weights are scaled by p, always."
-	if Carry(legacy, Check(&changed, e, d, snap), &changed, d, snap) {
-		t.Errorf("the verdict of a record of %s is carried to another text", PrevExtractorVersion)
+	if Carry(legacy, Check(&changed, e, d, snap), &changed, d, nil, snap) {
+		t.Errorf("the verdict of a record of %s is carried to another text", HashlessExtractorVersion)
 	}
 	moved := legacy
 	moved.Spans = []Span{{0, 40}}
-	if Carry(moved, r, c, d, snap) {
-		t.Errorf("the verdict of a record of %s is carried to another passage", PrevExtractorVersion)
+	if Carry(moved, r, c, d, nil, snap) {
+		t.Errorf("the verdict of a record of %s is carried to another passage", HashlessExtractorVersion)
 	}
 	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+aik-doc-2")
-	if Carry(legacy, r, c, d, snap) {
+	if Carry(legacy, r, c, d, nil, snap) {
 		t.Errorf("the verdict of a record of an older extractor is carried")
 	}
 }
@@ -306,9 +306,9 @@ func TestCarryPageTopHeading(t *testing.T) {
 	}
 	legacy := r
 	legacy.Judged, legacy.Passage, legacy.Verdict = "", "", Supported
-	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+PrevExtractorVersion)
+	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+HashlessExtractorVersion)
 	legacy.Spans = []Span{{r.Spans[0].Start - 1, r.Spans[0].End}}
-	if !Carry(legacy, r, c, d, snap) {
+	if !Carry(legacy, r, c, d, nil, snap) {
 		t.Errorf("the verdict of a span from the form feed is not carried")
 	}
 	// Section 1 ends at the heading of Section 2 now, past the form feed where it ended before.
@@ -320,9 +320,9 @@ func TestCarryPageTopHeading(t *testing.T) {
 	}
 	legacy = r
 	legacy.Judged, legacy.Passage, legacy.Verdict = "", "", Supported
-	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+PrevExtractorVersion)
+	legacy.Key = Key(Judged(c), snap.Hash, e.Locator, "pdftotext-1+"+HashlessExtractorVersion)
 	legacy.Spans = []Span{{r.Spans[0].Start, r.Spans[0].End - 1}}
-	if !Carry(legacy, r, c, d, snap) {
+	if !Carry(legacy, r, c, d, nil, snap) {
 		t.Errorf("the verdict of a span up to the form feed is not carried")
 	}
 }

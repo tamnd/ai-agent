@@ -5,7 +5,7 @@
 Usage: python3 verify.py [--model codex:gpt-6-sol] [--writers claude-opus-5-5] [--redo] [--dry-run] <slug> ...
 
 For each node it asks `aik cite passages` for the claims whose source passed the citation check and has no verdict
-yet, sends the claims and their passages to the verifier in one prompt, and writes the verdicts into
+yet, sends the claims and their passages to the verifier, in as few prompts as fit its input limit, and writes the verdicts into
 prov/cite/<tag>.jsonl with `aik cite verdict`. The verifier sees only the claim, its type and scope, and the passage
 with its section; it never sees the page.
 
@@ -20,6 +20,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -29,7 +30,10 @@ from lib import AIK, REPO, WORK, MissingCommand, Wait, _aik_text, extract_json, 
 PROMPT_VERSION = "verify/v1"
 RUN_ID = os.environ.get("AI_RUN_ID") or time.strftime("v-%Y%m%d-%H%M%S-") + str(os.getpid())
 VERDICTS = ("supported", "unsupported", "contradicted", "unreadable")
-MAX_PASSAGE = 24000  # bytes of passage and section per item
+MAX_PASSAGE = 24000  # characters of passage and section per item, after the white space is collapsed
+# The verifier takes at most 1,048,576 characters of input; a prompt is kept under MAX_PROMPT, which leaves room for
+# what the backend adds around it.
+MAX_PROMPT = 1_000_000
 
 
 def aik(sub, *args):
@@ -75,11 +79,19 @@ def verifier_for(ws, override):
     return reg.auditor_for(ws)
 
 
+def collapse(s):
+    """The text with one space for a run of spaces and tabs, no space at the ends of lines, and one empty line at most
+    between lines, so that the cut at MAX_PASSAGE keeps words and not white space."""
+    s = re.sub(r"[ \t\r\f\v\u00a0]+", " ", s)
+    s = re.sub(r" ?\n ?", "\n", s)
+    return re.sub(r"\n{3,}", "\n\n", s).strip()
+
+
 def item_text(i, p):
     scope = p.get("scope") or {}
     sc = "; ".join(f"{k}: {v if isinstance(v, str) else ', '.join(v)}" for k, v in scope.items() if v)
-    passage = p["passage"]
-    section = p.get("section", "")
+    passage = collapse(p["passage"])
+    section = collapse(p.get("section", ""))
     if len(passage) > MAX_PASSAGE:
         passage = passage[:MAX_PASSAGE] + "\n[the passage is cut here]"
         section = ""
@@ -90,6 +102,40 @@ def item_text(i, p):
     if section:
         out += ["The section that holds the passage:", "<<<", section, ">>>"]
     return "\n".join(out)
+
+
+def batches(ps, template, limit=None):
+    """The items in order, cut into runs whose prompt, the template with the items numbered from 1, stays under limit
+    characters. An item that does not fit even alone is a run of its own."""
+    limit = limit or MAX_PROMPT
+    base = len(template.format(items=""))
+    out, cur, n = [], [], base
+    for p in ps:
+        t = len(item_text(len(cur) + 1, p)) + (2 if cur else 0)
+        if cur and n + t > limit:
+            out.append(cur)
+            cur, n = [], base
+            t = len(item_text(1, p))
+        cur.append(p)
+        n += t
+    if cur:
+        out.append(cur)
+    return out
+
+
+def judge(slug, ps, backend, model, template):
+    """Ask the verifier about one batch of items. It gives the verdicts by item, or None when it gave no JSON list."""
+    prompt = template.format(items="\n\n".join(item_text(i + 1, p) for i, p in enumerate(ps)))
+    r = run_model(prompt, backend, model, job="verify", slug=slug, role="verifier", write=False, timeout=1800,
+                  max_turns=4, effort="high")
+    try:
+        got = extract_json(r["text"])
+    except ValueError:
+        got = None
+    if not isinstance(got, list):
+        print(f"{slug}: the verifier {backend}:{model} gave no JSON list: {r.get('text', '')[-400:]}{r.get('err', '')[-400:]}")
+        return None
+    return {int(g["id"]): g for g in got if isinstance(g, dict) and str(g.get("id", "")).isdigit()}
 
 
 def verify(slug, override, writers, redo, dry):
@@ -103,45 +149,47 @@ def verify(slug, override, writers, redo, dry):
     except Wait as w:
         print(f"{slug}: waits: {w}")
         return 1, []
-    prompt = (WORK / "prompts" / "verify" / "v1.md").read_text(encoding="utf-8")
-    prompt = prompt.format(items="\n\n".join(item_text(i + 1, p) for i, p in enumerate(ps)))
+    template = (WORK / "prompts" / "verify" / "v1.md").read_text(encoding="utf-8")
+    runs = batches(ps, template)
     if dry:
-        print(prompt)
+        for b in runs:
+            print(template.format(items="\n\n".join(item_text(i + 1, p) for i, p in enumerate(b))))
         return 0, []
-    r = run_model(prompt, backend, model, job="verify", slug=slug, role="verifier", write=False, timeout=1800,
-                  max_turns=4, effort="high")
-    try:
-        got = extract_json(r["text"])
-    except ValueError:
-        got = None
-    if not isinstance(got, list):
-        print(f"{slug}: the verifier {backend}:{model} gave no JSON list: {r.get('text', '')[-400:]}{r.get('err', '')[-400:]}")
-        return 1, []
-    by_id = {int(g["id"]): g for g in got if isinstance(g, dict) and str(g.get("id", "")).isdigit()}
-    verdicts, items, bad = [], [], 0
-    for i, p in enumerate(ps, 1):
-        g = by_id.get(i) or {}
-        v = g.get("verdict")
-        if v not in VERDICTS:
-            print(f"  {p['claim']} {p['work']}: no verdict from the verifier")
-            bad += 1
-            continue
-        verdicts.append({"tag": tag, "key": p["key"], "verdict": v})
-        items.append({"tag": tag, "claim": p["claim"], "work": p["work"], "locator": p["locator"], "key": p["key"],
-                      "spans": p["spans"], "verdict": v, "quote": str(g.get("quote", ""))[:300],
-                      "note": str(g.get("note", ""))[:600]})
-        bad += v != "supported"
-        print(f"  {v:<12} {p['claim']} ({p['work']}, {p['locator']})")
-        if v != "supported" and g.get("note"):
-            print(f"               {g['note']}")
     ver = f"{backend}:{model}"
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-        json.dump(verdicts, f)
-    try:
-        print(" ", aik("verdict", "-file", f.name, "-verifier", ver, "-run", RUN_ID).strip())
-    finally:
-        os.unlink(f.name)
-    log({"job": "verify", "slug": slug, "verifier": ver, "items": len(ps), "not_supported": bad})
+    items, bad = [], 0
+    for k, b in enumerate(runs, 1):
+        if len(runs) > 1:
+            print(f"  batch {k} of {len(runs)}: {len(b)} items")
+        by_id = judge(slug, b, backend, model, template)
+        if by_id is None:
+            bad += len(b)
+            continue
+        verdicts = []
+        for i, p in enumerate(b, 1):
+            g = by_id.get(i) or {}
+            v = g.get("verdict")
+            if v not in VERDICTS:
+                print(f"  {p['claim']} {p['work']}: no verdict from the verifier")
+                bad += 1
+                continue
+            verdicts.append({"tag": tag, "key": p["key"], "verdict": v})
+            items.append({"tag": tag, "claim": p["claim"], "work": p["work"], "locator": p["locator"], "key": p["key"],
+                          "spans": p["spans"], "verdict": v, "quote": str(g.get("quote", ""))[:300],
+                          "note": str(g.get("note", ""))[:600]})
+            bad += v != "supported"
+            print(f"  {v:<12} {p['claim']} ({p['work']}, {p['locator']})")
+            if v != "supported" and g.get("note"):
+                print(f"               {g['note']}")
+        if not verdicts:
+            continue
+        # The verdicts of each batch are written as it ends, so that a later batch that fails loses only its own.
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(verdicts, f)
+        try:
+            print(" ", aik("verdict", "-file", f.name, "-verifier", ver, "-run", RUN_ID).strip())
+        finally:
+            os.unlink(f.name)
+    log({"job": "verify", "slug": slug, "verifier": ver, "items": len(ps), "batches": len(runs), "not_supported": bad})
     return bad, [{"slug": slug, "verifier": ver, **it} for it in items]
 
 
