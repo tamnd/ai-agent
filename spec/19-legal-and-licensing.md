@@ -69,7 +69,7 @@ Each row was checked on the date in `registers/sources.yaml`; "checked at M1" ma
 | arXiv papers | the arXiv non-exclusive licence by default; some CC BY, CC BY-SA, CC BY-NC-SA, CC0 | D by default; per paper otherwise | facts, equations, locators, quotes under 19.5; figures only from CC BY, CC BY-SA or CC0 papers, with credit |
 | papers at venues (CVF, NeurIPS, PMLR, AAAI, IJCAI, ACM, IEEE, Springer) | authors' or publisher's copyright unless stated | D | facts, equations, locators, short quotes |
 | ACL Anthology papers since 2016 | CC BY 4.0 | C | facts; figures with credit; prose adapted with attribution (we still write fresh) |
-| Semantic Scholar datasets | ODC-BY (checked at M1) | C | facts with attribution |
+| Semantic Scholar datasets | per dataset, "such as CC BY-NC or ODC-BY", under the API License Agreement, which asks for the attribution "Semantic Scholar" (checked 2026-11-15); closed to the harvester (13.2), so not used | C or D | facts with attribution, if it opens |
 | Wikipedia | CC BY-SA 4.0 | B | titles, ids, redirects, infobox facts; prose only into the prose zone with attribution, and by default not at all |
 | Wikimedia Commons | per file | per file | photos only under CC0, public domain, CC BY or CC BY-SA, with credit (C04) |
 | Papers with Code dump | CC BY-SA 4.0 | B | ids, names, numbers; never descriptions into cards |
@@ -93,7 +93,7 @@ Each row was checked on the date in `registers/sources.yaml`; "checked at M1" ma
 | Stanford Encyclopedia of Philosophy, Britannica, PhilPapers | all rights reserved | D | **names only**: entry titles, categories, citations |
 | Distill | CC BY 4.0 | C | facts; figures with credit (we still prefer our own scenes) |
 | lab blogs, Transformer Circuits, personal blogs | all rights reserved unless stated | D | facts, locators, short quotes |
-| Alignment Forum, LessWrong | per post (checked at M1) | C or D | facts and citations |
+| Alignment Forum, LessWrong | none stated for the sites (checked 2026-11-15: the FAQ and /api/SKILL.md give none, /termsOfUse is a 404); a post that states its own licence is under it | D | facts and citations |
 | Stack Overflow, Reddit, Hacker News | CC BY-SA for SO; others per terms | signals | search terms and counts only |
 | GitHub repositories of papers' code | per repository | per licence | never copied into our code (C05); links and pinned commits only |
 | algorithm, programming, math2 | our own | A for metadata | bridge cards |
