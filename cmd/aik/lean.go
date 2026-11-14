@@ -12,15 +12,96 @@ import (
 
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/lang"
+	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
 )
 
 // cmdLean runs the subcommands of aik lean.
 func cmdLean(args []string) error {
-	if len(args) == 0 || args[0] != "build" {
-		return usageError{"use aik lean build"}
+	if len(args) > 0 {
+		switch args[0] {
+		case "build":
+			return cmdLeanBuild(args[1:])
+		case "steps":
+			return cmdLeanSteps(args[1:])
+		}
 	}
-	return cmdLeanBuild(args[1:])
+	return usageError{"use aik lean build, or aik lean steps [slug]"}
+}
+
+// leanSteps checks rule F08 for each node with lean.steps, or only for slug, and writes the marked steps to
+// steps.jsonl in out (spec 11.6).
+func leanSteps(c *node.Corpus, ds formal.Decls, out, slug string) ([]formal.Finding, int, error) {
+	var all []formal.Step
+	var fs []formal.Finding
+	nodes := 0
+	for _, n := range c.Nodes {
+		if slug != "" && n.Slug != slug {
+			continue
+		}
+		page, steps, ok, err := formal.NodeSteps(c.Root, n, ds)
+		if !ok {
+			continue
+		}
+		if err != nil {
+			return nil, 0, fmt.Errorf("%s: %w", n.Slug, err)
+		}
+		nodes++
+		all = append(all, steps...)
+		fs = append(fs, formal.CheckSteps(n, page, steps)...)
+	}
+	if slug == "" || nodes > 0 {
+		if err := formal.WriteSteps(filepath.Join(out, "steps.jsonl"), all); err != nil {
+			return nil, 0, err
+		}
+	}
+	return fs, nodes, nil
+}
+
+// cmdLeanSteps checks that the steps of each page proof are marked in its Lean proof, in order, and that each marked
+// step builds (rule F08, spec 11.6). It reads the declarations of the last aik lean build.
+func cmdLeanSteps(args []string) error {
+	f := newFlags("lean steps", "[flags] [slug]")
+	root := f.String("root", ".", "the root of the content repository")
+	out := f.String("out", "build/lean", "the directory of decls.jsonl, and of the steps.jsonl that this writes")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if f.NArg() > 1 {
+		return usageError{"aik lean steps takes at most one slug"}
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	slug := f.Arg(0)
+	if slug != "" && c.BySlug[slug] == nil {
+		return fmt.Errorf("no node has the slug %s", slug)
+	}
+	dir := under(*root, *out)
+	ds, err := status.LoadDecls(filepath.Join(dir, "decls.jsonl"))
+	if err != nil {
+		return err
+	}
+	if ds == nil {
+		return fmt.Errorf("no %s: run aik lean build first", filepath.Join(dir, "decls.jsonl"))
+	}
+	fs, nodes, err := leanSteps(c, ds, dir, slug)
+	if err != nil {
+		return err
+	}
+	if nodes == 0 {
+		fmt.Println("no node links its page proof to Lean (lean.steps)")
+		return nil
+	}
+	for _, x := range fs {
+		fmt.Println(x)
+	}
+	if len(fs) > 0 {
+		return errFindings
+	}
+	fmt.Printf("%d nodes: each step of the page proof is marked in the Lean proof, in order, and builds.\n", nodes)
+	return nil
 }
 
 // cmdLeanBuild builds the Lean package, extracts its declarations, and checks the axiom policy and the lean fields (spec 11.5).
@@ -79,6 +160,11 @@ func cmdLeanBuild(args []string) error {
 		fmt.Printf("  %-24s %s  %s\n", n.Slug, l.Label, l.Name)
 	}
 	fs := formal.Check(c, ds)
+	sfs, _, err := leanSteps(c, ds, o.Out, "")
+	if err != nil {
+		return err
+	}
+	fs = append(fs, sfs...)
 	if *timed {
 		ts, err := formal.Time(context.Background(), o)
 		if err != nil {

@@ -62,7 +62,7 @@ func init() {
 		{"review", "write the template of a review record, or check one: review <slug> <part> -reviewer github:<login> | -check", cmdReview},
 		{"gen", "write the build tree of each language to build/lang", cmdGen},
 		{"test", "run the native tests and the shared cases", cmdTest},
-		{"lean", "build the Lean package and check its axioms: lean build", cmdLean},
+		{"lean", "build the Lean package and check its axioms and proof steps: lean build, lean steps", cmdLean},
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
 		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
