@@ -1,0 +1,155 @@
+{
+  "$id": "https://ai.tamnd.com/data/schema/claims.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The claim records of a node (spec 07.3). The evidence labels are computed by the build from the evidence and the checks (07.4); nobody writes them.",
+  "items": {
+    "additionalProperties": {},
+    "properties": {
+      "as_of": {
+        "type": "string"
+      },
+      "assumes": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "derivation": {
+        "type": "string"
+      },
+      "evidence": {
+        "items": {
+          "additionalProperties": false,
+          "properties": {
+            "locator": {
+              "type": "string"
+            },
+            "reuses": {
+              "enum": [
+                "code",
+                "data",
+                "weights",
+                "none"
+              ],
+              "type": "string"
+            },
+            "role": {
+              "enum": [
+                "original",
+                "replication",
+                "reanalysis",
+                "review",
+                "meta-analysis",
+                "primary-document",
+                "official-text",
+                "official-guidance",
+                "statement"
+              ],
+              "type": "string"
+            },
+            "stance": {
+              "enum": [
+                "for",
+                "against",
+                "mixed"
+              ],
+              "type": "string"
+            },
+            "work": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "work",
+            "role",
+            "stance"
+          ],
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "exp": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "type": "string"
+      },
+      "lean": {
+        "type": "string"
+      },
+      "result": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "review_after": {
+        "type": "string"
+      },
+      "scope": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "models": {
+            "type": "string"
+          },
+          "scale": {
+            "type": "string"
+          },
+          "setting": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "self_reported": {
+        "type": "boolean"
+      },
+      "small_scale": {
+        "enum": [
+          "yes",
+          "no",
+          "partial"
+        ],
+        "type": "string"
+      },
+      "small_scale_note": {
+        "type": "string"
+      },
+      "superseded_by": {
+        "type": "string"
+      },
+      "text": {
+        "type": "string"
+      },
+      "type": {
+        "enum": [
+          "definitional",
+          "mathematical",
+          "empirical",
+          "historical",
+          "attributive",
+          "normative-reported",
+          "forecast"
+        ],
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "text"
+    ],
+    "type": "object"
+  },
+  "title": "claims.yaml",
+  "type": "array"
+}

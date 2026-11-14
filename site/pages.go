@@ -781,6 +781,9 @@ func (b *builder) machine() error {
 	if err := b.write("/api/nodes.json", data); err != nil {
 		return err
 	}
+	if err := b.schemas(); err != nil {
+		return err
+	}
 	if b.opt.Data != "" {
 		if err := b.datasets(b.opt.Data, g, recs); err != nil {
 			return err

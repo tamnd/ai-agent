@@ -85,6 +85,7 @@ The exit codes are 0 for success, 1 when a check finds a problem, 2 for a usage 
 | `markup` | Markdown and math. |
 | `katex` | Renders TeX to HTML on the server. |
 | `site` | The templates, assets and pages of the site. |
+| `schema` | The JSON Schemas of spec 20.2, generated from the Go types that read the files: `node.v1.json` (the front matter of `node.md`, with the fields of each kind allowed only on that kind), `claims.v1.json` (`claims.yaml`, without the computed labels) and `record.v1.json` (the record of `/<slug>.json` and of the items dataset). The site publishes them at `/data/schema/`. The tests fail when a file differs from the generator; `go test ./schema ./site -update` writes them again. `card.v1`, `facts.v1`, `experiment.v1`, `expect.v1`, `levels.v1`, `targets.v1` and `edges.md` are not written yet. |
 | `spec` | The specification. The site publishes it at [/spec/](https://ai.tamnd.com/spec/). |
 | `testdata/corpus` | A small content tree for the tests. |
 | `work` | The agent pipeline scripts of spec 14: catalog, stubs, writer, gate, audit, provenance, pull requests and deploy. See [work/README.md](work/README.md). |
