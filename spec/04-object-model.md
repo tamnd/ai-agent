@@ -307,7 +307,7 @@ Graph rules (15.3 E): no cycle in `prereqs`, `variant_of`, `generalizes`, `fine_
 
 ## 4.8 Provenance
 
-Each file of a node directory and each card row has a provenance record, as in algorithm and programming. Node files: `prov/<tag>.jsonl`, one line per change: the date, the file, the operation, the hash, the author (a GitHub login or an agent run id with the model ids and the prompt versions), the auditor, the reviewer when there is one, and the source ids that the change used. Card rows: the `harvest` record (4.6) and `prov/cards/<shard>.jsonl` for changes by people or agents. The page shows the record under "History" (16.4).
+Each file of a node directory and each card row has a provenance record, as in algorithm and programming. Node files: `prov/<tag>.jsonl`, one line per change: the date, the file, the operation, the hash, the author (a GitHub login or an agent run id with the model ids and the prompt versions), the auditor, the reviewer when there is one, and the source ids that the change used. Card rows: the `harvest` record (4.6) and `prov/cards/<shard>.jsonl` for changes by people or agents. The page shows the record under "History" (16.4). `aik prov show` prints the log of a node with the state of each file, `aik prov check` checks every line, and `aik prov record` appends the lines of a change made by a person; `work/prov.py` appends those of an agent run.
 
 ## 4.9 Facts
 
