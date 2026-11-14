@@ -1,0 +1,728 @@
+{
+  "$id": "https://ai.tamnd.com/data/schema/node.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "architecture"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "components": {},
+          "family": {},
+          "flops_per_example": {},
+          "flops_per_token": {},
+          "inductive_biases": {},
+          "inputs": {},
+          "introduced_by": {},
+          "models": {},
+          "outputs": {},
+          "params": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "argument"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "conclusion": {},
+          "premises": {},
+          "replies": {},
+          "responds_to": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "benchmark"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "contamination": {},
+          "introduced_by": {},
+          "licence": {},
+          "metrics": {},
+          "protocol": {},
+          "task": {},
+          "versions": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "dataset"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "access": {},
+          "collection": {},
+          "derived_from": {},
+          "documentation": {},
+          "known_issues": {},
+          "licence": {},
+          "modality": {},
+          "size": {},
+          "source": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "finding"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "claim": {},
+          "explanations": {},
+          "failures": {},
+          "first_reported": {},
+          "replications": {},
+          "scale_range": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "hardware"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "released": {},
+          "specs": {},
+          "type": {},
+          "vendor": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "metric"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "better": {},
+          "formula": {},
+          "measures": {},
+          "range": {},
+          "reference_impl": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "model"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "access": {},
+          "architecture": {},
+          "card_url": {},
+          "context_length": {},
+          "developer": {},
+          "distilled_from": {},
+          "fine_tuned_from": {},
+          "licence": {},
+          "member_of": {},
+          "modalities": {},
+          "params": {},
+          "released": {},
+          "role": {},
+          "training": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "open-problem"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "evidence": {},
+          "positions": {},
+          "question": {},
+          "would_settle_it": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "organization"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "kind_of": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "person"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "roles": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "policy"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "amended_by": {},
+          "amends": {},
+          "dates": {},
+          "jurisdiction": {},
+          "official_text": {},
+          "provisions": {},
+          "type": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "risk"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "affects": {},
+          "mitigations": {},
+          "taxonomy": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "software"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "category": {},
+          "first_release": {},
+          "language": {},
+          "licence": {},
+          "maintainer": {},
+          "releases": {},
+          "repo": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "system"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "developer": {},
+          "domain": {},
+          "milestones": {},
+          "parts": {},
+          "years": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "task"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "benchmarks": {},
+          "family": {},
+          "inputs": {},
+          "metrics": {},
+          "modality": {},
+          "outputs": {},
+          "subtask_of": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "theorem"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "hypotheses": {},
+          "proof": {},
+          "statement": {},
+          "tight": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "work"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authors": {},
+          "cited": {},
+          "doi": {},
+          "licence_class": {},
+          "standing": {},
+          "type": {},
+          "venue": {},
+          "year": {}
+        }
+      }
+    }
+  ],
+  "description": "The YAML front matter of a node (spec 04.4). The fields of a kind (04.5) are allowed only on a node of that kind; their values are checked by aik check, and a number that changes is a fact of facts.yaml (04.9), never a field.",
+  "properties": {
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "applies_to": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "area": {
+      "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)*$",
+      "type": "string"
+    },
+    "areas": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "complexity": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "properties": {
+        "space": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "time": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "vars": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "constraints": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "cost": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "exercises": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "generalizes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "history": {
+      "additionalProperties": false,
+      "properties": {
+        "note": {
+          "type": "string"
+        },
+        "people": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "year": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "hyperparameters": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "default_in": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "typical": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "meaning"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "implements": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "kind": {
+      "enum": [
+        "area",
+        "concept",
+        "definition",
+        "method",
+        "architecture",
+        "model",
+        "task",
+        "benchmark",
+        "dataset",
+        "metric",
+        "theorem",
+        "finding",
+        "argument",
+        "open-problem",
+        "system",
+        "software",
+        "hardware",
+        "risk",
+        "incident",
+        "policy",
+        "provision",
+        "standard",
+        "work",
+        "person",
+        "organization",
+        "event"
+      ],
+      "type": "string"
+    },
+    "lean": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "expected": {
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "module": {
+          "type": "string"
+        },
+        "statement": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "level": {
+      "enum": [
+        "intro",
+        "core",
+        "advanced",
+        "research"
+      ],
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "people": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "prereqs": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "properties": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "related_to": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "same_as": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "see_also": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "slug": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "type": "string"
+    },
+    "solves": {
+      "items": {
+        "oneOf": [
+          {
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "note": {
+                "type": "string"
+              },
+              "problem": {
+                "type": "string"
+              },
+              "requires": {
+                "additionalProperties": {},
+                "type": "object"
+              },
+              "time": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "problem"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "type": "array"
+    },
+    "sources": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "type": "string"
+          },
+          "locator": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "paper": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tag": {
+      "pattern": "^([0-9ABCDEFGHJKMNPQRSTVWXYZ]{6}|NEW-[a-z0-9-]+)$",
+      "type": "string"
+    },
+    "techniques": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "uses": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "variant_of": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "tag",
+    "kind",
+    "slug",
+    "name",
+    "area",
+    "level",
+    "summary"
+  ],
+  "title": "Front matter of node.md",
+  "type": "object",
+  "unevaluatedProperties": false
+}

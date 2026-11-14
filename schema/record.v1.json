@@ -1,0 +1,798 @@
+{
+  "$id": "https://ai.tamnd.com/data/schema/record.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The JSON record of a node or a card (spec 16.10), at /<slug>.json and in the items dataset: its fields, dated facts with sources, claims with their computed evidence labels, ladders, edges both ways and the result cards that name it. It never holds the prose. A field that a later version adds is allowed, so a reader must ignore what it does not know.",
+  "properties": {
+    "as_of": {
+      "type": "string"
+    },
+    "claims": {
+      "items": {
+        "properties": {
+          "against": {
+            "type": "integer"
+          },
+          "as_of": {
+            "type": "string"
+          },
+          "assumes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "derivation": {
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "properties": {
+                "locator": {
+                  "type": "string"
+                },
+                "reuses": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "stance": {
+                  "type": "string"
+                },
+                "work": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "work",
+                "role",
+                "stance"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "exp": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "independent_for": {
+            "type": "integer"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "lean": {
+            "type": "string"
+          },
+          "result": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "review_after": {
+            "type": "string"
+          },
+          "scope": {
+            "properties": {
+              "data": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "models": {
+                "type": "string"
+              },
+              "scale": {
+                "type": "string"
+              },
+              "setting": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "self_reported": {
+            "type": "boolean"
+          },
+          "small_scale": {
+            "type": "string"
+          },
+          "small_scale_note": {
+            "type": "string"
+          },
+          "superseded_by": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "text",
+          "labels",
+          "independent_for",
+          "against"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "edges_in": {
+      "items": {
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "known": {
+            "type": "boolean"
+          },
+          "to": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "from",
+          "to",
+          "known"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "edges_out": {
+      "items": {
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "known": {
+            "type": "boolean"
+          },
+          "to": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "from",
+          "to",
+          "known"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "facts": {
+      "items": {
+        "properties": {
+          "as_of": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "properties": {
+                "as_of": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string"
+                },
+                "loc": {
+                  "type": "string"
+                },
+                "src": {
+                  "type": "string"
+                },
+                "value": {}
+              },
+              "required": [
+                "src"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "status": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "value": {}
+        },
+        "required": [
+          "id",
+          "label",
+          "value",
+          "text"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "fields": {
+      "additionalProperties": {},
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "key": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string"
+    },
+    "markdown_url": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "results": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "status": {
+      "properties": {
+        "d": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "g": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "h": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "i": {
+          "additionalProperties": {
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "level": {
+                "type": "integer"
+              },
+              "max": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              },
+              "next": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "level",
+              "max",
+              "label",
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "l": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "r": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "tests": {
+          "additionalProperties": {
+            "properties": {
+              "diff": {
+                "items": {
+                  "properties": {
+                    "cases": {
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "failures": {
+                      "items": {
+                        "properties": {
+                          "case": {
+                            "type": "string"
+                          },
+                          "got": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "want": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "case",
+                          "reason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "passed": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "problem",
+                    "cases",
+                    "passed"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "failed": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "lang": {
+                "type": "string"
+              },
+              "lint": {
+                "items": {
+                  "properties": {
+                    "missing": {
+                      "type": "boolean"
+                    },
+                    "output": {
+                      "type": "string"
+                    },
+                    "pass": {
+                      "type": "boolean"
+                    },
+                    "tool": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "tool",
+                    "pass"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "ms": {
+                "type": "integer"
+              },
+              "mutation": {
+                "properties": {
+                  "error": {
+                    "type": "string"
+                  },
+                  "ignored": {
+                    "type": "integer"
+                  },
+                  "killed": {
+                    "type": "integer"
+                  },
+                  "mutants": {
+                    "type": "integer"
+                  },
+                  "survivors": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "mutants",
+                  "killed"
+                ],
+                "type": "object"
+              },
+              "output": {
+                "type": "string"
+              },
+              "pass": {
+                "type": "boolean"
+              },
+              "passed": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "shared": {
+                "items": {
+                  "properties": {
+                    "cases": {
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "failures": {
+                      "items": {
+                        "properties": {
+                          "case": {
+                            "type": "string"
+                          },
+                          "got": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "want": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "case",
+                          "reason"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "passed": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "skip_expected": {
+                      "type": "boolean"
+                    },
+                    "skip_reason": {
+                      "type": "string"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "problem",
+                    "cases",
+                    "passed"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "vectors": {
+                "properties": {
+                  "cases": {
+                    "type": "integer"
+                  },
+                  "error": {
+                    "type": "string"
+                  },
+                  "failures": {
+                    "items": {
+                      "properties": {
+                        "case": {
+                          "type": "string"
+                        },
+                        "got": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "want": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "case",
+                        "reason"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "passed": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "cases",
+                  "passed"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "slug",
+              "lang",
+              "pass",
+              "ms"
+            ],
+            "type": "object"
+          },
+          "type": "object"
+        },
+        "v": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        },
+        "w": {
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer"
+            },
+            "max": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            },
+            "next": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "level",
+            "max",
+            "label",
+            "name"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "slug",
+        "h",
+        "l",
+        "i",
+        "v",
+        "w",
+        "g"
+      ],
+      "type": "object"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tag": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "url",
+    "kind",
+    "key",
+    "name",
+    "as_of",
+    "fields"
+  ],
+  "title": "Record of an item",
+  "type": "object"
+}
