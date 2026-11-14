@@ -34,6 +34,7 @@ var Adapters = map[string]Adapter{
 	"huggingface":          {Source: "huggingface", Gap: time.Second, Run: harvestHub},
 	"github":               {Source: "github", Gap: 7 * time.Second, Run: harvestGitHub},
 	"acl":                  {Source: "acl", Gap: time.Second, Run: harvestACL},
+	"cvf":                  {Source: "cvf", Gap: 2 * time.Second, Run: harvestCVF},
 	"dblp":                 {Source: "dblp", Gap: 10 * time.Second, Run: harvestDBLP},
 	"federal-register":     {Source: "federal-register", Gap: time.Second, Run: harvestFedReg},
 	"eur-lex":              {Source: "eur-lex", Gap: time.Second, Run: harvestEurLex},

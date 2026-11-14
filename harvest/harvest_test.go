@@ -892,3 +892,54 @@ func TestNISTPage(t *testing.T) {
 		t.Errorf("url %s", u)
 	}
 }
+
+func TestCVF(t *testing.T) {
+	confs, err := CVFMenu(fixture(t, "cvf-menu.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if confs[0].ID != "CVPR2026" || confs[0].Year != 2026 || confs[0].Venue != "CVPR" {
+		t.Errorf("first conference %+v", confs[0])
+	}
+	for _, c := range confs {
+		if strings.Contains(c.ID, "_") || c.Year < 2013 {
+			t.Errorf("a conference that is not main: %+v", c)
+		}
+	}
+	if _, err := CVFMenu([]byte("<html></html>")); err == nil {
+		t.Error("an empty menu is not a schema error")
+	}
+	days := CVFDays(fixture(t, "cvf-days.html"), "CVPR2019")
+	if len(days) != 3 || days[0] != "https://openaccess.thecvf.com/CVPR2019?day=2019-06-18" {
+		t.Errorf("days %v", days)
+	}
+	if all := CVFDays([]byte(`<a href="/CVPR2024?day=2024-06-19">x</a><a href="/CVPR2024?day=all">all</a>`), "CVPR2024"); !reflect.DeepEqual(all, []string{"https://openaccess.thecvf.com/CVPR2024?day=all"}) {
+		t.Errorf("the page of all days %v", all)
+	}
+	rows := CVFPapers(fixture(t, "cvf-page.html"), "b3:c", CVFConf{"CVPR2024", "CVPR", 2024})
+	if len(rows) != 3 {
+		t.Fatalf("got %d papers, want 3", len(rows))
+	}
+	z := rows[0]
+	if z.ID != "CVPR2024/Zeng_Unmixing_Diffusion_for_Self-Supervised_Hyperspectral_Image_Denoising_CVPR_2024_paper" || z.Name != "Unmixing Diffusion for Self-Supervised Hyperspectral Image Denoising" {
+		t.Errorf("zeng: %+v", z)
+	}
+	if z.URL != "https://openaccess.thecvf.com/content/CVPR2024/html/Zeng_Unmixing_Diffusion_for_Self-Supervised_Hyperspectral_Image_Denoising_CVPR_2024_paper.html" || z.Fields["venue"] != "CVPR" || z.Fields["year"] != 2024 {
+		t.Errorf("zeng url %s, fields %v", z.URL, z.Fields)
+	}
+	if a, _ := z.Fields["authors"].([]string); len(a) != 6 || a[0] != "Haijin Zeng" || a[5] != "Wilfried Philips" {
+		t.Errorf("zeng authors %v", z.Fields["authors"])
+	}
+	n := 0
+	for _, r := range rows {
+		if r.SameAs["arxiv"] != "" {
+			n++
+		}
+		if strings.Contains(r.Name, "&amp;") {
+			t.Errorf("an escaped title %q", r.Name)
+		}
+	}
+	if n == 0 || n == 3 {
+		t.Errorf("%d papers with an arXiv id; the fixture has some with and some without", n)
+	}
+}

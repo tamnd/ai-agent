@@ -165,6 +165,16 @@ var Sources = []Source{
 		Credit: "ACL Anthology (CC BY 4.0), https://aclanthology.org",
 		Note:   "The metadata and the papers since 2016 are CC BY 4.0, the papers before 2016 CC BY-NC-SA 3.0; the code of the repository is Apache 2.0. The site lists awards only for some years.",
 	},
+	{
+		ID: "cvf", Name: "CVF open access",
+		URL: "https://openaccess.thecvf.com/", Owner: "the Computer Vision Foundation",
+		Licence: "facts only", Checked: "2026-11-15", Class: "D",
+		Access: "the HTML of the site, which has no robots.txt: the menu, then the page of each main conference (CVPR, ICCV, WACV), or the page of all its days, or the page of each day; workshops, findings and demos are not read", Rate: "1 request per 2 s",
+		Schedule: "per conference", Standing: "secondary-reference",
+		Facts:  "titles, authors, venues, years and arXiv ids of the main papers; never the abstracts or the papers",
+		Credit: "CVF open access, https://openaccess.thecvf.com",
+		Note:   "The site says that copyright and all rights of the papers are retained by the authors or other holders, so only facts are kept. It lists no awards; the awards of S-W3 for CVPR and ICCV need the conferences' own pages.",
+	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "dblp", Name: "dblp computer science bibliography",
 		URL: "https://dblp.org/", Owner: "Schloss Dagstuhl - Leibniz Center for Informatics",
