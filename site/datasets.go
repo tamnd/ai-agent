@@ -84,7 +84,7 @@ func modelsCSV(recs []Record) ([]byte, int, error) {
 	}
 	rows := [][]string{head}
 	for _, r := range models {
-		row := []string{r.Key, r.Tag, r.Name, r.URL, cell(r.Fields["role"]), cell(r.Fields["owner"])}
+		row := []string{r.Key, r.Tag, r.Name, r.URL, cell(field(r, "role")), cell(field(r, "owner"))}
 		byID := map[string]RecordFact{}
 		for _, f := range r.Facts {
 			byID[f.ID] = f

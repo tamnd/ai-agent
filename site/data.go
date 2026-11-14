@@ -16,10 +16,7 @@ import (
 )
 
 // The forms of the datasets of 16.10 that the build does not write yet; the manifest lists them under not_built.
-var notBuilt = []string{
-	"items, models, results and works as Parquet",
-	"works as its own dataset (its cards are in items)",
-}
+var notBuilt = []string{}
 
 // Dataset is one dataset of the manifest.
 type Dataset struct {
@@ -78,20 +75,24 @@ func (j *jsonl) add(v any) error {
 }
 
 // dataFile is a file of a dataset before it is written; rows counts the records in it (the lines of a JSON Lines file,
-// the rows of a CSV file without its header, the edges of a GraphML file, the files of a tarball).
+// the rows of a CSV file without its header or of a Parquet file, the edges of a GraphML file, the files of a tarball).
 type dataFile struct {
 	path string
 	data []byte
 	rows int
 }
 
-// datasets writes the datasets of 16.10 to dir and their manifest.json: items/<kind>.jsonl with the record of every node
-// and card, models.csv, results as JSON Lines and CSV, claims.jsonl, the graph as JSON Lines and GraphML,
-// incidents.jsonl, policy.jsonl, experiments.jsonl, code.jsonl with a tarball of each framework, and pages/<top>.jsonl.
+// datasets writes the datasets of 16.10 to dir and their manifest.json: items/<kind> with the record of every node and
+// card as JSON Lines and Parquet, models as Parquet and CSV, results as JSON Lines, Parquet and CSV, works.parquet,
+// claims.jsonl, the graph as JSON Lines and GraphML, incidents.jsonl, policy.jsonl, experiments.jsonl, code.jsonl with a
+// tarball of each framework, and pages/<top>.jsonl.
 // nodes holds the records of the nodes with their ladders. Like the site, the datasets go to a new directory that
 // replaces dir at the end, so a failed build leaves the old ones.
 func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 	items := map[string]*jsonl{}
+	pqItems := map[string][]PqItem{}
+	var pqModels []PqModel
+	var pqWorks []PqWork
 	var cl, gr, rs, inc, pol jsonl
 	var all []Record
 	var edges []Edge
@@ -103,7 +104,12 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 		if err := items[r.Kind].add(r); err != nil {
 			return err
 		}
+		pqItems[r.Kind] = append(pqItems[r.Kind], pqItem(r))
 		switch r.Kind {
+		case "model":
+			pqModels = append(pqModels, pqModel(r))
+		case "work":
+			pqWorks = append(pqWorks, pqWork(r))
 		case "incident":
 			if err := inc.add(r); err != nil {
 				return err
@@ -146,11 +152,13 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 		}
 	}
 	var shownResults []*results.Result
+	var pqResults []PqResult
 	for _, r := range g.Results().Results {
 		if r.Card == nil || shown[r.Card] == nil {
 			continue
 		}
 		shownResults = append(shownResults, r)
+		pqResults = append(pqResults, pqResult(g, r))
 		if err := rs.add(ResultLine{URL: g.URL(Thing{Card: r.Card}), Result: r, Group: r.Group}); err != nil {
 			return err
 		}
@@ -230,21 +238,38 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 
 	var fs []dataFile
 	for _, k := range sortedKeys(items) {
-		fs = append(fs, lines("items/"+k+".jsonl", items[k]))
+		pq, err := writeParquet(pqItems[k])
+		if err != nil {
+			return err
+		}
+		fs = append(fs, lines("items/"+k+".jsonl", items[k]), dataFile{"items/" + k + ".parquet", pq, len(pqItems[k])})
 	}
 	set("items", open, fs...)
 	models, nm, err := modelsCSV(all)
 	if err != nil {
 		return err
 	}
-	set("models", open+"; the fields derived from Epoch AI keep CC-BY-4.0 with attribution", dataFile{"models.csv", models, nm})
+	mpq, err := writeParquet(pqModels)
+	if err != nil {
+		return err
+	}
+	set("models", open+"; the fields derived from Epoch AI keep CC-BY-4.0 with attribution", dataFile{"models.parquet", mpq, len(pqModels)}, dataFile{"models.csv", models, nm})
 	rcsv, err := resultsCSV(g, shownResults)
 	if err != nil {
 		return err
 	}
-	set("results", open, lines("results.jsonl", &rs), dataFile{"results.csv", rcsv, rs.rows})
+	rpq, err := writeParquet(pqResults)
+	if err != nil {
+		return err
+	}
+	set("results", open, lines("results.jsonl", &rs), dataFile{"results.parquet", rpq, len(pqResults)}, dataFile{"results.csv", rcsv, rs.rows})
 	set("claims", "CC0-1.0; the text of a claim quotes the prose, CC-BY-SA-4.0", lines("claims.jsonl", &cl))
 	set("graph", "CC0-1.0", lines("graph.jsonl", &gr), dataFile{"graph.graphml", graphML(all, edges), gr.rows})
+	wpq, err := writeParquet(pqWorks)
+	if err != nil {
+		return err
+	}
+	set("works", "CC0-1.0", dataFile{"works.parquet", wpq, len(pqWorks)})
 	set("incidents", "per source (19.2)", lines("incidents.jsonl", &inc))
 	set("policy", "per source (19.2)", lines("policy.jsonl", &pol))
 	set("experiments", "MIT; CC0-1.0 for the numbers", lines("experiments.jsonl", &ex))
