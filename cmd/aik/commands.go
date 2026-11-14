@@ -955,6 +955,7 @@ func cmdSite(args []string) error {
 	results := f.String("results", "build/results", "the directory of the test results")
 	decls := f.String("decls", "build/lean/decls.jsonl", "the declarations that aik lean build wrote")
 	spec := f.String("spec", "", "a directory of the specification to publish at /spec/")
+	qual := f.String("quality", "build/quality.json", "the report of aik report quality -o for /about/quality/; without it the build computes the metrics it can")
 	commit := f.String("commit", "", "the commit of the content; the default comes from git")
 	minify := f.Bool("minify", false, "minify the scenes")
 	addr := f.String("addr", "localhost:8150", "the address for serve")
@@ -973,6 +974,7 @@ func cmdSite(args []string) error {
 		BaseURL:  strings.TrimRight(*base, "/"),
 		Results:  filepath.Join(*root, *results),
 		Decls:    under(*root, *decls),
+		Quality:  under(*root, *qual),
 		SpecDir:  *spec,
 		Version:  ver(),
 		Commit:   *commit,
