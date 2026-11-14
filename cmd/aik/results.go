@@ -62,7 +62,11 @@ func cmdResults(args []string) error {
 				if r.SelfReported {
 					mark = " (self-reported)"
 				}
-				fmt.Printf("  %2d  %-32s %10s  [%s, %s]  %s%s\n", i+1, r.Model, scoreText(r.Score), r.Source.Src, r.Source.Loc, r.Evidence, mark)
+				model := r.Model
+				if r.ModelVariant != "" {
+					model += " (" + r.ModelVariant + ")"
+				}
+				fmt.Printf("  %2d  %-32s %10s  [%s, %s]  %s%s\n", i+1, model, scoreText(r.Score), r.Source.Src, r.Source.Loc, r.Evidence, mark)
 			}
 		}
 	}
@@ -81,5 +85,17 @@ func scoreText(s results.Score) string {
 	if s.Unit == "fraction" {
 		return fmt.Sprintf("%.1f%%", 100**s.V)
 	}
+	if s.Unit == "rating" {
+		return ratingText(s)
+	}
 	return fmt.Sprintf("%g", *s.V)
+}
+
+// ratingText prints a rating to the unit with its interval, as the arenas publish it: 1496 [1490, 1503]. The card keeps
+// the value of the source.
+func ratingText(s results.Score) string {
+	if len(s.Interval) == 2 {
+		return fmt.Sprintf("%.0f [%.0f, %.0f]", *s.V, s.Interval[0], s.Interval[1])
+	}
+	return fmt.Sprintf("%.0f", *s.V)
 }

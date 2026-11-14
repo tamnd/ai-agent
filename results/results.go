@@ -206,8 +206,11 @@ func (r *Result) value(k string) (string, bool) {
 	return string(b), true
 }
 
-// GroupOf gives the comparable group of a result: the benchmark version, the metric, and the value of each hard key that the setting has, and for a rating the arena and the snapshot. A result with an unknown hard key is in a group of its own (spec 10.6.3).
+// GroupOf gives the comparable group of a result: the benchmark version, the metric, and the value of each hard key that the setting has. A result with an unknown hard key is in a group of its own (spec 10.6.3). A rating is comparable only inside one snapshot of one arena, and every entrant of that snapshot is on one scale whatever its variant, so its group is the arena and the snapshot alone (10.10).
 func GroupOf(r *Result) (string, []string) {
+	if r.Metric == "rating" {
+		return r.Benchmark + "@" + r.Version + "/rating/arena=" + r.Arena + ",snapshot=" + r.Snapshot, nil
+	}
 	var parts, unknown []string
 	for _, k := range HardKeys {
 		v, ok := r.value(k)
@@ -218,10 +221,6 @@ func GroupOf(r *Result) (string, []string) {
 			unknown = append(unknown, k)
 		}
 		parts = append(parts, k+"="+v)
-	}
-	if r.Metric == "rating" {
-		// A rating is comparable only inside one snapshot of one arena (10.10).
-		parts = append(parts, "arena="+r.Arena, "snapshot="+r.Snapshot)
 	}
 	g := r.Benchmark + "@" + r.Version + "/" + r.Metric + "/" + strings.Join(parts, ",")
 	if len(unknown) > 0 {
@@ -343,8 +342,12 @@ func score(r *Result) float64 {
 	return *r.Score.V
 }
 
-// SettingText gives the hard keys of the setting as a header, such as "shots 5, prompt custom, cot none".
+// SettingText gives the hard keys of the setting as a header, such as "shots 5, prompt custom, cot none", and for a
+// rating its arena and snapshot, such as "arena LMArena text, snapshot 2026-11-09".
 func (r *Result) SettingText() string {
+	if r.Metric == "rating" {
+		return "arena " + r.Arena + ", snapshot " + r.Snapshot
+	}
 	var parts []string
 	for _, k := range HardKeys {
 		if v, ok := r.value(k); ok {

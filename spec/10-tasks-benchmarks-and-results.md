@@ -221,7 +221,7 @@ Each benchmark version may have `human_baseline` and `ceiling` facts with source
 
 ## 10.10 Ratings and arenas
 
-Preference ratings (Elo, Bradley-Terry) are results of metric `rating`, with the interval, the number of votes and the snapshot date. They are comparable only inside one snapshot of one arena, so the arena and the snapshot are part of the comparable group of a rating (10.6.3). The page says what the rating measures (preference of the voters of that arena in that period) and links the arena's methodology page.
+Preference ratings (Elo, Bradley-Terry) are results of metric `rating`, with the interval, the number of votes and the snapshot date. They are comparable only inside one snapshot of one arena, and every entrant of a snapshot is rated on one scale, whatever its variant (a reasoning effort, search on, a date suffix), so the comparable group of a rating is its version, its arena and its snapshot, and the hard keys of the setting do not split it (10.6.3). A table prints a rating to the unit with its interval, as the arenas publish it; the card keeps the value of the source. The page says what the rating measures (preference of the voters of that arena in that period) and links the arena's methodology page.
 
 ## 10.11 Data facts: the D ladder
 
