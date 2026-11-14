@@ -132,7 +132,7 @@ The tree of 05.2 has 615 sub-areas, so a sub-area holds about 50 nodes on averag
 | Papers with Code (closed) | the task, method, dataset and result graph | gone since 2025-07-24; results were self-reported with settings in free text | dump CC BY-SA 4.0 |
 | Epoch AI | a curated model database with sources for each number, estimates with their method, hardware and benchmark data | ideas, derivations, code; only models | CC BY 4.0 |
 | Hugging Face Hub and docs | model and dataset cards, licences, tasks, `model-index` results | cards are self-reported; no curation of ideas | per repository |
-| Dive into Deep Learning (D2L) | one idea per section with runnable code in several frameworks | covers deep learning only; code tested by the book's CI, not across frameworks with a reference | text CC BY-SA 4.0; code under a permissive licence (checked at M1) |
+| Dive into Deep Learning (D2L) | one idea per section with runnable code in several frameworks | covers deep learning only; code tested by the book's CI, not across frameworks with a reference | text CC BY-SA 4.0 (LICENSE); sample code MIT-0, with no attribution condition (LICENSE-SAMPLECODE) (checked 2026-11-15) |
 | Distill | interactive explanations of a few ideas, reviewed | paused since 2021; a few dozen articles | CC BY 4.0 |
 | Transformer Circuits, lab research blogs | the main record of interpretability and frontier research | not structured; change after publication | per post |
 | Lilian Weng's blog, Jay Alammar's illustrated guides, Karpathy's lectures and repositories | clear long-form explanations with figures | personal, not exhaustive, not maintained as reference | all rights reserved unless stated |
