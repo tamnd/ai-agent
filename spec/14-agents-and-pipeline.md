@@ -144,6 +144,8 @@ Priority: the core first (5.10), then the milestone targets, then demand (18.6),
 Within a sub-area, items go in reading order (5.7), so prerequisites are written first and later pages can link them.
 The queue is published at `/about/queue/` so that people can take items, as in programming.
 
+`aik queue [-milestone M]` computes it from the coverage report (18.7) and the audit rules. An item is `write` (a row with outcome `node` and no node), `card` (a row with outcome `card` and no valid card), `raise` (a node or card below the coverage level that the milestone asks: in M1 every node at C2 and every card at C1; in M2 the core at C2; in M3 the core at C3 and the core methods, architectures and metrics at C4; in M4 and M5 the core at C5), `decide` (a `pending` row) or `fix` (a result card that fails an M rule). Its id is `<kind>:<target>`, so a lease (`{by, until}`) stays on its item from one build to the next while it runs. The claims, the disputed facts, the daily job, demand, reader reports, regressions and the reading order are not read yet, and the command says so.
+
 ## 14.6 The write phase: writer loop, gate and audit
 
 `python3 work/writer.py --queue --limit 50 --jobs 6` (or `--slugs …`) runs this loop for each node.
