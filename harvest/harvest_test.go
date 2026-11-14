@@ -943,3 +943,33 @@ func TestCVF(t *testing.T) {
 		t.Errorf("%d papers with an arXiv id; the fixture has some with and some without", n)
 	}
 }
+
+// TestDue lists the sources of each period: a schedule with a note after a semicolon counts, a source harvested once
+// or by hand never does, and every due source has an adapter.
+func TestDue(t *testing.T) {
+	seen := map[string]string{}
+	for _, p := range Periods {
+		for _, id := range Due(p) {
+			if _, ok := Adapters[id]; !ok {
+				t.Errorf("%s is due %s and has no adapter", id, p)
+			}
+			if q, ok := seen[id]; ok {
+				t.Errorf("%s is due %s and %s", id, q, p)
+			}
+			seen[id] = p
+		}
+	}
+	if seen["arxiv"] != "daily" || seen["aiid"] != "weekly" || seen["mitre-atlas"] != "monthly" {
+		t.Errorf("the periods are %v", seen)
+	}
+	for _, s := range Sources {
+		if strings.HasPrefix(s.Schedule, "once") || strings.HasPrefix(s.Schedule, "at each") || strings.HasPrefix(s.Schedule, "per ") {
+			if p, ok := seen[s.ID]; ok {
+				t.Errorf("%s (%s) is due %s", s.ID, s.Schedule, p)
+			}
+		}
+	}
+	if Due("yearly") != nil {
+		t.Error("an unknown period has sources")
+	}
+}

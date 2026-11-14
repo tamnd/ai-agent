@@ -22,6 +22,10 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"check", "-root", corpus}, 0},
 		{[]string{"check", "-root", "no-such-dir"}, 1},
 		{[]string{"check", "-no-such-flag"}, 2},
+		{[]string{"harvest", "-due", "weekly", "-list"}, 0},
+		{[]string{"harvest", "-due", "yearly", "-list"}, 2},
+		{[]string{"harvest", "-due", "weekly", "aiid"}, 2},
+		{[]string{"harvest", "-list", "no-such-source"}, 2},
 	}
 	for _, c := range cases {
 		if got := run(c.args); got != c.want {

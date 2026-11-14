@@ -136,7 +136,7 @@ Rule: a canon or survey entry needs an editor's reason. The canon is a checklist
 
 ## 13.4 Harvest runs, schedules and politeness
 
-- **Runs.** `aik harvest <source>` runs one adapter. A run is a function of the source's state on that date: it writes snapshots, inventory rows and card updates, and a run record (`reports/harvest/<source>/<date>.json`) with counts of new, changed, removed, unchanged and skipped rows, the requests and the snapshots.
+- **Runs.** `aik harvest <source>` runs one adapter; `aik harvest -due weekly` (or `daily`, `monthly`) runs every source whose schedule starts with that period, the run of `harvest.yml` (20.5). A source harvested once, per conference or at each change of a register is never due: a person starts it. A run is a function of the source's state on that date: it writes snapshots, inventory rows and card updates, and a run record (`reports/harvest/<source>/<date>.json`) with counts of new, changed, removed, unchanged and skipped rows, the requests and the snapshots.
   A run with `-limit` or `-since` is partial: it adds and updates rows but removes none, so a sample never deletes the inventory.
 - **Pull requests.** One pull request per source per run, as in programming. A run whose changes pass the D and M rules (15.3) and touch only cards may merge without a person (Default); a run that removes cards or changes more than 5% of a source's cards waits for a person.
 - **Schedules.** As in the tables of 13.2. The daily job (14.9) runs the daily sources in one batch at 02:00 UTC.

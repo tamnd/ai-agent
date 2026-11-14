@@ -175,7 +175,7 @@ GitHub Actions of `tamnd/ai`, and the self-hosted build server for the heavy job
 | `lean.yml` | PRs that touch `lean/` | `aik lean build`, which also runs `aik lean steps` | yes |
 | `build.yml` | push to `main`, nightly | `aik build` and `aik site build` and `aik site check` on the build server | no; a failure opens an issue |
 | `deploy.yml` | after `build.yml` on `main` | `aik site deploy -commit $H` and the live check (14.10) | no |
-| `harvest.yml` | weekly per source | `aik harvest`, `aik universe merge`, `aik card sync`; one PR per source | no |
+| `harvest.yml` | each Monday for the weekly sources, the first Monday of the month also for the monthly ones, and by hand for one source | `aik harvest -due weekly` (`monthly`), then for each source `aik universe merge` and `aik card sync`; one PR per source | no |
 | `daily.yml` | 06:00 UTC | the daily freshness job of 14.9 | no |
 | `exp.yml` | monthly, and on demand with a label `exp: gpu` | `aik exp plan`, then `aik exp run -update` on the GPU pool under the cap (09.10); a PR with the new `results.json` | no |
 | `audit.yml` | daily | `aik cite -all`, then `aik audit` (`-links` on the weekly run): every rule with main's severities, the citation records of `prov/cite` with those that fail, the size alarm and the dead links, in `reports/audit.json`, in a PR when it changes. The report has no date, so it changes only when the state does | no |
