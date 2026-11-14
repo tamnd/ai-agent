@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/parquet-go/parquet-go"
+
 	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/prov"
@@ -50,7 +52,7 @@ func TestDatasets(t *testing.T) {
 	if err := json.Unmarshal(b, &m); err != nil {
 		t.Fatal(err)
 	}
-	if m.AsOf != "2026-11-03" || m.Commit != "0123456789abcdef" || len(m.NotBuilt) == 0 {
+	if m.AsOf != "2026-11-03" || m.Commit != "0123456789abcdef" || len(m.NotBuilt) != 0 {
 		t.Errorf("manifest = %+v", m)
 	}
 	files := map[string]DataFile{}
@@ -110,6 +112,15 @@ func TestDatasets(t *testing.T) {
 	}
 }
 
+func readParquet[T any](t *testing.T, b []byte) []T {
+	t.Helper()
+	rows, err := parquet.Read[T](bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rows
+}
+
 func each(t *testing.T, file string, fn func([]byte)) {
 	t.Helper()
 	fh, err := os.Open(file)
@@ -141,13 +152,15 @@ func TestDatasetForms(t *testing.T) {
 	files := map[string]string{
 		"cards/model/_.jsonl": `{"tag":"9MA000","kind":"model","slug":"model-a","name":"Model A","role":"checkpoint","developer":{"v":"lab-a","src":"S:paper-a"},"params":{"total":{"v":7000000000,"src":"S:paper-a","loc":"Table 1"}}}` + "\n" +
 			`{"tag":"9MB000","kind":"model","slug":"model-b","name":"Model B, \"large\"","fine_tuned_from":"model-a"}` + "\n",
-		"cards/incident/_.jsonl":                               `{"tag":"9IN000","kind":"incident","slug":"incident-a","name":"Incident A"}` + "\n",
-		"cards/policy/_.jsonl":                                 `{"tag":"9PO000","kind":"policy","slug":"policy-a","name":"Policy A"}` + "\n",
-		"cards/provision/_.jsonl":                              `{"tag":"9PV000","kind":"provision","slug":"provision-a","name":"Provision A","policy":"policy-a"}` + "\n",
-		"cards/result/_.jsonl":                                 `{"tag":"9R0001","kind":"result","model":"model-a","benchmark":"mmlu","version":"original-test","metric":"accuracy","score":{"v":0.886,"unit":"fraction","interval":[0.88,0.89]},"setting":{"shots":5},"source":{"src":"S:paper-a","loc":"Table 2","date":"2024-07-23"},"checks":{"cite":"found"}}` + "\n",
-		filepath.Join(toy, "node.md"):                          "---\ntag: 7TQYMD\nkind: model\nslug: toy-model\nname: Toy model\narea: foundations/models-of-computation\nlevel: intro\nsummary: A small model.\n---\n\n## Overview\n\nThe toy model fits the data {#c-fits}.\n",
-		filepath.Join(toy, "claims.yaml"):                      "- id: c-fits\n  type: empirical\n  text: The toy model fits the data.\n  small_scale: yes\n  evidence:\n    - {work: paper, role: original, stance: for}\n",
-		filepath.Join(bs, "impl", "numpy", "binary_search.py"): "import numpy as np\n\n\ndef binary_search(a, x):\n    i = int(np.searchsorted(a, x))\n    return i if i < len(a) and a[i] == x else -1\n",
+		"cards/work/_.jsonl":              `{"tag":"9WK000","kind":"work","slug":"attention-is-all-you-need","name":"Attention Is All You Need","type":"paper","year":2017,"venue":"NeurIPS","authors":["ashish-vaswani","noam-shazeer"],"same_as":{"arxiv":"1706.03762","doi":"10.48550/arXiv.1706.03762"}}` + "\n",
+		"cards/incident/_.jsonl":          `{"tag":"9IN000","kind":"incident","slug":"incident-a","name":"Incident A"}` + "\n",
+		"cards/policy/_.jsonl":            `{"tag":"9PO000","kind":"policy","slug":"policy-a","name":"Policy A"}` + "\n",
+		"cards/provision/_.jsonl":         `{"tag":"9PV000","kind":"provision","slug":"provision-a","name":"Provision A","policy":"policy-a"}` + "\n",
+		"cards/result/_.jsonl":            `{"tag":"9R0001","kind":"result","model":"model-a","benchmark":"mmlu","version":"original-test","metric":"accuracy","score":{"v":0.886,"unit":"fraction","interval":[0.88,0.89]},"setting":{"shots":5},"source":{"src":"S:paper-a","loc":"Table 2","date":"2024-07-23"},"checks":{"cite":"found"}}` + "\n",
+		filepath.Join(toy, "node.md"):     "---\ntag: 7TQYMD\nkind: model\nslug: toy-model\nname: Toy model\narea: foundations/models-of-computation\nlevel: intro\nsummary: A small model.\n---\n\n## Overview\n\nThe toy model fits the data {#c-fits}.\n",
+		filepath.Join(toy, "claims.yaml"): "- id: c-fits\n  type: empirical\n  text: The toy model fits the data.\n  small_scale: yes\n  evidence:\n    - {work: paper, role: original, stance: for}\n",
+		filepath.Join("nodes", "foundations", "models-of-computation", "turing-1936", "node.md"): "---\ntag: 7TUR36\nkind: work\nslug: turing-1936\nname: On Computable Numbers\narea: foundations/models-of-computation\nlevel: core\nsummary: The paper that defined the Turing machine.\nsame_as: {wikidata: Q1129575, doi: [\"10.1112/plms/s2-42.1.230\"]}\ntype: paper\nauthors: [Alan Turing]\nyear: 1936\nvenue: Proceedings of the London Mathematical Society\n---\n\nThe paper defines the machine.\n",
+		filepath.Join(bs, "impl", "numpy", "binary_search.py"):                                   "import numpy as np\n\n\ndef binary_search(a, x):\n    i = int(np.searchsorted(a, x))\n    return i if i < len(a) and a[i] == x else -1\n",
 	}
 	for _, id := range []string{"toy-fit", "hidden"} {
 		ed := filepath.Join(toy, exp.Dir, id)
@@ -341,6 +354,52 @@ func TestDatasetForms(t *testing.T) {
 	}
 	if len(names) != 1 || names[0] != "numpy/binary-search/binary_search.py" || files2["code/numpy.tar.gz"].Rows != 1 {
 		t.Errorf("code/numpy.tar.gz has %v", names)
+	}
+
+	pmodels := readParquet[PqModel](t, read("models.parquet"))
+	if len(pmodels) != files2["models.parquet"].Rows || len(pmodels) != len(models) {
+		t.Errorf("models.parquet has %d rows, models.csv %d", len(pmodels), len(models))
+	}
+	for _, r := range pmodels {
+		if r.Key != "model-a" {
+			continue
+		}
+		var total *PqFact
+		for i := range r.Facts {
+			if r.Facts[i].ID == "params.total" {
+				total = &r.Facts[i]
+			}
+		}
+		if r.Role != "checkpoint" || total == nil || total.Value != "7000000000" || len(total.Sources) != 1 || total.Sources[0].Loc != "Table 1" {
+			t.Errorf("the Parquet row of model-a: %+v", r)
+		}
+	}
+	presults := readParquet[PqResult](t, read("results.parquet"))
+	if len(presults) != 1 || presults[0].Score == nil || *presults[0].Score != 0.886 || presults[0].IntervalHigh == nil || *presults[0].IntervalHigh != 0.89 || presults[0].Votes != nil || presults[0].Setting != `{"shots":5}` {
+		t.Errorf("results.parquet = %+v", presults)
+	}
+	works := readParquet[PqWork](t, read("works.parquet"))
+	byWork := map[string]PqWork{}
+	for _, w := range works {
+		byWork[w.Key] = w
+	}
+	if w := byWork["attention-is-all-you-need"]; w.ArXiv != "1706.03762" || w.DOI != "10.48550/arxiv.1706.03762" || w.Year == nil || *w.Year != 2017 || len(w.Authors) != 2 || w.Cited != "null" {
+		t.Errorf("the work card in works.parquet: %+v", w)
+	}
+	// A work that is a node keeps the fields of its kind under "fields" in its record.
+	if w := byWork["turing-1936"]; w.Type != "paper" || w.Year == nil || *w.Year != 1936 || len(w.Authors) != 1 || w.Wikidata != "Q1129575" || w.DOI != "10.1112/plms/s2-42.1.230" {
+		t.Errorf("the work node in works.parquet: %+v", w)
+	}
+	for _, k := range []string{"concept", "incident", "model"} {
+		rows := readParquet[PqItem](t, read("items/"+k+".parquet"))
+		if len(rows) == 0 || len(rows) != files2["items/"+k+".jsonl"].Rows {
+			t.Errorf("items/%s.parquet has %d rows, the JSON Lines %d", k, len(rows), files2["items/"+k+".jsonl"].Rows)
+		}
+		for _, r := range rows {
+			if r.Kind != k || !json.Valid([]byte(r.Fields)) || !json.Valid([]byte(r.Status)) || !json.Valid([]byte(r.Claims)) {
+				t.Errorf("a row of items/%s.parquet: %+v", k, r)
+			}
+		}
 	}
 
 	page := false
