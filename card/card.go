@@ -81,8 +81,9 @@ func (e *Error) Error() string { return fmt.Sprintf("%s:%d: %v", e.File, e.Line,
 // notFacts are the fields with an object value that are not facts.
 var notFacts = map[string]bool{"same_as": true, "harvest": true, "rules": true, "aliases": true}
 
-// resultFields are the fields of a result card that are records, not facts (spec 10.6.1).
-var resultFields = map[string]bool{"score": true, "setting": true, "source": true, "checks": true, "versions": true}
+// resultFields are the fields of a result card that are records, not facts (spec 10.6.1). original names the
+// leaderboard or paper that a hub copied the score from (13.2).
+var resultFields = map[string]bool{"score": true, "setting": true, "source": true, "checks": true, "versions": true, "original": true}
 
 // Read reads every shard under root/cards. It returns the cards in the order of the files and their lines, and the lines that are not cards.
 func Read(root string) ([]*Card, []error) {
