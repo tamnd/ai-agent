@@ -5,18 +5,22 @@
 package ingest
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/sha256"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -275,23 +279,32 @@ func Key(fields map[string]any) string {
 }
 
 // citer checks the numbers of the rows in their snapshots: in a JSON snapshot, the number must be a value of the
-// record (an object) that also has the entry id of the row as a value.
+// record (an object) that also has the entry id of the row as a value. In a zip of CSV files, the number must be a
+// cell of a row that also has the entry id as a cell, in the file that the locator names first ("gpqa_diamond.csv,
+// row ..., column ...").
 type citer struct {
 	store cite.Store
 	snaps map[string]map[string][]float64 // snapshot to the numbers of the records of each string
 }
 
-func (ct *citer) check(snap, anchor string, v float64) string {
+func (ct *citer) check(snap, loc, anchor string, v float64) string {
 	idx, ok := ct.snaps[snap]
 	if !ok {
 		idx = nil
-		if b, err := ct.store.Get(snap); err == nil {
-			idx = jsonRecords(b)
+		// The rows name a snapshot as the manifest does, "b3:<hash>"; the store keys it by the hash.
+		if b, err := ct.store.Get(strings.TrimPrefix(snap, "b3:")); err == nil {
+			if idx = jsonRecords(b); idx == nil {
+				idx = zipRecords(b)
+			}
 		}
 		ct.snaps[snap] = idx
 	}
 	if idx == nil {
 		return citeUnchecked
+	}
+	if _, zipped := idx[zipMark]; zipped {
+		file, _, _ := strings.Cut(loc, ",")
+		anchor = strings.TrimSpace(file) + "\x00" + anchor
 	}
 	for _, n := range idx[anchor] {
 		if math.Abs(n-v) <= 1e-9*math.Max(1, math.Abs(v)) {
@@ -299,6 +312,54 @@ func (ct *citer) check(snap, anchor string, v float64) string {
 		}
 	}
 	return results.CiteNotFound
+}
+
+// zipMark is the key of the index of a zip snapshot, whose other keys are "<file>\x00<cell>".
+const zipMark = "\x00zip"
+
+// zipRecords maps each cell of each row of each CSV file of a zip to the numbers of that row, or is nil when the
+// document is not a zip with a CSV file.
+func zipRecords(b []byte) map[string][]float64 {
+	zr, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	if err != nil {
+		return nil
+	}
+	out := map[string][]float64{}
+	for _, f := range zr.File {
+		if !strings.HasSuffix(f.Name, ".csv") || f.UncompressedSize64 > 64<<20 {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			continue
+		}
+		r := csv.NewReader(io.LimitReader(rc, 64<<20))
+		r.FieldsPerRecord = -1
+		recs, err := r.ReadAll()
+		rc.Close()
+		if err != nil {
+			continue
+		}
+		out[zipMark] = nil
+		for _, rec := range recs {
+			var nums []float64
+			for _, c := range rec {
+				if n, err := strconv.ParseFloat(strings.TrimSpace(c), 64); err == nil {
+					nums = append(nums, n)
+				}
+			}
+			for _, c := range rec {
+				if c = strings.TrimSpace(c); c != "" {
+					k := f.Name + "\x00" + c
+					out[k] = append(out[k], nums...)
+				}
+			}
+		}
+	}
+	if _, ok := out[zipMark]; !ok {
+		return nil
+	}
+	return out
 }
 
 // jsonRecords maps each string value of an object of a JSON document to the numbers of that object, or is nil when
@@ -440,7 +501,7 @@ func Results(c *node.Corpus, o Options) (*Report, error) {
 			cited := citeUnchecked
 			if rr.Source.Kind != "primary" {
 				anchor := hr.ID[strings.LastIndexByte(hr.ID, '/')+1:]
-				cited = ct.check(hr.Snapshot, anchor, *rr.Score.V)
+				cited = ct.check(hr.Snapshot, rr.Source.Loc, anchor, *rr.Score.V)
 			}
 			rep.Cite[cited]++
 			if cited != citeUnchecked {

@@ -3,6 +3,8 @@
 package ingest
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -83,7 +85,8 @@ func setup(t *testing.T) (string, cite.Store, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return root, st, snap
+	// The harvest names a snapshot as its manifest does, "b3:<hash>".
+	return root, st, "b3:" + snap
 }
 
 func run(t *testing.T, root string, st cite.Store, rows []harvest.Row) *Report {
@@ -207,5 +210,52 @@ func TestResults(t *testing.T) {
 	after, _ := card.ReadKind(filepath.Join(root, "cards", "result"))
 	if len(after) != 4 {
 		t.Errorf("%d cards after the update, want 4", len(after))
+	}
+}
+
+// A zip of CSV files is checked row by row, in the file that the locator names.
+func TestCiterZip(t *testing.T) {
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, body := range map[string]string{
+		"gpqa_diamond.csv": "Model version,mean_score,id\nmodel-a_high,0.875,run1\nmodel-b,0.5,run2\n",
+		"other.csv":        "Model version,mean_score,id\nmodel-a_high,0.25,run3\n",
+		"README.md":        "run1 0.99\n",
+	} {
+		w, err := zw.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte(body)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	st := cite.Store{Dir: filepath.Join(t.TempDir(), "raw")}
+	snap, err := st.Put(buf.Bytes(), cite.Meta{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ct := &citer{store: st, snaps: map[string]map[string][]float64{}}
+	for _, c := range []struct {
+		loc, anchor string
+		v           float64
+		want        string
+	}{
+		{"gpqa_diamond.csv, row run1, column mean_score", "run1", 0.875, results.CiteFound},
+		{"gpqa_diamond.csv, row run1, column mean_score", "run1", 0.5, results.CiteNotFound},  // the number of another row
+		{"other.csv, row run1, column mean_score", "run1", 0.875, results.CiteNotFound},       // the row of another file
+		{"gpqa_diamond.csv, row run1, column mean_score", "run1", 0.99, results.CiteNotFound}, // not in a CSV file
+		{"other.csv, row run3, column mean_score", "run3", 0.25, results.CiteFound},
+	} {
+		// The harvest names the snapshot as its manifest does, with the prefix b3:.
+		if got := ct.check("b3:"+snap, c.loc, c.anchor, c.v); got != c.want {
+			t.Errorf("check(%q, %q, %g) = %s, want %s", c.loc, c.anchor, c.v, got, c.want)
+		}
+	}
+	if zipRecords([]byte("not a zip")) != nil {
+		t.Error("a document that is not a zip has records")
 	}
 }
