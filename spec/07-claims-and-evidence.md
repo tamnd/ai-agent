@@ -187,6 +187,7 @@ Then an **extraction pass**, run by the verifier role (14.2) and so by a model o
 4. It writes nothing to `claims.yaml`. The fixer (14.2) changes the files.
 
 `aik claims extract <slug>` runs the cheap part (sentence split, anchor match, the forbidden phrases of K04 and K05) in the gate (14.6); the model part runs once, before the audit.
+The cheap part cannot tell a claim sentence by meaning, so it marks an unanchored `claim` sentence with a year, a citation, a number outside math, or a reporting or comparing verb as a K02 candidate and fails on none of them. It writes the sentences, with their lines, classes and anchors, to `build/claims/<slug>.jsonl`, and the model part reads that file. For K05 it reads "shows" and "demonstrates" with a clause ("shows that", "showed how") as the verb of a finding. Such a sentence passes when each of its anchors is a mathematical or definitional claim, or when it names a proof, a theorem or a derivation. "Proves" fails only on an empirical claim.
 
 ## 7.7 Contested claims and contested questions
 
