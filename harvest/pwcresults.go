@@ -14,10 +14,10 @@ import (
 
 // PwCEvalFile is the file of the evaluation tables of the dump: the leaderboards of Papers with Code, by task and
 // dataset, with a row for each model of each paper and its metrics.
-const PwCEvalFile = "jul-28-evaluation-tables.json.gz"
+const PwCEvalFile = "jul-28-evaluation-tables.json.gz" //nolint:gosec // G101: a file name, not a credential
 
 // PwCUnverified is the flag of a result of the dump until the citation check finds its number in the paper (Q-35).
-const PwCUnverified = "pwc-unverified"
+const PwCUnverified = "pwc-unverified" //nolint:gosec // G101: a flag name, not a credential
 
 // PwCEvalTask is a task of the evaluation tables, with its datasets and its subtasks.
 type PwCEvalTask struct {
