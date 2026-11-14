@@ -49,6 +49,7 @@ func init() {
 		{"fmt", "put node files, registers and topics in canonical form", cmdFmt},
 		{"mint", "give each provisional id a permanent tag", cmdMint},
 		{"mv", "rename a node or move it to another area; the old URL redirects", cmdMv},
+		{"promote", "make the node of a card with the same tag: front matter, facts.yaml, the sections of its kind", cmdPromote},
 		{"check", "run the audit rules, and the scene checks with -viz", cmdCheck},
 		{"gate", "the writer gate of 14.6 on nodes: fmt, check, stubs, plain words, characters, claims, tests, cpu-small experiments", cmdGate},
 		{"status", "show the ladders of a node and what the next level needs", cmdStatus},
