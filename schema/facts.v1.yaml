@@ -1,4 +1,4 @@
-# Generated from package facts by go test ./schema -update. Do not edit; change the code.
+# Generated from the code of package facts by go test ./schema -update. Do not edit; change the code.
 version: 1
 spec: 04.9, 10.11
 tolerance:

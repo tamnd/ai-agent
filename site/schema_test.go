@@ -8,8 +8,10 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
+	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/schema"
 )
 
@@ -46,5 +48,14 @@ func TestRecordSchema(t *testing.T) {
 	}
 	if _, ok := props["Head"]; ok {
 		t.Error("record.v1 has the embedded Head as a property")
+	}
+}
+
+// TestLineageEdges checks that each edge type of the lineage views is an edge of 04.7, as schema/edges.md lists them.
+func TestLineageEdges(t *testing.T) {
+	for _, k := range LineageTypes {
+		if !slices.ContainsFunc(node.Edges, func(e node.Edge) bool { return e.Type == k }) {
+			t.Errorf("the lineage type %s is not in node.Edges", k)
+		}
 	}
 }

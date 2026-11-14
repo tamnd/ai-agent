@@ -89,74 +89,105 @@ func LoadUniverse(root string) ([]Row, error) {
 	return rows, nil
 }
 
-// codeKinds are the kinds whose nodes have code in the tier-1 frameworks (18.2, C4; 08.2).
-var codeKinds = map[string]bool{"method": true, "architecture": true, "metric": true}
+// CodeKinds are the kinds whose nodes have code in the tier-1 frameworks (18.2, C4; 08.2).
+var CodeKinds = []string{"architecture", "method", "metric"}
 
-// tier1 are the tier-1 frameworks with the X level of each of C4, C5 and C6.
-var tier1 = []struct {
-	id         string
-	c4, c5, c6 int
-}{{"numpy", 2, 3, 4}, {"pytorch", 2, 3, 4}, {"jax", 2, 2, 4}}
+// Target is one requirement of a coverage level (18.2, 04.10): a ladder at a least level, for the nodes that When names.
+// schema/targets.v1.yaml is made from Targets.
+type Target struct {
+	Level  int    `yaml:"level"`  // the coverage level, C2 to C6
+	Ladder string `yaml:"ladder"` // W, G, X, R, D, L or V
+	Min    int    `yaml:"min"`
+	// Framework is the framework of an X target.
+	Framework string `yaml:"framework,omitempty"`
+	// When names the nodes that the target applies to: all; code (the kinds of CodeKinds); facts (a kind with the D
+	// ladder); experiments (a node with the R ladder); lean-theorem (a theorem with a Lean part); scene (a node with a
+	// scene).
+	When string `yaml:"when"`
+}
+
+// Targets are the requirements of the levels C2 to C6, in the order that NodeLevel reports what is missing.
+var Targets = []Target{
+	{2, "W", 2, "", "all"}, {2, "G", 1, "", "all"},
+	{3, "W", 3, "", "all"}, {3, "G", 2, "", "all"}, {3, "D", 2, "", "facts"},
+	{4, "X", 2, "numpy", "code"}, {4, "X", 2, "pytorch", "code"}, {4, "X", 2, "jax", "code"}, {4, "R", 1, "", "experiments"}, {4, "G", 3, "", "all"},
+	{5, "W", 4, "", "all"}, {5, "G", 3, "", "all"},
+	{5, "X", 3, "numpy", "code"}, {5, "X", 3, "pytorch", "code"}, {5, "X", 2, "jax", "code"},
+	{5, "R", 2, "", "experiments"}, {5, "D", 2, "", "facts"}, {5, "L", 2, "", "lean-theorem"}, {5, "V", 2, "", "scene"},
+	{6, "W", 5, "", "all"}, {6, "X", 4, "numpy", "code"}, {6, "X", 4, "pytorch", "code"}, {6, "X", 4, "jax", "code"},
+	{6, "R", 4, "", "experiments"}, {6, "D", 3, "", "facts"},
+}
+
+// what names the part of a node that a ladder measures, for the messages of NodeLevel.
+var what = map[string]string{"W": "the writing", "G": "the grounding", "D": "the data facts", "R": "the experiments",
+	"L": "the Lean proof", "V": "the visualization"}
 
 // NodeLevel is the coverage level of a node from its ladders, with what the next level needs. The node stands for its
 // own card: its front matter is the card of 18.2, so a node is at least C1.
 func NodeLevel(n *node.Node, st status.Status) (int, []string) {
-	need := func(r status.Rung, lo int, ladder, what string) []string {
-		if r.Level >= lo {
-			return nil
+	rung := func(t Target) (status.Rung, bool) {
+		switch t.Ladder {
+		case "W":
+			return st.W, true
+		case "G":
+			return st.G, true
+		case "L":
+			return st.L, true
+		case "V":
+			return st.V, true
+		case "D":
+			if st.D != nil {
+				return *st.D, true
+			}
+		case "R":
+			if st.R != nil {
+				return *st.R, true
+			}
+		case "X":
+			r, ok := st.I[t.Framework]
+			return r, ok
 		}
-		return []string{fmt.Sprintf("%s at %s%d (now %s%d)", what, ladder, lo, ladder, r.Level)}
+		return status.Rung{}, false
 	}
-	opt := func(r *status.Rung, lo int, ladder, what string) []string {
-		if r == nil {
-			return nil
+	applies := func(t Target) bool {
+		switch t.When {
+		case "code":
+			return slices.Contains(CodeKinds, n.Kind)
+		case "facts":
+			return st.D != nil
+		case "experiments":
+			return st.R != nil
+		case "lean-theorem":
+			return n.Kind == "theorem" && len(n.Lean) > 0
+		case "scene":
+			return n.Scene != "" || n.ArchScene != ""
 		}
-		return need(*r, lo, ladder, what)
+		return true
 	}
-	x := func(level func(int, int, int) int) []string {
-		if !codeKinds[n.Kind] {
-			return nil
-		}
+	missing := func(level int) []string {
 		var out []string
-		for _, fw := range tier1 {
-			lo := level(fw.c4, fw.c5, fw.c6)
-			r, ok := st.I[fw.id]
-			if !ok {
-				out = append(out, fmt.Sprintf("the %s code at X%d (none yet)", fw.id, lo))
+		for _, t := range Targets {
+			if t.Level != level || !applies(t) {
 				continue
 			}
-			out = append(out, need(r, lo, "X", "the "+fw.id+" code")...)
+			r, ok := rung(t)
+			name := what[t.Ladder]
+			if t.Ladder == "X" {
+				name = "the " + t.Framework + " code"
+				if !ok {
+					out = append(out, fmt.Sprintf("%s at X%d (none yet)", name, t.Min))
+					continue
+				}
+			}
+			if r.Level < t.Min {
+				out = append(out, fmt.Sprintf("%s at %s%d (now %s%d)", name, t.Ladder, t.Min, t.Ladder, r.Level))
+			}
 		}
 		return out
 	}
-	levels := []func() []string{
-		2: func() []string {
-			return slices.Concat(need(st.W, 2, "W", "the writing"), need(st.G, 1, "G", "the grounding"))
-		},
-		3: func() []string {
-			return slices.Concat(need(st.W, 3, "W", "the writing"), need(st.G, 2, "G", "the grounding"), opt(st.D, 2, "D", "the data facts"))
-		},
-		4: func() []string {
-			return slices.Concat(x(func(a, _, _ int) int { return a }), opt(st.R, 1, "R", "the experiments"), need(st.G, 3, "G", "the grounding"))
-		},
-		5: func() []string {
-			out := slices.Concat(need(st.W, 4, "W", "the writing"), need(st.G, 3, "G", "the grounding"), x(func(_, b, _ int) int { return b }),
-				opt(st.R, 2, "R", "the experiments"), opt(st.D, 2, "D", "the data facts"))
-			if n.Kind == "theorem" && len(n.Lean) > 0 {
-				out = append(out, need(st.L, 2, "L", "the Lean proof")...)
-			}
-			if n.Scene != "" || n.ArchScene != "" {
-				out = append(out, need(st.V, 2, "V", "the visualization")...)
-			}
-			return out
-		},
-		6: func() []string {
-			return slices.Concat(need(st.W, 5, "W", "the writing"), x(func(_, _, c int) int { return c }), opt(st.R, 4, "R", "the experiments"), opt(st.D, 3, "D", "the data facts"))
-		},
-	}
 	level := 1
-	for l := 2; l < len(levels); l++ {
-		if miss := levels[l](); len(miss) > 0 {
+	for l := 2; l <= 6; l++ {
+		if miss := missing(l); len(miss) > 0 {
 			return level, miss
 		}
 		level = l

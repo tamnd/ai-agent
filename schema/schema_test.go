@@ -58,6 +58,17 @@ func TestFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	GoldenBytes(t, "facts.v1.yaml", fy, *update)
+	GoldenBytes(t, "edges.md", EdgesMarkdown(), *update)
+	for file, v := range map[string]struct {
+		pkg string
+		v   any
+	}{"levels.v1.yaml": {"packages status and coverage", Levels()}, "targets.v1.yaml": {"package coverage", Targets()}} {
+		b, err := encodeYAML(v.pkg, v.v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		GoldenBytes(t, file, b, *update)
+	}
 	Golden(t, "node.v1.json", Node(), *update)
 	Golden(t, "claims.v1.json", Claims(), *update)
 	Golden(t, "card.v1.json", Card(), *update)
