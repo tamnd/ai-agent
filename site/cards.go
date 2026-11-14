@@ -81,9 +81,12 @@ func cardURL(c *card.Card) string {
 	switch {
 	case c.Kind == "result":
 		return ""
-	case c.Owner != "" && c.Kind == "model":
-		return "/models/" + c.Owner + "/" + c.Slug + "/"
+	case c.Owner != "" && ownRoute[c.Kind]:
+		// A release under its family, a benchmark version under its benchmark, an exercise under its site:
+		// /models/llama/llama-3-1-405b/, /benchmarks/mmlu/pro/, /exercises/gymnasium/frozen-lake-v1/.
+		return collection(c.Kind) + c.Owner + "/" + c.Slug + "/"
 	case c.Owner != "":
+		// A provision under its policy: /eu-ai-act/article-50/.
 		return "/" + c.Owner + "/" + c.Slug + "/"
 	case ownRoute[c.Kind]:
 		return collection(c.Kind) + c.Slug + "/"
