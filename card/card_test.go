@@ -105,3 +105,19 @@ func TestShard(t *testing.T) {
 		t.Error("Words counts the words wrong")
 	}
 }
+
+// A result copied by a hub names its original, a record and not a fact.
+func TestParseResultOriginal(t *testing.T) {
+	c, err := Parse([]byte(`{"tag":"new-r1","kind":"result","benchmark":"gsm8k","version":"test","model":"llama-2-70b","metric":"accuracy","score":{"v":0.568,"unit":"fraction"},"source":{"src":"S:epoch-benchmarking-hub","kind":"leaderboard"},"original":{"name":"Llama 2","src":"arxiv:2307.09288"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Bad) > 0 {
+		t.Errorf("a result with an original has problems: %v", c.Bad)
+	}
+	for _, f := range c.Facts {
+		if f.ID == "original" {
+			t.Errorf("original is read as a fact: %+v", f)
+		}
+	}
+}
