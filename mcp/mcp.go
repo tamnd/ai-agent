@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -30,7 +29,6 @@ import (
 
 	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/claims"
-	"github.com/tamnd/ai-agent/facts"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/results"
 	"github.com/tamnd/ai-agent/search"
@@ -52,51 +50,17 @@ type Options struct {
 	AsOf string
 }
 
-// LineageTypes are the edge types of the lineage views (16.9), in the order the views list them.
-var LineageTypes = []string{
-	"fine_tuned_from", "distilled_from", "merged_from", "member_of",
-	"introduced_by", "variant_of", "generalizes", "uses", "responds_to", "components",
-}
-
-// cardRefs are the fields of a card that name other items, besides the lineage types.
-var cardRefs = []string{"developer", "architecture", "family", "task", "benchmark", "model", "policy", "organization", "authors", "people"}
-
 // Data is a content tree as the server answers from it.
 type Data struct {
 	c     *node.Corpus
 	opt   Options
-	reg   *results.Register
+	g     *site.Graph
 	mu    sync.Mutex // the ranker runs a JavaScript runtime, which one goroutine uses at a time
 	rank  *search.Ranker
 	cards map[string]*card.Card // by tag
-	ids   map[string]item       // by scheme:value of same_as
-	names map[string]item       // by the lower-case name or alias of a node
-	urls  map[string]item       // by the path of the page of a card
-	out   map[string][]Edge     // by the key of the item
-	in    map[string][]Edge
-	cites map[string][]string // the tags of the result cards that name the item
-}
-
-// item is a node or a card.
-type item struct {
-	n *node.Node
-	c *card.Card
-}
-
-func (it item) key() string {
-	if it.n != nil {
-		return it.n.Slug
-	}
-	return it.c.Key()
-}
-
-// Edge is one edge of the graph (04.7): From names To with a field of type Type. Known is false when To is not an
-// item of the corpus; the lineage views show such an edge as unknown, never guessed (16.9).
-type Edge struct {
-	Type  string `json:"type"`
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Known bool   `json:"known"`
+	ids   map[string]site.Thing // by scheme:value of same_as
+	names map[string]site.Thing // by the lower-case name or alias of a node
+	urls  map[string]site.Thing // by the path of the page of a card
 }
 
 // Load prepares a content tree for the server.
@@ -113,17 +77,16 @@ func Load(c *node.Corpus, opt Options) (*Data, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := &Data{c: shown, opt: opt, reg: results.Load(shown), rank: r,
-		cards: map[string]*card.Card{}, ids: map[string]item{}, names: map[string]item{}, urls: map[string]item{},
-		out: map[string][]Edge{}, in: map[string][]Edge{}, cites: map[string][]string{}}
+	d := &Data{c: shown, opt: opt, g: site.NewGraph(shown, opt.BaseURL), rank: r,
+		cards: map[string]*card.Card{}, ids: map[string]site.Thing{}, names: map[string]site.Thing{}, urls: map[string]site.Thing{}}
 	for _, n := range shown.Nodes {
 		for _, s := range append([]string{n.Name}, n.Aliases...) {
 			if _, ok := d.names[strings.ToLower(s)]; !ok {
-				d.names[strings.ToLower(s)] = item{n: n}
+				d.names[strings.ToLower(s)] = site.Thing{Node: n}
 			}
 		}
 		for _, id := range sameAs(n.SameAs) {
-			d.ids[id] = item{n: n}
+			d.ids[id] = site.Thing{Node: n}
 		}
 	}
 	for _, cd := range shown.Cards {
@@ -131,25 +94,17 @@ func Load(c *node.Corpus, opt Options) (*Data, error) {
 			d.cards[cd.Tag] = cd
 		}
 		if u := site.CardURL(cd); u != "" {
-			d.urls[strings.Trim(u, "/")] = item{c: cd}
+			d.urls[strings.Trim(u, "/")] = site.Thing{Card: cd}
 		}
 		var m map[string]any
 		if raw, ok := cd.Fields["same_as"]; ok && json.Unmarshal(raw, &m) == nil {
 			for _, id := range sameAs(m) {
 				if _, ok := d.ids[id]; !ok {
-					d.ids[id] = item{c: cd}
+					d.ids[id] = site.Thing{Card: cd}
 				}
 			}
 		}
 	}
-	for _, r := range d.reg.Results {
-		for _, k := range []string{r.Model, r.Benchmark} {
-			if k != "" && r.Tag != "" {
-				d.cites[k] = append(d.cites[k], r.Tag)
-			}
-		}
-	}
-	d.edges()
 	return d, nil
 }
 
@@ -170,94 +125,9 @@ func sameAs(m map[string]any) []string {
 	return out
 }
 
-// edges finds the edges of each node and card, both ways.
-func (d *Data) edges() {
-	add := func(from, typ string, vs []string) {
-		for _, to := range vs {
-			_, ok := d.ref(to)
-			e := Edge{Type: typ, From: from, To: to, Known: ok}
-			if !ok && !slices.Contains(LineageTypes, typ) {
-				continue // a free-text field that names nothing; only the lineage keeps unknown ends
-			}
-			d.out[from] = append(d.out[from], e)
-			if ok {
-				d.in[to] = append(d.in[to], e)
-			}
-		}
-	}
-	for _, n := range d.c.Nodes {
-		var front map[string]any
-		b, _ := json.Marshal(n.Front)
-		_ = json.Unmarshal(b, &front)
-		for _, k := range node.EdgeKeys {
-			add(n.Slug, k, refs(front[k]))
-		}
-		for _, k := range LineageTypes {
-			if !slices.Contains(node.EdgeKeys, k) {
-				add(n.Slug, k, refs(n.Fields[k]))
-			}
-		}
-	}
-	for _, cd := range d.c.Cards {
-		for _, k := range append(slices.Clone(LineageTypes), cardRefs...) {
-			raw, ok := cd.Fields[k]
-			if !ok {
-				continue
-			}
-			var v any
-			if json.Unmarshal(raw, &v) == nil {
-				add(cd.Key(), k, refs(v))
-			}
-		}
-	}
-	for k := range d.in {
-		sort.SliceStable(d.in[k], func(i, j int) bool { return d.in[k][i].From < d.in[k][j].From })
-	}
-}
-
-var refRE = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9.-]*)?$`)
-
-// refs gives the slugs that a field value names: a slug, a list of them, the problem of a solves entry, or the value
-// of a card fact.
-func refs(v any) []string {
-	switch t := v.(type) {
-	case string:
-		if refRE.MatchString(t) {
-			return []string{t}
-		}
-	case []any:
-		var out []string
-		for _, x := range t {
-			out = append(out, refs(x)...)
-		}
-		return out
-	case map[string]any:
-		for _, k := range []string{"problem", "slug", "v"} {
-			if x, ok := t[k]; ok {
-				return refs(x)
-			}
-		}
-	}
-	return nil
-}
-
-// ref finds the item that a slug or a card key names.
-func (d *Data) ref(s string) (item, bool) {
-	if n := d.c.BySlug[s]; n != nil {
-		return item{n: n}, true
-	}
-	if c := d.c.CardByKey[s]; c != nil {
-		return item{c: c}, true
-	}
-	if to, ok := d.c.OldSlugs[s]; ok && d.c.BySlug[to] != nil {
-		return item{n: d.c.BySlug[to]}, true
-	}
-	return item{}, false
-}
-
 // Resolve finds the item of an id: a URL or a path of the site, a slug, a card key, a tag, an id of same_as such as
 // arxiv:1706.03762 or wikidata:Q43479, or the name or an alias of a node.
-func (d *Data) Resolve(id string) (item, bool) {
+func (d *Data) Resolve(id string) (site.Thing, bool) {
 	s := strings.TrimSpace(id)
 	s = strings.TrimPrefix(s, d.opt.BaseURL)
 	if i := strings.IndexAny(s, "#?"); i >= 0 {
@@ -269,12 +139,12 @@ func (d *Data) Resolve(id string) (item, bool) {
 		p = t
 	}
 	if n := d.c.ByTag[p]; n != nil {
-		return item{n: n}, true
+		return site.Thing{Node: n}, true
 	}
 	if c := d.cards[p]; c != nil {
-		return item{c: c}, true
+		return site.Thing{Card: c}, true
 	}
-	if it, ok := d.ref(p); ok {
+	if it, ok := d.g.Ref(p); ok {
 		return it, true
 	}
 	if it, ok := d.urls[p]; ok {
@@ -286,158 +156,38 @@ func (d *Data) Resolve(id string) (item, bool) {
 	if it, ok := d.names[strings.ToLower(s)]; ok {
 		return it, true
 	}
-	return item{}, false
+	return site.Thing{}, false
 }
 
-func (d *Data) find(id string) (item, error) {
+func (d *Data) find(id string) (site.Thing, error) {
 	if strings.TrimSpace(id) == "" {
-		return item{}, errors.New("name an item: a URL, a slug, a tag or an external id")
+		return site.Thing{}, errors.New("name an item: a URL, a slug, a tag or an external id")
 	}
 	it, ok := d.Resolve(id)
 	if !ok {
-		return item{}, fmt.Errorf("%q is not an item of the corpus; search for it by words", id)
+		return site.Thing{}, fmt.Errorf("%q is not an item of the corpus; search for it by words", id)
 	}
 	return it, nil
 }
 
-// URL is the URL of the page of an item. A result card has none; its benchmark version's table has it.
-func (d *Data) URL(it item) string {
-	if it.n != nil {
-		return d.opt.BaseURL + "/" + it.n.Slug + "/"
-	}
-	if u := site.CardURL(it.c); u != "" {
-		return d.opt.BaseURL + u
-	}
-	if r := results.Parse(it.c); r != nil && r.Benchmark != "" {
-		return d.opt.BaseURL + "/benchmarks/" + r.Benchmark + "/" + r.Version + "/"
-	}
-	return ""
-}
-
-// Head is what every result says of its item.
-type Head struct {
-	URL  string `json:"url"`
-	Tag  string `json:"tag,omitempty"`
-	Kind string `json:"kind"`
-	Key  string `json:"key"`
-	Name string `json:"name"`
-	AsOf string `json:"as_of"`
-}
-
-func (d *Data) head(it item) Head {
-	h := Head{URL: d.URL(it), AsOf: d.opt.AsOf, Key: it.key()}
-	if it.n != nil {
-		h.Tag, h.Kind, h.Name = it.n.Tag, it.n.Kind, it.n.Name
-	} else {
-		h.Tag, h.Kind, h.Name = it.c.Tag, it.c.Kind, it.c.Name
-	}
-	return h
-}
-
-// Record is the JSON record of an item (16.10): its fields, facts, claims, edges both ways and the result cards that
-// name it. It never holds the prose, which has another licence (19.2); the Markdown twin has it.
-type Record struct {
-	Head
-	Summary  string         `json:"summary,omitempty"`
-	Markdown string         `json:"markdown_url,omitempty"`
-	Fields   map[string]any `json:"fields"`
-	Facts    []Fact         `json:"facts,omitempty"`
-	Claims   []claims.Claim `json:"claims,omitempty"`
-	Out      []Edge         `json:"edges_out,omitempty"`
-	In       []Edge         `json:"edges_in,omitempty"`
-	Results  []string       `json:"results,omitempty"`
-}
-
-// Record gives the record of an item.
-func (d *Data) Record(it item) Record {
-	r := Record{Head: d.head(it), Out: d.out[it.key()], In: d.in[it.key()], Results: d.cites[it.key()], Facts: d.facts(it)}
-	if it.n != nil {
-		r.Summary, r.Claims = it.n.Summary, it.n.Claims
-		var m map[string]any
-		b, _ := json.Marshal(it.n.Front)
-		_ = json.Unmarshal(b, &m)
-		r.Fields = m
-		if hasTwin(it.n) {
-			r.Markdown = d.opt.BaseURL + "/" + it.n.Slug + ".md"
-		}
-		return r
-	}
-	r.Summary = it.c.Summary
-	r.Fields = map[string]any{}
-	for k, raw := range it.c.Fields {
-		var v any
-		if json.Unmarshal(raw, &v) == nil {
-			r.Fields[k] = v
-		}
-	}
-	return r
-}
-
-// hasTwin tells whether a node has a page body, which the site writes as its Markdown twin. A stub and a node that the
-// quarantine withdrew have none.
-func hasTwin(n *node.Node) bool {
-	return strings.HasPrefix(n.Body, "## ") || strings.Contains(n.Body, "\n## ")
-}
+// Record gives the JSON record of an item, as the site writes it at /<slug>.json but without the ladders.
+func (d *Data) Record(it site.Thing) site.Record { return d.g.Record(it, d.opt.AsOf) }
 
 // Markdown gives the Markdown twin of a node, as the site serves it at /<slug>.md.
-func (d *Data) Markdown(it item) (string, error) {
-	if it.c != nil {
+func (d *Data) Markdown(it site.Thing) (string, error) {
+	if it.Card != nil {
 		return "", errors.New("a card has no Markdown twin yet; ask for the record")
 	}
-	if !hasTwin(it.n) {
-		return "", fmt.Errorf("%s has no page body yet; ask for the record", it.n.Slug)
+	if !site.HasTwin(it.Node) {
+		return "", fmt.Errorf("%s has no page body yet; ask for the record", it.Node.Slug)
 	}
-	b, err := os.ReadFile(filepath.Join(it.n.Dir, "node.md"))
+	b, err := os.ReadFile(filepath.Join(it.Node.Dir, "node.md"))
 	return string(b), err
-}
-
-// Fact is one dated fact of an item with its sources (04.9 for a node, 04.6 for a card).
-type Fact struct {
-	ID      string       `json:"id"`
-	Label   string       `json:"label"`
-	Value   any          `json:"value"`
-	Unit    string       `json:"unit,omitempty"`
-	Text    string       `json:"text"`
-	Status  string       `json:"status,omitempty"`
-	AsOf    string       `json:"as_of,omitempty"`
-	Note    string       `json:"note,omitempty"`
-	Sources []FactSource `json:"sources,omitempty"`
-}
-
-// FactSource is a source of a fact.
-type FactSource struct {
-	Src   string `json:"src"`
-	Kind  string `json:"kind,omitempty"`
-	Loc   string `json:"loc,omitempty"`
-	Value any    `json:"value,omitempty"`
-	AsOf  string `json:"as_of,omitempty"`
-}
-
-func (d *Data) facts(it item) []Fact {
-	var out []Fact
-	if it.n != nil {
-		for _, f := range it.n.Facts {
-			v := Fact{ID: f.ID, Label: facts.Label(f.ID), Value: f.Value, Unit: f.Unit, Text: facts.Format(f.Value, f.Unit), Status: f.Status, AsOf: facts.AsOf(f), Note: f.Note}
-			for _, s := range f.Sources {
-				v.Sources = append(v.Sources, FactSource{Src: s.Src, Kind: s.Kind, Loc: s.Loc, Value: s.Value, AsOf: s.AsOf})
-			}
-			out = append(out, v)
-		}
-		return out
-	}
-	for _, f := range it.c.Facts {
-		v := Fact{ID: f.ID, Label: facts.Label(f.ID), Value: f.V, Text: facts.Format(f.V, "")}
-		if f.Src != "" {
-			v.Sources = []FactSource{{Src: f.Src, Loc: f.Loc}}
-		}
-		out = append(out, v)
-	}
-	return out
 }
 
 // Hit is one search result.
 type Hit struct {
-	Head
+	site.Head
 	Summary  string  `json:"summary,omitempty"`
 	Area     string  `json:"area,omitempty"`
 	Level    string  `json:"level,omitempty"`
@@ -473,10 +223,10 @@ func (d *Data) Search(in SearchIn) ([]Hit, error) {
 	out := []Hit{}
 	for _, e := range es {
 		it, ok := d.Resolve(e.URL)
-		if !ok || it.n == nil {
+		if !ok || it.Node == nil {
 			continue
 		}
-		n := it.n
+		n := it.Node
 		if in.Kind != "" && n.Kind != in.Kind {
 			continue
 		}
@@ -486,8 +236,8 @@ func (d *Data) Search(in SearchIn) ([]Hit, error) {
 		if in.Level != "" && n.Level != in.Level {
 			continue
 		}
-		h := Hit{Head: d.head(it), Summary: n.Summary, Area: n.Area, Level: n.Level, Score: e.Sc}
-		if hasTwin(n) {
+		h := Hit{Head: d.g.Head(it, d.opt.AsOf), Summary: n.Summary, Area: n.Area, Level: n.Level, Score: e.Sc}
+		if site.HasTwin(n) {
 			h.Markdown = d.opt.BaseURL + "/" + n.Slug + ".md"
 		}
 		out = append(out, h)
@@ -499,12 +249,12 @@ func (d *Data) Search(in SearchIn) ([]Hit, error) {
 }
 
 // Claims gives the claims of an item, all of them or those with a label.
-func (d *Data) Claims(it item, label string) []claims.Claim {
-	if it.n == nil {
+func (d *Data) Claims(it site.Thing, label string) []claims.Claim {
+	if it.Node == nil {
 		return nil
 	}
 	out := []claims.Claim{}
-	for _, c := range it.n.Claims {
+	for _, c := range it.Node.Claims {
 		if label == "" || c.Headline == label || slices.Contains(c.Labels, label) {
 			out = append(out, c)
 		}
@@ -538,14 +288,14 @@ func (d *Data) Results(in ResultsIn) (Table, error) {
 	if i := strings.Index(bench, "/"); i >= 0 && in.Version == "" {
 		bench, in.Version = bench[:i], bench[i+1:]
 	}
-	if !slices.Contains(d.reg.Benchmarks(), bench) {
+	if !slices.Contains(d.g.Results().Benchmarks(), bench) {
 		return Table{}, fmt.Errorf("%q has no versions or results in the corpus", bench)
 	}
 	var versions []string
-	for v := range d.reg.Versions[bench] {
+	for v := range d.g.Results().Versions[bench] {
 		versions = append(versions, v)
 	}
-	for _, r := range d.reg.Results {
+	for _, r := range d.g.Results().Results {
 		if r.Benchmark == bench && r.Version != "" && !slices.Contains(versions, r.Version) {
 			versions = append(versions, r.Version)
 		}
@@ -562,7 +312,7 @@ func (d *Data) Results(in ResultsIn) (Table, error) {
 	if !slices.Contains(versions, v) {
 		return Table{}, fmt.Errorf("%s has no version %q; it has %s", bench, v, strings.Join(versions, ", "))
 	}
-	tab := d.reg.TableOf(bench, v, nil)
+	tab := d.g.Results().TableOf(bench, v, nil)
 	keep := func(r *results.Result) bool {
 		if !r.Shown() {
 			return false
@@ -589,7 +339,7 @@ func (d *Data) Results(in ResultsIn) (Table, error) {
 	}
 	tab.Groups, tab.Other = filter(tab.Groups), filter(tab.Other)
 	t.URL += v + "/"
-	t.Table, t.Version = &tab, d.reg.Versions[bench][v]
+	t.Table, t.Version = &tab, d.g.Results().Versions[bench][v]
 	return t, nil
 }
 
@@ -603,9 +353,9 @@ type LineageIn struct {
 
 // Lineage is a lineage DAG (16.9).
 type Lineage struct {
-	Root  Head          `json:"root"`
+	Root  site.Head     `json:"root"`
 	Nodes []LineageNode `json:"nodes"`
-	Edges []Edge        `json:"edges"`
+	Edges []site.Edge   `json:"edges"`
 	// Truncated is true when the DAG had more than 300 items, as the views prune it (16.9).
 	Truncated bool `json:"truncated,omitempty"`
 }
@@ -623,10 +373,10 @@ type LineageNode struct {
 const maxLineage = 300
 
 // Lineage walks the edges of the given types from an item.
-func (d *Data) Lineage(it item, in LineageIn) (Lineage, error) {
+func (d *Data) Lineage(it site.Thing, in LineageIn) (Lineage, error) {
 	types := in.Types
 	if len(types) == 0 {
-		types = LineageTypes
+		types = site.LineageTypes
 	}
 	up, down := true, true
 	switch in.Direction {
@@ -642,20 +392,20 @@ func (d *Data) Lineage(it item, in LineageIn) (Lineage, error) {
 	if depth <= 0 {
 		depth = 6
 	}
-	l := Lineage{Root: d.head(it), Nodes: []LineageNode{}, Edges: []Edge{}}
-	seen := map[string]bool{it.key(): true}
-	seenEdge := map[Edge]bool{}
-	l.Nodes = append(l.Nodes, d.lineageNode(it.key()))
-	frontier := []string{it.key()}
+	l := Lineage{Root: d.g.Head(it, d.opt.AsOf), Nodes: []LineageNode{}, Edges: []site.Edge{}}
+	seen := map[string]bool{it.Key(): true}
+	seenEdge := map[site.Edge]bool{}
+	l.Nodes = append(l.Nodes, d.lineageNode(it.Key()))
+	frontier := []string{it.Key()}
 	for step := 0; step < depth && len(frontier) > 0; step++ {
 		var next []string
 		for _, k := range frontier {
-			var es []Edge
+			var es []site.Edge
 			if up {
-				es = append(es, d.out[k]...)
+				es = append(es, d.g.Out(k)...)
 			}
 			if down {
-				es = append(es, d.in[k]...)
+				es = append(es, d.g.In(k)...)
 			}
 			for _, e := range es {
 				if !slices.Contains(types, e.Type) || seenEdge[e] {
@@ -686,14 +436,14 @@ func (d *Data) Lineage(it item, in LineageIn) (Lineage, error) {
 }
 
 func (d *Data) lineageNode(key string) LineageNode {
-	it, ok := d.ref(key)
+	it, ok := d.g.Ref(key)
 	if !ok {
 		return LineageNode{Key: key}
 	}
-	h := d.head(it)
+	h := d.g.Head(it, d.opt.AsOf)
 	ln := LineageNode{Key: key, Name: h.Name, Kind: h.Kind, URL: h.URL, Known: true}
-	if it.n != nil && it.n.History != nil {
-		ln.Year = it.n.History.Year
+	if it.Node != nil && it.Node.History != nil {
+		ln.Year = it.Node.History.Year
 	}
 	return ln
 }
@@ -749,7 +499,7 @@ func New(d *Data) *sdk.Server {
 				if err != nil {
 					return nil, nil, err
 				}
-				return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: md}}}, d.head(it), nil
+				return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: md}}}, d.g.Head(it, d.opt.AsOf), nil
 			}
 			return nil, nil, fmt.Errorf("format is record or markdown, not %q", in.Format)
 		})
@@ -759,13 +509,13 @@ func New(d *Data) *sdk.Server {
 			if err != nil {
 				return nil, nil, err
 			}
-			fs := []Fact{}
-			for _, f := range d.facts(it) {
+			fs := []site.RecordFact{}
+			for _, f := range site.FactsOf(it) {
 				if len(in.IDs) == 0 || slices.Contains(in.IDs, f.ID) {
 					fs = append(fs, f)
 				}
 			}
-			return nil, map[string]any{"item": d.head(it), "facts": fs}, nil
+			return nil, map[string]any{"item": d.g.Head(it, d.opt.AsOf), "facts": fs}, nil
 		})
 	sdk.AddTool(srv, tool("get_claims", "Give the claims of an item with their types, evidence labels and sources."),
 		func(_ context.Context, _ *sdk.CallToolRequest, in ClaimsIn) (*sdk.CallToolResult, any, error) {
@@ -773,7 +523,7 @@ func New(d *Data) *sdk.Server {
 			if err != nil {
 				return nil, nil, err
 			}
-			return nil, map[string]any{"item": d.head(it), "claims": d.Claims(it, in.Label)}, nil
+			return nil, map[string]any{"item": d.g.Head(it, d.opt.AsOf), "claims": d.Claims(it, in.Label)}, nil
 		})
 	sdk.AddTool(srv, tool("get_results", "Give the comparable results of a benchmark version, by comparable group from the best score down, with sources and dates. With no version, list the versions."),
 		func(_ context.Context, _ *sdk.CallToolRequest, in ResultsIn) (*sdk.CallToolResult, any, error) {
