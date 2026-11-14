@@ -1,0 +1,12 @@
+[{"task":"Question Answering","categories":[],"description":"","synonyms":[],"source_link":null,
+  "datasets":[{"dataset":"SQuAD1.1 dev","description":"","dataset_links":[],"dataset_citations":[],"subdatasets":[],
+    "sota":{"metrics":["EM","F1"],"rows":[
+      {"model_name":"XLNet+DSC","metrics":{"EM":"89.79","F1":"95.77"},"paper_title":"Dice Loss for Data-imbalanced NLP Tasks","paper_url":"https://arxiv.org/abs/1911.02855v3","paper_date":"2019-11-07","uses_additional_data":false,"code_links":[],"model_links":[]},
+      {"model_name":"BERT-Large","metrics":{"EM":"84.1%","F1":"-"},"paper_title":"BERT","paper_url":"https://arxiv.org/abs/1810.04805","paper_date":"2018-10-11","uses_additional_data":true,"code_links":[],"model_links":[]},
+      {"model_name":"BERT-Large","metrics":{"EM":"85.0"},"paper_title":"BERT","paper_url":"https://arxiv.org/abs/1810.04805","paper_date":"2018-10-11","uses_additional_data":true,"code_links":[],"model_links":[]},
+      {"model_name":"Nameless","metrics":{"EM":"50.0"},"paper_title":"No link","paper_url":"","paper_date":"2020-01-01","uses_additional_data":false,"code_links":[],"model_links":[]},
+      {"model_name":"Venue","metrics":{"F1":"1,234.5 ± 0.2"},"paper_title":"A Venue Paper","paper_url":"https://aclanthology.org/2020.acl-main.1/","paper_date":"2020-07-01","uses_additional_data":false,"code_links":[],"model_links":[]}]}}],
+  "subtasks":[{"task":"Reading Comprehension","categories":[],"description":"","synonyms":[],"source_link":null,"subtasks":[],
+    "datasets":[{"dataset":"SQuAD1.1 dev","description":"","dataset_links":[],"dataset_citations":[],"subdatasets":[],
+      "sota":{"metrics":["EM"],"rows":[
+        {"model_name":"XLNet+DSC","metrics":{"EM":"89.79"},"paper_title":"Dice Loss for Data-imbalanced NLP Tasks","paper_url":"https://arxiv.org/abs/1911.02855","paper_date":"2019-11-07","uses_additional_data":false,"code_links":[],"model_links":[]}]}}]}]}]

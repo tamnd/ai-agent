@@ -57,6 +57,16 @@ var Sources = []Source{
 		Note:   "Methods whose names are advertising (the dump holds about 6,800 of them, such as customer service phone numbers) are skipped.",
 	},
 	{
+		ID: "pwc-results", Name: "Papers with Code, the evaluation tables of the final data dump",
+		URL: "https://huggingface.co/datasets/pwc-archive/files", Owner: "Papers with Code (Meta AI); archived by the pwc-archive organization on Hugging Face",
+		Licence: "CC-BY-SA-4.0", Checked: "2026-11-14", Class: "B",
+		Access: "jul-28-evaluation-tables.json.gz at the pinned revision of pwc-archive/files, one request", Rate: "1 request per 2 s",
+		Schedule: "once; the site closed in July 2025", Standing: "secondary-reference",
+		Facts:  "the model, dataset, metric and number of each row, with its paper; every number is checked against the paper (Q-35)",
+		Credit: "Papers with Code data dump (CC BY-SA 4.0), archived at https://huggingface.co/datasets/pwc-archive/files",
+		Note:   "Each value is a result row whose source is the paper and whose secondary source is the dump, flagged pwc-unverified until the citation check finds the number in the paper; a value with no percent sign has the unit number.",
+	},
+	{
 		ID: "aiid", Name: "AI Incident Database",
 		URL: "https://incidentdatabase.ai/research/snapshots/", Owner: "Responsible AI Collaborative",
 		Licence: "CC-BY-SA-4.0", Checked: "2026-11-14", Class: "B",

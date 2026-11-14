@@ -435,8 +435,13 @@ func Results(c *node.Corpus, o Options) (*Report, error) {
 				continue
 			}
 			seen[key] = true
-			anchor := hr.ID[strings.LastIndexByte(hr.ID, '/')+1:]
-			cited := ct.check(hr.Snapshot, anchor, *rr.Score.V)
+			// The snapshot is the source of a leaderboard row. A row whose source is the paper (a row of Papers with
+			// Code) is checked against the paper (07.5): the dump that lists its number is not the citation.
+			cited := citeUnchecked
+			if rr.Source.Kind != "primary" {
+				anchor := hr.ID[strings.LastIndexByte(hr.ID, '/')+1:]
+				cited = ct.check(hr.Snapshot, anchor, *rr.Score.V)
+			}
 			rep.Cite[cited]++
 			if cited != citeUnchecked {
 				fields["checks"] = map[string]any{"cite": cited}
