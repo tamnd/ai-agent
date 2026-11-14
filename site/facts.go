@@ -38,6 +38,15 @@ func factRefs(c *node.Corpus, body string) string {
 	body = outsideMarkdownCode(body, func(s string) string {
 		return node.FactRefRE.ReplaceAllStringFunc(s, func(m string) string {
 			sm := node.FactRefRE.FindStringSubmatch(m)
+			// A computed fact is a sentence of the build, with its population and date (06.10). The prose writes the
+			// stop after the reference, as after any other.
+			if r := c.Computed[sm[2]]; sm[1] == "computed" && r != nil {
+				out := strings.TrimSuffix(r.Sentence, ".")
+				if r.Src != "" {
+					out += note(facts.Source{Src: r.Src, Loc: r.Loc, AsOf: r.AsOf})
+				}
+				return out
+			}
 			f, err := c.Fact(sm[1], sm[2])
 			if err != nil || f.Value == nil || len(f.Sources) == 0 {
 				return m
