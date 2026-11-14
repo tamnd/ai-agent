@@ -20,7 +20,7 @@ import (
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-6"
+const ExtractorVersion = "aik-doc-7"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
@@ -430,7 +430,7 @@ func parse(text string) *Doc {
 		if s == "" {
 			continue
 		}
-		if m := captionRE.FindStringSubmatch(s); m != nil {
+		if m := captionRE.FindStringSubmatch(s); m != nil && !(i > 0 && mention(s, lines[i-1].s)) {
 			k := captionKind(m[1])
 			d.Marks = append(d.Marks, Mark{Kind: k, Num: strings.ReplaceAll(m[2], ".", ""), Start: l.off})
 			continue
@@ -851,3 +851,18 @@ func clean(s string) string {
 	s = ligature.Replace(s)
 	return hyphenRE.ReplaceAllString(s, "$1$2\n")
 }
+
+// mention tells whether a line that is only a label and a period, "Extended Data Table 2.", ends the sentence of the
+// line before it ("The full set of feature planes are listed in"), rather than being a caption whose title comes on
+// the next line. The line before a caption is blank, a title, or the end of a sentence.
+func mention(s, before string) bool {
+	f := strings.Fields(before)
+	if !labelOnlyRE.MatchString(s) || len(f) == 0 {
+		return false
+	}
+	r, _ := utf8.DecodeRuneInString(f[len(f)-1])
+	return unicode.IsLower(r)
+}
+
+// labelOnlyRE is a line that is only the label of a caption and a period: "Table 3.", "Extended Data Table 2.".
+var labelOnlyRE = regexp.MustCompile(`^(Extended Data (?:Table|Figure|Fig\.)|Table|Figure|Fig\.|Algorithm)\s+([0-9]+|[A-Z]\.?[0-9]+|S[0-9]+)\s*\.$`)

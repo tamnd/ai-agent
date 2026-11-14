@@ -380,7 +380,7 @@ func TestNature(t *testing.T) {
 	for i, f := range foot {
 		pages = append(pages, fmt.Sprintf("ARTICLE RESEARCH\nthe text of page %d\nmore text\nand more\n%s\n© 2016 Macmillan Publishers Limited. All rights reserved\n", i+1, f))
 	}
-	pages = append(pages, "RESEARCH ARTICLE\nMETHODS\nProblem setting.\n",
+	pages = append(pages, "RESEARCH ARTICLE\nMETHODS\nThe full set of feature planes are listed in\nExtended Data Table 1.\nNeural network architecture.\n",
 		"ARTICLE RESEARCH\nExtended Data Table 1 | Details of match between AlphaGo and Fan Hui\nDate\n5 Oct 2015\n",
 		"RESEARCH ARTICLE\nExtended Data Figure 2 | Tree search in AlphaGo\nthe figure\n")
 	d := Parse(strings.Join(pages, "\f"))
@@ -391,6 +391,12 @@ func TestNature(t *testing.T) {
 	}
 	if txt := resolve(t, d, "Extended Data Table 1"); !strings.Contains(txt, "Fan Hui") {
 		t.Errorf("Extended Data Table 1 = %q", txt)
+	}
+	if m, _ := hasMark(d, "extended-data-table", "1"); d.Page(m.Start) != 4 {
+		t.Errorf("Extended Data Table 1 is on page %d, want 4: a mention that ends a sentence is not a caption", d.Page(m.Start))
+	}
+	if _, ok := hasMark(Parse("Results\n\nTable 3.\n\nModel BLEU\n"), "table", "3"); !ok {
+		t.Error("a label alone after a blank line is not a caption")
 	}
 	if txt := resolve(t, d, "Extended Data Fig. 2"); !strings.Contains(txt, "Tree search") {
 		t.Errorf("Extended Data Fig. 2 = %q", txt)
