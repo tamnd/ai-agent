@@ -34,6 +34,8 @@ func TestParseLocator(t *testing.T) {
 		{"pp. 12 to 14", []Ref{{Kind: "page", From: "12", To: "14"}}},
 		{"the abstract", []Ref{{Kind: "abstract"}}},
 		{"the title page", []Ref{{Kind: "title-page"}}},
+		{"the references", []Ref{{Kind: "references"}}},
+		{"the bibliography", []Ref{{Kind: "references"}}},
 		{"Theorem 2.1", []Ref{{Kind: "theorem", From: "2.1"}}},
 	} {
 		got, err := ParseLocator(tc.in)

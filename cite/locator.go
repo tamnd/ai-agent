@@ -47,6 +47,7 @@ var kinds = []struct {
 	{"annex", []string{"annex", "annexes"}, annexNum},
 	{"abstract", []string{"abstract", "the abstract"}, nil},
 	{"title-page", []string{"title page", "the title page"}, nil},
+	{"references", []string{"bibliography", "the bibliography", "references", "the references"}, nil},
 }
 
 var (
@@ -65,7 +66,7 @@ var (
 // ParseLocator reads a locator in the grammar of spec 13.6.1: places separated by commas, semicolons or "and", each
 // a kind and a number ("Section 3.2", "Eq. 4", "Article 50(4)"), a range ("Sections 2 to 7"), a bare number that
 // continues the kind before it ("Sections 3 and 4"), or a qualifier of the place before it: row "x", column "y", or a
-// quoted heading. "the abstract" and "the title page" are places without a number.
+// quoted heading. "the abstract", "the title page" and "the references" are places without a number.
 func ParseLocator(s string) ([]Ref, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {

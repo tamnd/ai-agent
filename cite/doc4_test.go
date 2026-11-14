@@ -194,6 +194,27 @@ func TestExtractHTMLContents(t *testing.T) {
 	}
 }
 
+// The references of the Stanford Encyclopedia are the last "Bibliography", after the one of its table of contents, and
+// run to the end of the text; those of a paper end at the appendix after them.
+func TestReferences(t *testing.T) {
+	page := `<html><body><h1>The Chinese Room Argument</h1><div id="toc"><ul>` +
+		`<li><a href="#Over">1. Overview</a></li><li><a href="#Bib">Bibliography</a></li></ul></div>` +
+		`<div id="main-text"><h2 id="Over">1. Overview</h2><p>Work in Artificial Intelligence has produced computer programs.</p>` +
+		`<h2 id="Bib">Bibliography</h2><p>Preston, J. and M. Bishop (eds.), 2002, <em>Views into the Chinese Room</em>.</p></div></body></html>`
+	d := ExtractHTML([]byte(page))
+	if txt := resolve(t, d, "the bibliography"); !strings.HasPrefix(txt, "Bibliography") || !strings.Contains(txt, "Views into the Chinese Room") || strings.Contains(txt, "computer programs") {
+		t.Errorf("the bibliography = %q", txt)
+	}
+	d = &Doc{Text: "1 Introduction\nDropout works.\n\nReferences\nHinton, G. 2012. Improving neural networks.\n\nA Proofs\nThe proof.\n"}
+	d.Heads = []Head{{Num: "1", Title: "Introduction", Start: 0}, {Num: "A", Title: "Proofs", Start: strings.Index(d.Text, "A Proofs")}}
+	if txt := resolve(t, d, "the references"); !strings.Contains(txt, "Improving neural networks") || strings.Contains(txt, "The proof") {
+		t.Errorf("the references = %q", txt)
+	}
+	if _, fails := Resolve(&Doc{Text: "1 Introduction\nNo list here.\n"}, []Ref{{Kind: "references"}}); len(fails) == 0 {
+		t.Error("a text with no references resolved them")
+	}
+}
+
 // Searle 1980 in BBS, a scan: the odd pages print their numbers at the foot, the even pages lose them in the noise of
 // the margin or put them mid-column, and the numbers that continue the neighbours find them.
 func TestPrintedNumbersScan(t *testing.T) {
