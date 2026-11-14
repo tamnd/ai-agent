@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "test": {
+      "additionalProperties": false,
+      "properties": {
+        "alpha": {
+          "type": "number"
+        },
+        "arm": {
+          "type": "string"
+        },
+        "at": {
+          "pattern": "^(final|best|curve|step:[0-9]+)$",
+          "type": "string"
+        },
+        "compare": {
+          "additionalProperties": false,
+          "properties": {
+            "control": {
+              "type": "string"
+            },
+            "treatment": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "treatment",
+            "control"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "lower",
+            "higher"
+          ],
+          "type": "string"
+        },
+        "form": {
+          "enum": [
+            "power",
+            "linear"
+          ],
+          "type": "string"
+        },
+        "margin": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "relative",
+                "absolute"
+              ],
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "metric": {
+          "type": "string"
+        },
+        "min_effect": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "relative",
+                "absolute"
+              ],
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "min_share": {
+          "type": "number"
+        },
+        "note": {
+          "type": "string"
+        },
+        "r2_min": {
+          "type": "number"
+        },
+        "range": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "rate": {
+          "type": "number"
+        },
+        "test": {
+          "enum": [
+            "bootstrap-diff",
+            "fit",
+            "mann-whitney",
+            "rate",
+            "shape",
+            "tost",
+            "welch-t"
+          ],
+          "type": "string"
+        },
+        "x": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "metric",
+        "test"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ai.tamnd.com/data/schema/expect.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The test of an experiment (spec 09.3.2): the claim, the primary and secondary tests, the correction and the report. It is fixed before the first full run; results.json records its hash.",
+  "properties": {
+    "claim": {
+      "type": "string"
+    },
+    "correction": {
+      "enum": [
+        "holm",
+        "none"
+      ],
+      "type": "string"
+    },
+    "primary": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/test"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/test"
+          },
+          "type": "array"
+        }
+      ]
+    },
+    "report": {
+      "additionalProperties": false,
+      "properties": {
+        "bootstrap": {
+          "additionalProperties": false,
+          "properties": {
+            "method": {
+              "enum": [
+                "bca",
+                "percentile"
+              ]
+            },
+            "resamples": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "seed": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "ci": {
+          "exclusiveMaximum": 1,
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "secondary": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/test"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/test"
+          },
+          "type": "array"
+        }
+      ]
+    }
+  },
+  "required": [
+    "claim",
+    "primary"
+  ],
+  "title": "expect.yaml",
+  "type": "object"
+}

@@ -106,7 +106,10 @@
                 "type": "string"
               }
             },
-            "type": "object"
+            "type": [
+              "object",
+              "null"
+            ]
           },
           "self_reported": {
             "type": "boolean"
@@ -305,7 +308,10 @@
             "label",
             "name"
           ],
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "g": {
           "properties": {
@@ -456,7 +462,10 @@
             "label",
             "name"
           ],
-          "type": "object"
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "slug": {
           "type": "string"
@@ -577,7 +586,10 @@
                   "mutants",
                   "killed"
                 ],
-                "type": "object"
+                "type": [
+                  "object",
+                  "null"
+                ]
               },
               "output": {
                 "type": "string"
@@ -692,7 +704,10 @@
                   "cases",
                   "passed"
                 ],
-                "type": "object"
+                "type": [
+                  "object",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -773,7 +788,10 @@
         "w",
         "g"
       ],
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "summary": {
       "type": "string"

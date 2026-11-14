@@ -3,10 +3,13 @@
 package schema
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 
+	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/claims"
+	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/node"
 )
 
@@ -18,6 +21,9 @@ const (
 	TagPattern  = `^([0-9ABCDEFGHJKMNPQRSTVWXYZ]{6}|NEW-[a-z0-9-]+)$`
 	SlugPattern = `^[a-z0-9][a-z0-9-]*$`
 	AreaPattern = `^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9-]*)*$`
+	// KeyPattern is the key of a card: a slug, or the slug of its owner and its own slug (04.4).
+	KeyPattern  = `^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9.-]*)?$`
+	DatePattern = `^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$`
 )
 
 func head(name, title, desc string, s map[string]any) map[string]any {
@@ -107,4 +113,138 @@ func Claims() map[string]any {
 	s := map[string]any{"type": "array", "items": g.Of(reflect.TypeFor[claims.Claim]())}
 	return head("claims.v1.json", "claims.yaml",
 		"The claim records of a node (spec 07.3). The evidence labels are computed by the build from the evidence and the checks (07.4); nobody writes them.", s)
+}
+
+// Card is the schema of one line of cards/<kind>/<shard>.jsonl (spec 04.6). The fields of the kind are open: a fact
+// field is an object with v and src, a group of facts is an object of fact fields, and anything else is a plain field.
+func Card() map[string]any {
+	str := map[string]any{"type": "string"}
+	harvest := (&Gen{Tag: "json"}).Of(reflect.TypeFor[card.Harvest]())
+	harvest["properties"].(map[string]any)["date"] = map[string]any{"type": "string", "pattern": DatePattern}
+	notFact := map[string]any{"not": map[string]any{"anyOf": []any{
+		map[string]any{"required": []string{"v"}}, map[string]any{"required": []string{"src"}}}}}
+	defs := map[string]any{
+		// A fact field (04.6): the value, a source id of registers/sources.yaml or a work tag, and the locator.
+		"fact": map[string]any{"type": "object", "required": []string{"v", "src"}, "properties": map[string]any{
+			"v": map[string]any{}, "src": map[string]any{"type": "string", "minLength": 1}, "loc": str, "note": str,
+		}, "additionalProperties": false},
+		// A group of facts, such as training with training.tokens in it.
+		"group": map[string]any{"type": "object", "allOf": []any{notFact}, "additionalProperties": map[string]any{"$ref": "#/$defs/field"}},
+		"field": map[string]any{"anyOf": []any{
+			map[string]any{"type": []string{"string", "number", "boolean", "array", "null"}},
+			map[string]any{"$ref": "#/$defs/fact"},
+			map[string]any{"$ref": "#/$defs/group"},
+		}},
+		"harvest": harvest,
+	}
+	props := map[string]any{
+		"tag":     map[string]any{"type": "string", "pattern": TagPattern},
+		"kind":    map[string]any{"enum": node.Kinds},
+		"slug":    map[string]any{"type": "string", "pattern": SlugPattern, "maxLength": 60},
+		"owner":   map[string]any{"type": "string", "pattern": KeyPattern},
+		"name":    map[string]any{"type": "string", "minLength": 1},
+		"role":    str,
+		"summary": map[string]any{"type": "string", "description": fmt.Sprintf("at most %d words (rule S10)", card.MaxSummary)},
+		"harvest": map[string]any{"oneOf": []any{
+			map[string]any{"$ref": "#/$defs/harvest"},
+			map[string]any{"type": "array", "items": map[string]any{"$ref": "#/$defs/harvest"}, "minItems": 1},
+		}},
+		"same_as":  map[string]any{"type": "object", "additionalProperties": map[string]any{"type": []string{"string", "integer", "null"}}},
+		"aliases":  map[string]any{"type": "array", "items": str},
+		"rules":    map[string]any{"type": "object"},
+		"versions": map[string]any{},
+	}
+	results := map[string]any{}
+	for _, k := range card.ResultFields {
+		results[k] = map[string]any{}
+	}
+	s := map[string]any{
+		"type":       "object",
+		"required":   []string{"tag", "kind"},
+		"properties": props,
+		"allOf": []any{
+			// A result card takes its owner, slug and name from its benchmark, tag and model (04.4); every other card writes them.
+			map[string]any{
+				"if":   map[string]any{"properties": map[string]any{"kind": map[string]any{"const": "result"}}, "required": []string{"kind"}},
+				"then": map[string]any{"properties": results},
+				"else": map[string]any{"required": []string{"slug", "name"}},
+			},
+			map[string]any{
+				"if":   map[string]any{"properties": map[string]any{"kind": map[string]any{"const": "model"}}, "required": []string{"kind"}},
+				"then": map[string]any{"properties": map[string]any{"role": map[string]any{"enum": card.ModelRoles}}},
+			},
+		},
+		"unevaluatedProperties": map[string]any{"$ref": "#/$defs/field"},
+		"$defs":                 defs,
+	}
+	return head("card.v1.json", "A card",
+		"One line of cards/<kind>/<shard>.jsonl (spec 04.6): the fields of the kind, its facts with their sources, a summary, and the harvest records. aik check applies the rules of 15.3 beyond this schema.", s)
+}
+
+func keys[V any](m map[string]V) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// Experiment is the schema of experiment.yaml (spec 09.3.1): the design of an experiment. aik reads it with known fields
+// only, so an unknown key is an error.
+func Experiment() map[string]any {
+	g := Gen{Tag: "yaml",
+		Enums: map[string][]string{"Design.budget": keys(exp.Budgets)},
+		// An experiment that makes its data in run.py, such as a simulation, has no inputs.
+		Optional: []string{"Design.data"},
+		Fields: map[string]map[string]any{
+			"Design.id": {"type": "string", "pattern": SlugPattern},
+			// The design of a run that the reader cannot repeat bit for bit says why (9.8).
+			"Design.deterministic": {"type": "boolean"},
+		},
+	}
+	s := g.Of(reflect.TypeFor[exp.Design]())
+	s["allOf"] = []any{map[string]any{
+		"if":   map[string]any{"properties": map[string]any{"deterministic": map[string]any{"const": false}}, "required": []string{"deterministic"}},
+		"then": map[string]any{"required": []string{"deterministic_reason"}},
+	}}
+	data := s["properties"].(map[string]any)["data"].(map[string]any)
+	data["items"].(map[string]any)["oneOf"] = []any{
+		map[string]any{"required": []string{"pin"}}, map[string]any{"required": []string{"generator"}},
+	}
+	return head("experiment.v1.json", "experiment.yaml",
+		"The design of an experiment (spec 09.3.1): the claims it tests, the arms, the data, the seeds and the budget class. aik check applies rules R01 to R08 beyond this schema.", s)
+}
+
+// Expect is the schema of expect.yaml (spec 09.3.2): the test of the claim, fixed before the first full run.
+func Expect() map[string]any {
+	g := Gen{Tag: "yaml",
+		Enums: map[string][]string{
+			"Test.test":         keys(exp.TestNames),
+			"Test.direction":    {"lower", "higher"},
+			"Test.form":         {"power", "linear"},
+			"Effect.kind":       {"relative", "absolute"},
+			"Expect.correction": {"holm", "none"},
+		},
+		Fields: map[string]map[string]any{
+			"Test.at":    {"type": "string", "pattern": `^(final|best|curve|step:[0-9]+)$`},
+			"Test.range": {"type": "array", "items": map[string]any{"type": "number"}, "minItems": 2, "maxItems": 2},
+		},
+		Types: map[string]map[string]any{"Tests": {"oneOf": []any{
+			map[string]any{"$ref": "#/$defs/test"},
+			map[string]any{"type": "array", "items": map[string]any{"$ref": "#/$defs/test"}},
+		}}},
+	}
+	s := g.Of(reflect.TypeFor[exp.Expect]())
+	s["$defs"] = map[string]any{"test": g.Of(reflect.TypeFor[exp.Test]())}
+	set(s, "report", "properties", map[string]any{
+		"ci": map[string]any{"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+		"bootstrap": map[string]any{"type": "object", "properties": map[string]any{
+			"resamples": map[string]any{"type": "integer", "minimum": 1},
+			"method":    map[string]any{"enum": []string{"bca", "percentile"}},
+			"seed":      map[string]any{"type": "integer", "minimum": 0},
+		}, "additionalProperties": false},
+	})
+	return head("expect.v1.json", "expect.yaml",
+		"The test of an experiment (spec 09.3.2): the claim, the primary and secondary tests, the correction and the report. It is fixed before the first full run; results.json records its hash.", s)
 }

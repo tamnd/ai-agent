@@ -1,0 +1,230 @@
+{
+  "$id": "https://ai.tamnd.com/data/schema/experiment.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "deterministic": {
+            "const": false
+          }
+        },
+        "required": [
+          "deterministic"
+        ]
+      },
+      "then": {
+        "required": [
+          "deterministic_reason"
+        ]
+      }
+    }
+  ],
+  "description": "The design of an experiment (spec 09.3.1): the claims it tests, the arms, the data, the seeds and the budget class. aik check applies rules R01 to R08 beyond this schema.",
+  "properties": {
+    "arms": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "config": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "id": {
+            "type": "string"
+          },
+          "seeds": {
+            "additionalProperties": false,
+            "properties": {
+              "base": {
+                "type": "integer"
+              },
+              "n": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "n",
+              "base"
+            ],
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "tuning": {
+            "additionalProperties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "config"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "base_config": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "budget": {
+      "enum": [
+        "cpu-small",
+        "gpu-medium",
+        "gpu-small"
+      ],
+      "type": "string"
+    },
+    "claims": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "data": {
+      "items": {
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "required": [
+              "pin"
+            ]
+          },
+          {
+            "required": [
+              "generator"
+            ]
+          }
+        ],
+        "properties": {
+          "dataset": {
+            "type": "string"
+          },
+          "generator": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "pin": {
+            "type": "string"
+          },
+          "subset": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "deterministic": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "deterministic_reason": {
+      "type": "string"
+    },
+    "framework": {
+      "type": "string"
+    },
+    "id": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "type": "string"
+    },
+    "image": {
+      "type": "string"
+    },
+    "keep_checkpoints": {
+      "type": "boolean"
+    },
+    "metrics": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "question": {
+      "type": "string"
+    },
+    "replicates": {
+      "additionalProperties": false,
+      "properties": {
+        "locator": {
+          "type": "string"
+        },
+        "work": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "work",
+        "locator"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "scale_note": {
+      "additionalProperties": false,
+      "properties": {
+        "here": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "here",
+        "source"
+      ],
+      "type": "object"
+    },
+    "seeds": {
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "type": "integer"
+        },
+        "n": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "n",
+        "base"
+      ],
+      "type": "object"
+    },
+    "tuning": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "uses_impl": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "claims",
+    "question",
+    "scale_note",
+    "arms",
+    "base_config",
+    "seeds",
+    "budget",
+    "framework",
+    "metrics"
+  ],
+  "title": "experiment.yaml",
+  "type": "object"
+}

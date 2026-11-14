@@ -285,12 +285,12 @@ func Missing(kind string, fs []Fact) []string {
 	return out
 }
 
-// timeBound are the fact ids that are true only at a date (rule D07). A fact with one of these ids, or with an id under one of them, needs as_of.
-var timeBound = []string{"access", "licence", "status", "price", "users", "downloads", "likes", "stars", "rank"}
+// TimeBoundIDs are the fact ids that are true only at a date (rule D07). A fact with one of these ids, or with an id under one of them, needs as_of.
+var TimeBoundIDs = []string{"access", "licence", "status", "price", "users", "downloads", "likes", "stars", "rank"}
 
 // TimeBound tells if the fact is true only at a date, so it needs as_of.
 func TimeBound(id string) bool {
-	return slices.ContainsFunc(timeBound, func(t string) bool { return Covers(id, t) })
+	return slices.ContainsFunc(TimeBoundIDs, func(t string) bool { return Covers(id, t) })
 }
 
 // AsOf returns the date of a fact: its own as_of, or else the latest as_of of its sources.
@@ -362,8 +362,8 @@ func group(s string) string {
 	return b.String()
 }
 
-// labels are the names of the common fact ids.
-var labels = map[string]string{ //nolint:gosec // G101 reads the fact id training.tokens as a credential; these are display names.
+// Labels are the names of the common fact ids.
+var Labels = map[string]string{ //nolint:gosec // G101 reads the fact id training.tokens as a credential; these are display names.
 	"developer": "Developer", "released": "Release date", "architecture": "Architecture",
 	"params.total": "Parameters (total)", "params.active": "Parameters (active)",
 	"access": "Access", "licence": "Licence", "modalities": "Modalities", "modality": "Modality",
@@ -380,11 +380,11 @@ var labels = map[string]string{ //nolint:gosec // G101 reads the fact id trainin
 
 // Label turns a fact id into a name for a reader. A common id has a fixed name, such as "Parameters (total)" for params.total. A sub-id of a common id adds its last part, so peak_flops.fp16 becomes "Peak FLOP/s (fp16)". Another id becomes words: context_window becomes "Context window".
 func Label(id string) string {
-	if l, ok := labels[id]; ok {
+	if l, ok := Labels[id]; ok {
 		return l
 	}
 	if i := strings.LastIndexByte(id, '.'); i > 0 {
-		if l, ok := labels[id[:i]]; ok {
+		if l, ok := Labels[id[:i]]; ok {
 			return l + " (" + strings.ReplaceAll(id[i+1:], "_", " ") + ")"
 		}
 	}

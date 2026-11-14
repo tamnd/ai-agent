@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Package schema holds the JSON Schemas of the files and records of spec 20.2 (node.v1.json, claims.v1.json,
-// record.v1.json) and the generator that makes them from the Go types that read those files, so a schema cannot drift
-// from the code. The tests compare the files with the generator; go test ./schema -update writes them again.
+// Package schema holds the schemas of the files and records of spec 20.2 (node.v1.json, card.v1.json, claims.v1.json,
+// experiment.v1.json, expect.v1.json, facts.v1.yaml, record.v1.json) and the generator that makes them from the Go
+// types and tables that read those files, so a schema cannot drift from the code. The tests compare the files with the generator; go test ./schema -update writes them again.
 //
 // The code is the authority: aik check applies rules that a schema cannot say (a slug that exists, a role that the
 // type of a claim allows). The schemas are for editors and for programs that read the records.
@@ -20,7 +20,7 @@ import (
 
 // Files are the schema files, as the site publishes them at /data/schema/.
 //
-//go:embed *.json
+//go:embed *.json *.yaml
 var Files embed.FS
 
 // Draft is the JSON Schema dialect of the files.
@@ -40,6 +40,8 @@ type Gen struct {
 	// version may extend.
 	Open    []string
 	AllOpen bool
+	// Optional lists the fields, by "Type.field", that a file may leave out though the Go field has no omitempty.
+	Optional []string
 
 	seen map[reflect.Type]bool
 }
@@ -136,8 +138,15 @@ func (g *Gen) fields(t reflect.Type, props map[string]any, req *[]string, extra 
 			s = maps.Clone(s)
 			s["type"] = []string{s["type"].(string), "null"}
 		}
+		if f.Type.Kind() == reflect.Pointer {
+			// a pointer reads null as nil, and encoding/json writes nil as null
+			if t, ok := s["type"].(string); ok {
+				s = maps.Clone(s)
+				s["type"] = []string{t, "null"}
+			}
+		}
 		props[name] = s
-		if !omit && f.Type.Kind() != reflect.Pointer {
+		if !omit && f.Type.Kind() != reflect.Pointer && !slices.Contains(g.Optional, t.Name()+"."+name) {
 			*req = append(*req, name)
 		}
 	}

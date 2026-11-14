@@ -448,7 +448,10 @@
           "type": "object"
         }
       },
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "constraints": {
       "additionalProperties": {},
@@ -488,7 +491,10 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": [
+        "object",
+        "null"
+      ]
     },
     "hyperparameters": {
       "items": {
