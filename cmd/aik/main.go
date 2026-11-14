@@ -37,7 +37,6 @@ type command struct {
 // planned are the commands of spec 18.3 that are not built yet, with the milestone that builds them.
 var planned = map[string]string{
 	"audit":      "M0",
-	"review":     "M0",
 	"bench":      "M2",
 	"ingest":     "M1",
 	"queue":      "M1",
@@ -60,6 +59,7 @@ func init() {
 		{"check", "run the audit rules, and the scene checks with -viz", cmdCheck},
 		{"gate", "the writer gate of 14.6 on nodes: fmt, check, stubs, plain words, characters, claims, tests, cpu-small experiments", cmdGate},
 		{"status", "show the ladders of a node and what the next level needs", cmdStatus},
+		{"review", "write the template of a review record, or check one: review <slug> <part> -reviewer github:<login> | -check", cmdReview},
 		{"gen", "write the build tree of each language to build/lang", cmdGen},
 		{"test", "run the native tests and the shared cases", cmdTest},
 		{"lean", "build the Lean package and check its axioms: lean build", cmdLean},

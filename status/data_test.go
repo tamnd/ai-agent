@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/tamnd/ai-agent/facts"
+	"github.com/tamnd/ai-agent/internal/reviewtest"
 	"github.com/tamnd/ai-agent/node"
 )
 
@@ -56,16 +57,6 @@ func TestDataLadder(t *testing.T) {
 	level(1, "an as_of date (D07)")
 	n.Facts[len(n.Facts)-2].AsOf, n.Facts[len(n.Facts)-1].AsOf = "2026-11-13", "2026-11-13"
 	level(2, "no review record reviews/7TQYMD/facts.yaml")
-	h, err := Hash(filepath.Join(dir, facts.File))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rev := filepath.Join(root, "reviews", "7TQYMD", "facts.yaml")
-	if err := os.MkdirAll(filepath.Dir(rev), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(rev, []byte("part: facts\nhash: "+h+"\nreviewer: someone\ndate: 2026-11-13\nverdict: approve\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	reviewtest.Pass(t, root, n, "facts", filepath.Join(dir, facts.File))
 	level(3, "")
 }

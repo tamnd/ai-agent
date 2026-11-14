@@ -143,7 +143,7 @@ func claimLevel(n *node.Node, id string, levels map[*exp.Experiment]int, nexts m
 		return 2, []string{"pass a second experiment of the claim " + id + " at another scale or on other data (R13)"}
 	}
 	for _, e := range passed {
-		ok, why := Reviewed(env.root(), n.Tag, "exp/"+e.Slug, filepath.Join(e.Dir, exp.ResultsFile))
+		ok, why := Reviewed(env.root(), n, "exp/"+e.Slug, filepath.Join(e.Dir, exp.ResultsFile))
 		if !ok {
 			return 3, []string{"a person reviews the design and the results of " + e.Slug + ": " + why}
 		}

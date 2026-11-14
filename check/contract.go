@@ -46,7 +46,7 @@ func (r *run) contracts(n *node.Node) {
 	r.generators(n, k)
 	r.flaky(n)
 	if n.Level == "core" {
-		if ok, why := status.Reviewed(r.root, n.Tag, "contract", filepath.Join(dir, "contract.yaml")); !ok {
+		if ok, why := status.Reviewed(r.root, n, "contract", filepath.Join(dir, "contract.yaml")); !ok {
 			r.add("M04", Level, p, 0, "the contract of a core problem needs a review by a person: %s", why)
 		}
 	}

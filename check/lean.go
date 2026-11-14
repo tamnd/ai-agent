@@ -34,7 +34,7 @@ func (r *run) leanNode(n *node.Node) {
 		if status.Formal(n) {
 			part, what = "lean-statement", "statement"
 		}
-		if ok, why := status.Reviewed(r.root, n.Tag, part, filepath.Join(r.root, filepath.FromSlash(file))); !ok {
+		if ok, why := status.Reviewed(r.root, n, part, filepath.Join(r.root, filepath.FromSlash(file))); !ok {
 			r.add("F02", Level, p, 0, "the Lean %s of a core node needs a fidelity review by a person: %s", what, why)
 		}
 	}
