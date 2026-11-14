@@ -292,8 +292,9 @@ func Merge(root, date string) (*Report, error) {
 // headings are the sources whose rows are headings of works and courses, not things: two works or two sections that
 // name one item are the canon match (14.3), so their rows are never kept apart for sharing the source. The risks of
 // the MIT AI Risk Repository are the same: each is a heading of one document's taxonomy, and two documents that name
-// one risk are the evidence of S-X1.
-var headings = map[string]bool{"canon": true, "courses": true, "mit-ai-risk": true}
+// one risk are the evidence of S-X1. The entries of the OWASP Top 10 for LLM Applications are headings of one release:
+// the release's own same_as key keeps two entries of one release apart, and lets one risk named in two releases join.
+var headings = map[string]bool{"canon": true, "courses": true, "mit-ai-risk": true, "owasp-llm": true}
 
 // sourceKey is the key of a source ref ("arxiv:2303.18223") in the rule that one item has at most one row of a source:
 // the source, or the whole ref for the sources of headings.

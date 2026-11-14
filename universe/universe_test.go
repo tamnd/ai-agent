@@ -442,3 +442,36 @@ func TestCanonMatch(t *testing.T) {
 		t.Error("sourceKey")
 	}
 }
+
+// TestOWASPReleases joins one risk named in two releases of the OWASP list; two entries of one release with one name
+// would carry two values of the release's id and stay apart.
+func TestOWASPReleases(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "registers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ScopeFile), []byte(scope), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rs := []harvest.Row{
+		row("owasp-llm", "LLM01:2025", "Prompt Injection", "risk", map[string]string{"owasp_llm_2025": "LLM01:2025"}, nil),
+		row("owasp-llm", "LLM01:2023", "Prompt Injection", "risk", map[string]string{"owasp_llm_2023": "LLM01:2023"}, nil),
+		row("owasp-llm", "LLM05:2023", "Model Theft", "risk", map[string]string{"owasp_llm_2023": "LLM05:2023"}, nil),
+		row("owasp-llm", "LLM10:2023", "Model Theft", "risk", map[string]string{"owasp_llm_2023": "LLM10:2023"}, nil),
+	}
+	if err := harvest.WriteInventory(root, "owasp-llm", rs); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Merge(root, "2026-11-15")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Items != 3 || rep.Conflicts != 1 {
+		t.Fatalf("%d items and %d conflicts, want 3 and 1", rep.Items, rep.Conflicts)
+	}
+	for _, it := range byID(t, root) {
+		if it.Name == "Prompt Injection" && len(it.Sources) != 2 {
+			t.Errorf("prompt injection has the sources %v", it.Sources)
+		}
+	}
+}
