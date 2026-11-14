@@ -74,6 +74,7 @@ func init() {
 		{"site", "render and preview the site: site build | serve | check", cmdSite},
 		{"build", "build the whole tree with a cache: check, Lean, tests, facts, results tables, scenes, ladders and coverage", cmdBuild},
 		{"coverage", "compute the coverage levels C0 to C6 and the coverage report of 18.7", cmdCoverage},
+		{"copycheck", "the copy check of 13.7: the prose of nodes against the stored texts of the works they cite, and their code against the code corpora", cmdCopycheck},
 		{"queue", "build the work queue of 14.5 into work/state/queue.jsonl: the promised items, the items below the milestone's targets, the pending rows, the failing results", cmdQueue},
 		{"prov", "read, check and append the provenance logs of the nodes (04.8): prov show <slug> | check [-strict] | record -author <login> <slug>...", cmdProv},
 		{"quarantine", "hide a node or some of its files from the site at the next build, or clear it: quarantine -by <login> -why <reason> [-file <path>] <slug> | -clear | -list", cmdQuarantine},
