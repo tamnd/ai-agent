@@ -1,0 +1,230 @@
+{
+ "data": [
+  {
+   "id": 2646,
+   "englishName": "AI eGovernment Chatbots",
+   "originalName": "Digitalni asistenti u javnoj upravi",
+   "slug": "ai-egovernment-chatbots",
+   "website": "https://euprava.gov.rs",
+   "status": "Active",
+   "category": "AI policy initiatives, programmes and projects",
+   "extentBinding": null,
+   "startYear": 2025,
+   "endYear": null,
+   "gaiinCountry": {
+    "id": 154,
+    "name": "Serbia",
+    "slug": "serbia",
+    "code": "SRB",
+    "category": "Country"
+   },
+   "intergovernmentalOrganisation": null,
+   "initiativeType": {
+    "id": 123,
+    "name": "AI use cases/projects in the public sector",
+    "order": 750,
+    "category": "AI policy initiatives, programmes and projects",
+    "isLinkedToAIPrinciple": false,
+    "displayGroup": "Cross-cutting",
+    "deletedAt": null
+   },
+   "tags": [
+    {
+     "id": 19,
+     "name": "AI-enabling Ecosystem",
+     "order": 50,
+     "deletedAt": null
+    },
+    {
+     "id": 23,
+     "name": "Generative AI",
+     "order": 150,
+     "deletedAt": null
+    },
+    {
+     "id": 33,
+     "name": "AI in Government",
+     "order": null,
+     "deletedAt": null
+    }
+   ],
+   "targetSectors": [
+    {
+     "id": 23,
+     "name": "Public sector",
+     "description": null,
+     "order": null,
+     "deletedAt": null
+    }
+   ],
+   "editorialStatus": "Published",
+   "createdAt": "2026-09-30T09:26:59.072Z",
+   "updatedAt": "2026-09-30T09:27:45.000Z",
+   "createdByEmail": "editor@example.org",
+   "createdByName": "An Editor",
+   "description": "Not kept."
+  },
+  {
+   "id": 2605,
+   "englishName": "Enhancing Digital Security and Trust Act, 2024 (Subnational: Ontario)",
+   "originalName": null,
+   "slug": "enhancing-digital-security-and-trust-act,-2024-subnational-ontario",
+   "website": "https://www.ontario.ca/laws/statute/24e24",
+   "status": "Active",
+   "category": "Regulations, guidelines and standards",
+   "extentBinding": "Binding",
+   "startYear": 2024,
+   "endYear": null,
+   "gaiinCountry": {
+    "id": 32,
+    "name": "Canada",
+    "slug": "canada",
+    "code": "CAN",
+    "category": "Country"
+   },
+   "intergovernmentalOrganisation": null,
+   "initiativeType": {
+    "id": 102,
+    "name": "Law/legislation/act (by legislative body)",
+    "order": 540,
+    "category": "Regulations, guidelines and standards",
+    "isLinkedToAIPrinciple": true,
+    "displayGroup": null,
+    "deletedAt": null
+   },
+   "tags": [
+    {
+     "id": 3,
+     "name": "Laws and Legislation",
+     "order": 210,
+     "deletedAt": null
+    },
+    {
+     "id": 7,
+     "name": "AI Governance & Policy",
+     "order": 60,
+     "deletedAt": null
+    },
+    {
+     "id": 33,
+     "name": "AI in Government",
+     "order": null,
+     "deletedAt": null
+    }
+   ],
+   "targetSectors": [
+    {
+     "id": 13,
+     "name": "Employment & labour",
+     "description": "",
+     "order": 0,
+     "deletedAt": null
+    },
+    {
+     "id": 23,
+     "name": "Public sector",
+     "description": null,
+     "order": null,
+     "deletedAt": null
+    }
+   ],
+   "editorialStatus": "Published",
+   "createdAt": "2026-09-09T10:24:59.678Z",
+   "updatedAt": "2026-09-09T10:27:49.000Z",
+   "createdByEmail": "editor@example.org",
+   "createdByName": "An Editor",
+   "description": "Not kept."
+  },
+  {
+   "id": 2547,
+   "englishName": "Santo Domingo Declaration — Third Ministerial Summit and High Authorities on the Ethics of Artificial Intelligence in Latin America and the Caribbean",
+   "originalName": null,
+   "slug": "santo-domingo-declaration-—-third-ministerial-summit-and-high-authorities-on-the-ethics-of-artificial-intelligence-in-latin-america-and-the-caribbean",
+   "website": null,
+   "status": "Active",
+   "category": "AI Policy Frameworks and Initiatives (intergovernmental or supranational)",
+   "extentBinding": null,
+   "startYear": 2026,
+   "endYear": null,
+   "gaiinCountry": null,
+   "intergovernmentalOrganisation": {
+    "id": 5,
+    "name": "The United Nations Educational, Scientific and Cultural Organization",
+    "shortName": "UNESCO",
+    "slug": "the-united-nations-educational-scientific-and-cultural-organization",
+    "type": "Supranational"
+   },
+   "initiativeType": {
+    "id": 55,
+    "name": "Declaration, opinion, or outcome document",
+    "order": 70,
+    "category": "AI Policy Frameworks and Initiatives (intergovernmental or supranational)",
+    "isLinkedToAIPrinciple": false,
+    "displayGroup": null,
+    "deletedAt": null
+   },
+   "tags": [
+    {
+     "id": 6,
+     "name": "Climate & Environment",
+     "order": 120,
+     "deletedAt": null
+    },
+    {
+     "id": 7,
+     "name": "AI Governance & Policy",
+     "order": 60,
+     "deletedAt": null
+    },
+    {
+     "id": 11,
+     "name": "International Approaches and Co-operation",
+     "order": 200,
+     "deletedAt": null
+    }
+   ],
+   "targetSectors": [
+    {
+     "id": 3,
+     "name": "Social & welfare issues",
+     "description": "",
+     "order": 0,
+     "deletedAt": null
+    },
+    {
+     "id": 5,
+     "name": "Public governance",
+     "description": "",
+     "order": 0,
+     "deletedAt": null
+    },
+    {
+     "id": 12,
+     "name": "Environment",
+     "description": "",
+     "order": 0,
+     "deletedAt": null
+    },
+    {
+     "id": 13,
+     "name": "Employment & labour",
+     "description": "",
+     "order": 0,
+     "deletedAt": null
+    }
+   ],
+   "editorialStatus": "Published",
+   "createdAt": "2026-07-31T14:45:51.192Z",
+   "updatedAt": "2026-08-03T13:01:39.000Z",
+   "createdByEmail": "editor@example.org",
+   "createdByName": "An Editor",
+   "description": "Not kept."
+  }
+ ],
+ "currentPage": 2,
+ "lastPage": 27,
+ "from": 101,
+ "to": 200,
+ "total": 2642,
+ "perPage": 100
+}
