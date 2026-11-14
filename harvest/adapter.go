@@ -48,6 +48,7 @@ var Adapters = map[string]Adapter{
 	"canon":                {Source: "canon", Run: harvestCanon},
 	"mitre-atlas":          {Source: "mitre-atlas", Run: harvestATLAS},
 	"mit-ai-risk":          {Source: "mit-ai-risk", Gap: time.Second, Run: harvestMITRisk},
+	"owasp-llm":            {Source: "owasp-llm", Gap: time.Second, Run: harvestOWASP},
 	"surveys":              {Source: "surveys", Run: harvestSurveys},
 	"courses":              {Source: "courses", Run: harvestCourses},
 }
