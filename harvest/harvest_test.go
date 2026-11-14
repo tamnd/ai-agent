@@ -973,3 +973,44 @@ func TestDue(t *testing.T) {
 		t.Error("an unknown period has sources")
 	}
 }
+
+func TestIEEEPage(t *testing.T) {
+	rows, next, n, skipped, err := IEEEPage(fixture(t, "crossref-ieee.json"), "b3:i")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 7 || next != "abc" || skipped != 1 || len(rows) != 5 {
+		t.Fatalf("n %d, next %q, skipped %d, rows %d: want 7, abc, 1 (a DOI outside ieeestd), 5 (no robot map)", n, next, skipped, len(rows))
+	}
+	by := map[string]Row{}
+	for _, r := range rows {
+		by[r.ID] = r
+		if r.Kind != "standard" || r.Fields["body"] != "IEEE" || r.Snapshot != "b3:i" || r.SameAs["doi"] != "10.1109/"+r.ID {
+			t.Errorf("%s: %+v", r.ID, r)
+		}
+	}
+	g := by["ieeestd.2026.11738903"]
+	if g.Name != "IEEE Recommended Practice for Organizational Governance of Artificial Intelligence" || g.Fields["status"] != "final" ||
+		g.Facts["approved"].V != "2026-06-04" || g.Facts["issued"].V != nil || g.URL != "https://doi.org/10.1109/ieeestd.2026.11738903" ||
+		g.Fields["committee"] != "Artificial Intelligence Standards Committee of the IEEE Computer Society" {
+		t.Errorf("the governance practice is %+v", g)
+	}
+	if r := by["ieeestd.2002.94148"]; r.Fields["status"] != "replaced" || strings.HasPrefix(r.Name, "(") {
+		t.Errorf("the replaced standard is %+v", r)
+	}
+	if r := by["ieeestd.2010.5599999"]; r.Fields["status"] != "draft" {
+		t.Errorf("the draft is %+v", r)
+	}
+	if r := by["ieeestd.2022.9726144"]; r.Name != "IEEE Standard for Transparency of Autonomous Systems" {
+		t.Errorf("7001 is %+v", r)
+	}
+	if r := by["ieeestd.2025.10851955"]; !strings.HasPrefix(r.Fields["committee"].(string), "Software & Systems") {
+		t.Errorf("the committee keeps an entity: %v", r.Fields["committee"])
+	}
+	if _, _, _, _, err := IEEEPage([]byte(`[]`), ""); err == nil {
+		t.Error("a page that is not an object is not a schema error")
+	}
+	if u := IEEEURL("2026-01-01", "*"); !strings.Contains(u, "filter=prefix%3A10.1109%2Cfrom-pub-date%3A2026-01-01") || !strings.HasPrefix(u, IEEEStandards+"?") {
+		t.Errorf("url %s", u)
+	}
+}
