@@ -863,6 +863,24 @@ func TestAwardRows(t *testing.T) {
 	}
 }
 
+func TestReadAwards(t *testing.T) {
+	got, err := ReadAwards([]byte("- qid: Q185667\n  name: Turing Award\n  note: all of computing\n- {qid: Q5971529, name: ' IJCAI  Computers and Thought Award '}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Award{{"Q185667", "Turing Award", "all of computing"}, {"Q5971529", "IJCAI Computers and Thought Award", ""}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v", got)
+	}
+	var e *ErrSchema
+	for _, bad := range []string{"", "[]", "{qid: Q1}", "- {qid: q1, name: x}", "- {qid: Q0, name: x}", "- {qid: Q1}",
+		"- {qid: Q1, name: x}\n- {qid: Q1, name: y}"} {
+		if _, err := ReadAwards([]byte(bad)); !errors.As(err, &e) {
+			t.Errorf("%q: %v", bad, err)
+		}
+	}
+}
+
 func TestNISTPage(t *testing.T) {
 	rows, next, n, skipped, err := NISTPage(fixture(t, "crossref-nist.json"), "b3:n")
 	if err != nil {
