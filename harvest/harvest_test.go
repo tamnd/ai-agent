@@ -890,6 +890,9 @@ func TestNISTPage(t *testing.T) {
 	}
 	if u := NISTURL("2026-01-01", "*"); !strings.Contains(u, "filter=type%3Areport%2Cfrom-pub-date%3A2026-01-01") || !strings.Contains(u, "cursor=%2A") {
 		t.Errorf("url %s", u)
+	}
+}
+
 func TestCVF(t *testing.T) {
 	confs, err := CVFMenu(fixture(t, "cvf-menu.html"))
 	if err != nil {
