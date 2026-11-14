@@ -1,0 +1,35 @@
+,,,,,,,,,,Updated: 03 December 2025,,
+,Included resources,,,,,,,,,,,
+,This page is not mobile-friendly; please access on a computer if you can.,,,,,,,,,,,
+,Description of sheet,,,,,,,,,,,
+,"A list of all documents included in the database. Our inclusion criteria are reviews, articles, reports, and documents primarily focused on proposing new frameworks, taxonomies, or other structured classifications of risks from AI present across multiple locations and industry sectors. 
+
+We exclude: 
+Book chapters, theses, commentaries, editorials, protocols
+Reviews, articles, reports, and documents that:
+Discuss impacts, outcomes, or other consequences of AI without specifying risks.
+Focus on risks from AI present in a single location or sector.
+Only cite or discuss existing theories, frameworks, models, taxonomies, and other structured classifications.
+Focus on risks specific to a particular risk category (e.g., bias) or tool (e.g., DALL-E).
+Focus on sources of risk or the risk assessment process.
+Non-English articles, reports, and documents. 
+Forum posts, blog posts, slide decks, and social media posts.
+
+For more see detail please see our user guide.",,,,,,,,,,,
+,,,,,,,,,,,,
+,How to use,,,,,,,,,,,
+,This sheet shows information for all the documents in the current version of the database. Please review this sheet before recommending new documents to include.,,,,,,,,,,,
+,This work is licensed under CC BY 4.0,,,,,,,,,,,
+,,,,,,,,,,,,
+,Paper metadata,,,,,,,,,,,
+,Included,Paper_ID,QuickRef,Title,Authors (full),Authors (short),Year,DOI,URL,Citations (28 May 2024),Cites/yr,Item type
+,Yes,1,Critch2023,TASRA: a Taxonomy and Analysis of Societal-Scale Risks from AI,"Critch A, Russell S",Critch & Russell,2023,10.48550/arXiv.2306.06924,https://arxiv.org/abs/2306.06924,12,6,Preprint
+,Yes,2,Cui2024,"Risk Taxonomy, Mitigation, and Assessment Benchmarks of Large Language Model Systems","Cui T, Wang Y, Fu C, Xiao Y, Li S, Deng X, Liu Y, Zhang Q, Qiu Z, Li P, Tan Z, Xiong J, Kong X, Wen Z, Xu K, Li Q",Cui et al.,2024,10.48550/arXiv.2401.05778,https://arxiv.org/abs/2401.05778,15,15,Preprint
+,Yes,3,Dup2023,A document with the DOI of another,"Cui T, Wang Y, Fu C, Xiao Y, Li S, Deng X, Liu Y, Zhang Q, Qiu Z, Li P, Tan Z, Xiong J, Kong X, Wen Z, Xu K, Li Q",Cui et al.,2024,10.48550/arXiv.2306.06924,https://example.org/dup,15,15,Preprint
+,Yes,x9,Cunha2023,Navigating the Landscape of AI Ethics and Responsibility,"Cunha PR, Estima J",Cunha & Estima,2023,10.1007/978-3-031-49008-8_8,https://doi.org/10.1007/978-3-031-49008-8_8,0,0,Conference Paper
+,More information,,,,,,,,,,,
+,🌐 https://airisk.mit.edu/,,,,,,,,,,,
+,Feedback/Contact us,,,,,,,,,,,
+,"💬 Use this form to offer feedback, and suggest resources or risks to add",,,,,,,,,,,
+,📧 Email: pslat[at]mit.edu,,,,,,,,,,,
+,"📄 Cite as: Cite as: Slattery, P., Saeri, A. K., Grundy, E. A. C., Graham, J., Noetel, M., Uuk, R., Dao, J., Pour, S., Casper, S., & Thompson, N. (2025). The AI Risk Repository: A comprehensive meta-review, database, and taxonomy of risks from artificial intelligence. arXiv preprint arXiv:2408.12622. https://arxiv.org/abs/2408.12622",,,,,,,,,,,

@@ -296,6 +296,7 @@ var sourceGroup = map[string]string{
 	"lmarena":              "leaderboards",
 	"helm":                 "leaderboards",
 	"mitre-atlas":          "risk-taxonomies",
+	"mit-ai-risk":          "risk-taxonomies",
 }
 
 // ClosedSources are the sources of 18.4 that have no adapter, by the rules of 13.1, with the reason (spec 13.2). They
