@@ -18,6 +18,8 @@ func TestGraphRules(t *testing.T) {
 		// No path to a foundation: binary-search leads only to the foundations of the test corpus.
 		dir + "far/node.md": core("far", "Far", "prereqs: [binary-search]\nrelated_to: [loop-invariant, comparison-model]\n",
 			"It differs from the [comparison model](/comparison-model/) in one way.\n\n```\nloop invariant\n```"),
+		// A record kind with a full page has no prerequisites to check.
+		dir + "kay/node.md": strings.Replace(core("kay", "Kay", "", "A person."), "kind: concept", "kind: person", 1),
 		// A path through math2, and a related node named in the text.
 		dir + "near/node.md": core("near", "Near", "prereqs: [far, matrix-multiplication@m2]\nrelated_to: [loop-invariant]\n",
 			"Unlike a loop invariant, it is a toy."),

@@ -131,9 +131,14 @@ func (r *run) reverseFields() {
 	}
 }
 
-// foundationPath reports a core node with no path of prereqs back to a foundation (E09).
+// foundationPath reports a core node with no path of prereqs back to a foundation (E09). The rule is about what a
+// reader learns first, so it covers the kinds whose form is a node (04.2): the ideas, the tasks and the metrics. A
+// record kind with a full page, such as a person, a model or a law, is read for its facts and has no prerequisites.
 func (r *run) foundationPath(g *graph.Graph, n *node.Node) {
 	if n.Level != "core" || isFoundation(r.c, n.Slug) {
+		return
+	}
+	if k, ok := node.Kind(n.Kind); !ok || k.Form != "node" || k.ID == "area" {
 		return
 	}
 	for _, k := range g.Closure(n.Slug, false, "prereqs") {
