@@ -1,0 +1,297 @@
+{
+ "head": {
+  "link": [],
+  "vars": [
+   "celex",
+   "type",
+   "date",
+   "title",
+   "eli",
+   "force",
+   "end",
+   "amends"
+  ]
+ },
+ "results": {
+  "distinct": false,
+  "ordered": true,
+  "bindings": [
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2024-08-01"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32008R0300"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2024-08-01"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32018R1139"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2025-02-02"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32008R0300"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2025-02-02"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32018R1139"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2027-08-02"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32008R0300"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-06-13"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Regulation (EU) 2024/1689 of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)"
+    },
+    "eli": {
+     "type": "uri",
+     "value": "http://data.europa.eu/eli/reg/2024/1689/oj"
+    },
+    "force": {
+     "type": "literal",
+     "value": "2027-08-02"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    },
+    "amends": {
+     "type": "literal",
+     "value": "32018R1139"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "32024R1689R(01)"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/CORRIGENDUM"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2025-10-09"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "52021PC0206"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/PROP_REG"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2021-04-21"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Proposal for a REGULATION OF THE EUROPEAN PARLIAMENT AND OF THE COUNCIL LAYING DOWN HARMONISED RULES ON ARTIFICIAL INTELLIGENCE (ARTIFICIAL INTELLIGENCE ACT)"
+    },
+    "end": {
+     "type": "literal",
+     "value": "9999-12-31"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "52020DC0065"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/PAPER_WHITE"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2020-02-19"
+    },
+    "title": {
+     "type": "literal",
+     "value": "WHITE PAPER On Artificial Intelligence - A European approach to excellence and trust"
+    }
+   },
+   {
+    "celex": {
+     "type": "literal",
+     "value": "62024CN0001"
+    },
+    "type": {
+     "type": "uri",
+     "value": "http://publications.europa.eu/resource/authority/resource-type/INFO_JUDICIAL"
+    },
+    "date": {
+     "type": "literal",
+     "value": "2024-01-02"
+    },
+    "title": {
+     "type": "literal",
+     "value": "Case C-1/24"
+    }
+   }
+  ]
+ }
+}

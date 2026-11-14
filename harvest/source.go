@@ -166,6 +166,16 @@ var Sources = []Source{
 		Note:   "The Federal Register covers the US federal government from 1994; the states and other countries come from their own gazettes (S-L1).",
 	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "eur-lex", Name: "EUR-Lex, through the Cellar of the Publications Office",
+		URL: "https://eur-lex.europa.eu/", Owner: "the Publications Office of the European Union",
+		Licence: "the reuse policy of the Commission (Decision 2011/833/EU), with acknowledgement; only the Official Journal text is authentic", Checked: "2026-11-15", Class: "C",
+		Access: "the SPARQL endpoint of the Cellar (publications.europa.eu/webapi/rdf/sparql) with no key, one query for the works indexed under the EuroVoc concept artificial intelligence (3030); robots.txt of publications.europa.eu allows it, and eur-lex.europa.eu answers scripts with a challenge, so the adapter never fetches it", Rate: "1 request per 1 s",
+		Schedule: "daily", Standing: "primary",
+		Facts:  "CELEX numbers, ELI ids, resource types, English titles, the dates of the document, of entry into force, of application and of end of validity, and the CELEX numbers of the acts amended; never the text",
+		Credit: "EUR-Lex, © European Union, https://eur-lex.europa.eu",
+		Note:   "The EuroVoc index finds the acts about AI, not every act that has an AI provision; a curator adds the others to registers/watch.yaml (S-L1). Corrigenda, case law, national measures, parliamentary questions and notices are skipped.",
+	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "oecd-ai", Name: "OECD.AI policy database",
 		URL: "https://oecd.ai/en/dashboards/policy-initiatives", Owner: "the OECD AI Policy Observatory",
 		Licence: "facts only", Checked: "2026-11-14", Class: "D",
