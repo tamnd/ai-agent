@@ -237,7 +237,7 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 	if err != nil {
 		return err
 	}
-	set("models", open, dataFile{"models.csv", models, nm})
+	set("models", open+"; the fields derived from Epoch AI keep CC-BY-4.0 with attribution", dataFile{"models.csv", models, nm})
 	rcsv, err := resultsCSV(g, shownResults)
 	if err != nil {
 		return err
@@ -245,9 +245,9 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 	set("results", open, lines("results.jsonl", &rs), dataFile{"results.csv", rcsv, rs.rows})
 	set("claims", "CC0-1.0; the text of a claim quotes the prose, CC-BY-SA-4.0", lines("claims.jsonl", &cl))
 	set("graph", "CC0-1.0", lines("graph.jsonl", &gr), dataFile{"graph.graphml", graphML(all, edges), gr.rows})
-	set("incidents", open, lines("incidents.jsonl", &inc))
-	set("policy", open, lines("policy.jsonl", &pol))
-	set("experiments", "MIT for the code and the designs; the results are CC0-1.0", lines("experiments.jsonl", &ex))
+	set("incidents", "per source (19.2)", lines("incidents.jsonl", &inc))
+	set("policy", "per source (19.2)", lines("policy.jsonl", &pol))
+	set("experiments", "MIT; CC0-1.0 for the numbers", lines("experiments.jsonl", &ex))
 	fs = []dataFile{lines("code.jsonl", &code)}
 	for _, fw := range sortedKeys(tars) {
 		data, err := tars[fw].close()
@@ -261,7 +261,7 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 	for _, top := range sortedKeys(pages) {
 		fs = append(fs, lines("pages/"+top+".jsonl", pages[top]))
 	}
-	set("pages", "CC-BY-SA-4.0", fs...)
+	set("pages", "CC-BY-SA-4.0 for the prose, MIT for the code", fs...)
 
 	next := filepath.Clean(dir) + ".next"
 	_ = os.RemoveAll(next)
