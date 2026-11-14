@@ -1,0 +1,191 @@
+{
+ "status": "ok",
+ "message": {
+  "next-cursor": "abc",
+  "total-results": 7,
+  "items": [
+   {
+    "DOI": "10.1109/ieeestd.2002.94148",
+    "title": [
+     "(Replaced) IEEE Standard for Artificial Intelligence Exchange and Service Tie to All Test Environments (AI- ESTATE)"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2002,
+       6,
+       13
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "IEEE-SASB Coordinating Committees"
+    }
+   },
+   {
+    "DOI": "10.1109/ieeestd.2010.5599999",
+    "title": [
+     "IEEE Draft Standard for Artificial Intelligence Exchange and Service Tie to All Test Environments (AI-ESTATE)"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2010,
+       12,
+       8
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "IEEE-SASB Coordinating Committees"
+    }
+   },
+   {
+    "DOI": "10.1109/ieeestd.2015.7300355",
+    "title": [
+     "IEEE Standard for Robot Map Data Representation for Navigation"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2015,
+       9,
+       3
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "Standing Committee for Standards of the IEEE Robotics and Automation Society"
+    }
+   },
+   {
+    "DOI": "10.1109/ieeestd.2022.9726144",
+    "title": [
+     "IEEE Standard for Transparency of Autonomous Systems"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2021,
+       12,
+       8
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "Intelligent Transportation Systems of the IEEE Vehicular Technology Society"
+    }
+   },
+   {
+    "DOI": "10.1109/ieeestd.2025.10851955",
+    "title": [
+     "IEEE Standard for Algorithmic Bias Considerations"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2024,
+       12,
+       11
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "Software &amp; Systems Engineering Standards Committee of the IEEE Computer Society"
+    }
+   },
+   {
+    "DOI": "10.1109/ieeestd.2026.11738903",
+    "title": [
+     "IEEE Recommended Practice for Organizational Governance of Artificial Intelligence"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2026,
+       6,
+       4
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "Artificial Intelligence Standards Committee of the IEEE Computer Society"
+    }
+   },
+   {
+    "DOI": "10.1109/IEESTD.2020.1",
+    "title": [
+     "IEEE Standard for Machine Learning Placeholder"
+    ],
+    "issued": {
+     "date-parts": [
+      [
+       null
+      ]
+     ]
+    },
+    "approved": {
+     "date-parts": [
+      [
+       2002,
+       6,
+       13
+      ]
+     ]
+    },
+    "standards-body": {
+     "acronym": "IEEE",
+     "name": "IEEE-SASB Coordinating Committees"
+    }
+   }
+  ]
+ }
+}
