@@ -123,6 +123,9 @@ func TestResults(t *testing.T) {
 		delete(named.Fields, k)
 	}
 	named.Fields["benchmark_name"], named.Fields["metric_name"] = "SWE-bench Verified", "% resolved"
+	// Its source is the paper, so its number is not looked for in the snapshot.
+	named.Fields["source"] = map[string]any{"src": "arxiv:2310.06770", "kind": "primary", "date": "2023-10-10",
+		"loc": "not located"}
 	odd := resultRow("verified/o", "Claude 3.5 Sonnet", 1, snap)
 	delete(odd.Fields, "benchmark")
 	odd.Fields["benchmark_name"] = "Odd"
@@ -133,8 +136,8 @@ func TestResults(t *testing.T) {
 	if rep.Rows != 13 || rep.New != 4 || rep.Duplicates != 1 || rep.Skipped != 1 || rep.Unresolved != 7 {
 		t.Fatalf("report %+v", rep)
 	}
-	if rep.Cite[results.CiteFound] != 2 || rep.Cite[results.CiteNotFound] != 2 {
-		t.Errorf("cite %v; want 2 found (opus, old) and 2 not found (sonnet and named: no record has them)", rep.Cite)
+	if rep.Cite[results.CiteFound] != 2 || rep.Cite[results.CiteNotFound] != 1 || rep.Cite[citeUnchecked] != 1 {
+		t.Errorf("cite %v; want 2 found (opus, old), 1 not found (sonnet: no record has it), 1 unchecked (named: its source is a paper)", rep.Cite)
 	}
 	want := map[string]string{"GPT 4": Ambiguous, "Mystery 9": NoModel, "Bad": BadCrosswalk, "swe-bench@lite2": NoVersion,
 		"swe-bench:verified/e": NotResultRow, "Odd": BadCrosswalk, "SWE-bench Lite": NoBenchName}

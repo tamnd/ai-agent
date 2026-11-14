@@ -25,6 +25,7 @@ type Adapter struct {
 var Adapters = map[string]Adapter{
 	"epoch-ai":         {Source: "epoch-ai", Gap: 2 * time.Second, Run: harvestEpoch},
 	"pwc-dump":         {Source: "pwc-dump", Gap: 2 * time.Second, Run: harvestPwC},
+	"pwc-results":      {Source: "pwc-results", Gap: 2 * time.Second, Run: harvestPwCResults},
 	"aiid":             {Source: "aiid", Gap: 2 * time.Second, Run: harvestAIID},
 	"arxiv":            {Source: "arxiv", Gap: 3 * time.Second, Run: harvestArxiv},
 	"wikidata":         {Source: "wikidata", Gap: 2 * time.Second, Run: harvestWikidata},
