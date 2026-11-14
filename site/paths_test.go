@@ -21,9 +21,9 @@ func TestPaths(t *testing.T) {
 		"prereqs: [binary-search, matrix-multiplication@m2]\n---\n\n## Overview\n\nA toy search reads " + strings.Repeat("word ", 600) + "\n"
 	files := map[string]string{
 		"nodes/searching/sequential-and-binary-search/toy-search/node.md": md,
-		"cards/bridge/m2/_.jsonl": `{"tag":"M2MM01","site":"m2","kind":"theorem","slug":"matrix-multiplication","name":"Matrix multiplication","url":"https://math2.tamnd.com/matrix-multiplication/"}` + "\n",
+		"cards/bridge/m2/_.jsonl":       `{"tag":"M2MM01","site":"m2","kind":"theorem","slug":"matrix-multiplication","name":"Matrix multiplication","url":"https://math2.tamnd.com/matrix-multiplication/"}` + "\n",
 		"topics/courses/searching.yaml": "id: searching\ntitle: Searching\nbasis: the order of a textbook\nsections:\n  - heading: First ideas\n    items:\n      - {name: Loop invariant, node: loop-invariant}\n      - {name: Interpolation search, kind: method}\n      - {name: asymptotic notation, kind: definition}\n  - heading: Search\n    items:\n      - {name: Binary search, kind: method, node: binary-search}\n",
-		"topics/courses/to.yaml": "id: to\ntitle: A course with a reserved id\nsections: []\n",
+		"topics/courses/to.yaml":        "id: to\ntitle: A course with a reserved id\nsections: []\n",
 	}
 	for p, s := range files {
 		full := filepath.Join(root, filepath.FromSlash(p))
