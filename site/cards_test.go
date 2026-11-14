@@ -21,6 +21,10 @@ func TestCollections(t *testing.T) {
 		"cards/model/5T.jsonl":    `{"tag":"5TQX4M","kind":"model","slug":"llama-3-1","name":"Llama 3.1","role":"family","summary":"A family of open-weight models."}` + "\n" + `{"tag":"5TQX4N","kind":"model","slug":"llama-3-1-405b","owner":"llama-3-1","name":"Llama 3.1 405B","summary":"The largest model.","params":{"total":{"v":4.05e11,"src":"S:paper","loc":"Table 3"}}}` + "\n",
 		"cards/benchmark/_.jsonl": `{"tag":"6TQX4M","kind":"benchmark","slug":"toy-bench","name":"Toy bench","summary":"A small benchmark."}` + "\n",
 		"cards/metric/_.jsonl":    `{"tag":"7TQX4M","kind":"metric","slug":"toy-score","name":"Toy score","summary":"A small score."}` + "\n",
+		"cards/software/_.jsonl":  `{"tag":"8TQX4M","kind":"software","slug":"toy-gym","name":"Toy gym","summary":"A small library of environments."}` + "\n",
+		"cards/exercise/_.jsonl":  `{"tag":"8TQX4N","kind":"exercise","slug":"toy-env","owner":"toy-gym","name":"Toy env","summary":"A small environment."}` + "\n",
+		"cards/policy/_.jsonl":    `{"tag":"9TQX4M","kind":"policy","slug":"toy-act","name":"Toy act","summary":"A small law."}` + "\n",
+		"cards/provision/_.jsonl": `{"tag":"9TQX4N","kind":"provision","slug":"article-1","owner":"toy-act","name":"Article 1","summary":"The first article."}` + "\n",
 	}
 	for p, s := range files {
 		full := filepath.Join(root, filepath.FromSlash(p))
@@ -78,6 +82,8 @@ func TestCollections(t *testing.T) {
 		"/models/llama-3-1/llama-3-1-405b": "/models/#llama-3-1--llama-3-1-405b",
 		"/models/llama-3-1":                "/models/#llama-3-1",
 		"/toy-score":                       "/kind/metric/#toy-score",
+		"/exercises/toy-gym/toy-env":       "/exercises/#toy-gym--toy-env",
+		"/toy-act/article-1":               "/kind/provision/#toy-act--article-1",
 	} {
 		if moved[from] != to {
 			t.Errorf("moved.json sends %s to %q, not %q", from, moved[from], to)
