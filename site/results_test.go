@@ -54,7 +54,7 @@ func TestResultsPage(t *testing.T) {
 		"4 results in 2 comparable groups.",
 		"1 more result is not shown",
 		"accuracy · shots 5, prompt custom, cot none, decoding greedy, split test",
-		`<tr id="r-9R0001"><td>1</td><th scope="row"><a href="/models/model-a/">Model A</a>`,
+		`<tr id="r-9R0001"><td>1</td><th scope="row"><a href="/models/#model-a">Model A</a>`,
 		"88.6%",
 		"self-reported",
 		"2 contested results",

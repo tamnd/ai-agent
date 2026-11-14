@@ -91,8 +91,11 @@ func cardURL(c *card.Card) string {
 	return "/" + c.Slug + "/"
 }
 
-// cardKinds gives the cards of each kind, sorted by name.
+// cardKinds gives the cards of each kind, sorted by name. The map is shared: callers must not change it.
 func (b *builder) cardKinds() map[string][]*card.Card {
+	if b.cards != nil {
+		return b.cards
+	}
 	out := map[string][]*card.Card{}
 	for _, c := range b.c.Cards {
 		if node.IsKind(c.Kind) && c.Slug != "" {
@@ -107,7 +110,13 @@ func (b *builder) cardKinds() map[string][]*card.Card {
 			return cs[i].Tag < cs[j].Tag
 		})
 	}
+	b.cards = out
 	return out
+}
+
+// cardLink gives the link of a card: the row of the card on its catalogue, the only page that a card has (spec 16.2).
+func (b *builder) cardLink(c *card.Card) string {
+	return b.cardPage(b.cardKinds(), c)
 }
 
 func cardRow(c *card.Card) CardRow {
@@ -127,7 +136,10 @@ func cardRow(c *card.Card) CardRow {
 // A kind with a catalogue route and node pages but no cards gets a catalogue too, so that the links to its route, such
 // as the crumbs of a results table, point at a page.
 func (b *builder) collections() error {
-	kinds := b.cardKinds()
+	kinds := map[string][]*card.Card{}
+	for k, cs := range b.cardKinds() {
+		kinds[k] = cs
+	}
 	for kind := range collections {
 		if _, ok := kinds[kind]; !ok && len(b.c.Kind(kind)) > 0 {
 			kinds[kind] = nil
