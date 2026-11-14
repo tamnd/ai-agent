@@ -97,11 +97,11 @@ Counts are from the research of 01 in November 2026 (Estimate where marked).
 | Hugging Face Hub | model and dataset repositories, model cards, licences, downloads | more than 3M models; 1.5% of models get 99.2% of downloads | model, dataset, software | metadata by API; model cards under their own licences, facts only |
 | OpenAlex | works, authors, institutions, topics | AI subfield 1702: 4,063,595 works | work, person, org | CC0 |
 | arXiv | preprints and their categories | 2025: cs.LG 46,005 and cs.AI 45,133 with cross-lists | work; new terms (18.6) | metadata CC0; texts by their licences, snapshots for the citation check only |
-| Semantic Scholar, DBLP, OpenReview, ACL Anthology, CVF | works, venues, reviews, awards | Estimate: overlaps OpenAlex for 90%+ | work, event, person | by source (13.2) |
+| Semantic Scholar, DBLP, OpenReview, ACL Anthology, CVF | works, venues, reviews, awards | Estimate: overlaps OpenAlex for 90%+. The ACL Anthology's ten main venues have 64,742 papers, 80% with a DOI, and 349 with a best, outstanding or test-of-time award (2026-11-14); DBLP's pages are behind a bot check, so only its dump (1.1 GB) is open | work, event, person | by source (13.2) |
 | Papers with Code dump | methods, tasks, datasets, results, code links | frozen at the shutdown of 2025-07-24 | method, task, dataset, benchmark, result | CC BY-SA 4.0; facts and names only (19) |
 | Wikidata | items with QIDs, people, orgs, events | Estimate: about 60k items under AI classes | every kind; `same_as` | CC0 |
 | AI Incident Database | incidents and reports | highest id about 1,797 | incident, risk links | CC BY-SA 4.0; facts and our own summaries |
-| OECD.AI policy database, EUR-Lex, the Federal Register, national gazettes | AI laws, policies, provisions | Estimate: about 1,000 policy initiatives; the EU AI Act and the Digital Omnibus 2026/1744 in force | policy, provision, standard, org | official texts; public domain or reuse terms by jurisdiction |
+| OECD.AI policy database, EUR-Lex, the Federal Register, national gazettes | AI laws, policies, provisions | Estimate: about 1,000 policy initiatives; the Federal Register has 1,352 documents with the phrase "artificial intelligence", 175 with an AI title, 11 of them executive orders (2026-11-14); the adapter gives a rule, a proposed rule or a presidential document the signal `instrument`; the EU AI Act and the Digital Omnibus 2026/1744 in force | policy, provision, standard, org | official texts; public domain or reuse terms by jurisdiction |
 | Standards bodies (ISO/IEC JTC 1/SC 42, NIST, CEN-CENELEC JTC 21, IEEE) | standards and their status | Estimate: about 200 | standard | metadata only |
 | Leaderboards (HELM, LMArena, SWE-bench, ARC Prize, Epoch's benchmarking hub, the Open LLM Leaderboard archive) | results | Estimate: about 100k rows | result, benchmark | by source; facts only |
 | Canon works (5.10) and frontier sources (`registers/surveys.yaml`) | named concepts, methods, theorems, findings | 19 canon works; Estimate: about 40 surveys | concept, method, theorem, finding, argument, open problem | names and locators only |
@@ -130,7 +130,7 @@ A curator or a person can override a rule for one item with a reason.
 
 - S-W1: a work of OpenAlex subfield 1702 (or of the arXiv categories of `crosswalk/arxiv.yaml`) is a card when it is in the top 2% by citations for its year and subfield (Default, Q-07).
 - S-W2: a work cited by any node, card, result or fact is a card, whatever its citations.
-- S-W3: a work that won a best paper, an outstanding paper or a test-of-time award at a venue of `registers/venues.yaml` is a card.
+- S-W3: a work that won a best paper, an outstanding paper or a test-of-time award at a venue of `registers/venues.yaml` is a card. The adapters of venues write the signal `awards`, the number of such awards of the work (not a runner-up, an area chair's highlight or a people's choice), so the rule is the threshold `awards: 1`.
 - S-W4: a work is a node only as a canon work (5.10), or when a person promotes it (`aik promote`) because the work itself is the subject (for example "Attention Is All You Need"). About 600 work nodes.
 - Total at M5: about 200,000 work cards. The other works of the subfield (about 4 million) stay `row-only`; search still finds them by id (17).
 
