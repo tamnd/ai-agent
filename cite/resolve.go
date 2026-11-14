@@ -57,6 +57,8 @@ func (d *Doc) resolve(r Ref) (Span, string) {
 			return *d.Title, ""
 		}
 		return d.PageSpan(0), ""
+	case "references":
+		return d.references()
 	case "theorem", "lemma", "definition", "proposition", "corollary":
 		return d.labelled(r)
 	case "article", "recital", "annex":
@@ -378,4 +380,24 @@ func Merge(spans []Span) []Span {
 		out = append(out, x)
 	}
 	return out
+}
+
+// refsLineRE is the heading of a list of references on a line of its own.
+var refsLineRE = regexp.MustCompile(`(?im)^(references( and notes)?|bibliography|literature cited)[ \t]*$`)
+
+// references is the list of references: from the last heading that names it, as a table of contents names it first,
+// to the next numbered heading after it (an appendix) or the end of the text.
+func (d *Doc) references() (Span, string) {
+	all := refsLineRE.FindAllStringIndex(d.Text, -1)
+	if len(all) == 0 {
+		return Span{}, "the text has no list of references"
+	}
+	s := Span{Start: all[len(all)-1][0], End: len(d.Text)}
+	for _, h := range d.Heads {
+		if h.Start > s.Start {
+			s.End = h.Start
+			break
+		}
+	}
+	return s, ""
 }

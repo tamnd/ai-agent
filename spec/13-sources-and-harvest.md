@@ -183,6 +183,7 @@ Each place is a kind and a number.
 | page | `p. 12`, `pp. 12 to 14` | the number printed on the page |
 | article, recital, annex | `Article 50(4)`, `Recital 27`, `Annex III` | `50`, `50(4)`, `50(4)(a)`, `III` |
 | abstract, title page | `the abstract`, `the title page` | none |
+| references | `the references`, `the bibliography` | none |
 
 - A plural kind takes a range with "to". A bare number continues the kind before it: `Sections 3 and 4`, `Tables 2, 3`.
 - A table takes the qualifiers `row "<label>"` and `column "<label>"`, which must appear on the located pages.
@@ -198,6 +199,7 @@ How a place resolves in the extraction:
 - **Articles** resolve to the text up to the next article; a paragraph, to the text from its number to the next one.
 - **The provisions of a legal text** end at the next heading of their level or above. A recital ends at the next recital, or at the enacting formula ("HAVE ADOPTED THIS REGULATION:") after the last one. An article ends at the next article, at the next chapter or section, or at the final formula ("This Regulation shall be binding…") after the last one. An annex ends at the next annex, as its parts and points are its own. The heading of an article is "Article N" on a line of its own, with its title on the next line, and the headings of an act are the run of numbers that starts at Article 1, so that a reference ("Article 6(1) and the corresponding obligations…") or an article that an amending act quotes ("Article 75b", inside its Article 1) is not taken for one. An annex is found by "ANNEX III" or "Annex III" on a line of its own after the last article, and a recital by its number in brackets between "Whereas:" and the enacting formula. A span inside a provision is read with the provision as its section.
 - **The title page** of a web page is its opening block, the text before its first heading or provision, cut at 4,000 bytes. Of a PDF it is its first page.
+- **The references** resolve to the list of references, from the last line that is only "References", "Bibliography" or "Literature Cited" (a table of contents names it first) to the next numbered heading, as an appendix, or to the end of the text. A bibliographic fact (who edited a volume, where a chapter was printed) is cited to the references of an open work when the work it describes has no open text.
 
 The text of a web page keeps its white space as a browser shows it, one space for a run of spaces and new lines and one new line at the end of a block. A superscript after a digit is written as a power, so that `10<sup>25</sup>` is `10^25`, and the number check reads `10^25`, `$10^{25}$` and `10²⁵` as 1e25. The text of a PDF loses its superscripts, so a power of a claim is also found there as its base and its exponent.
 
