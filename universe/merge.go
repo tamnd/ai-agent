@@ -373,7 +373,7 @@ func (g *merger) keys(m member, pass int) []string {
 // idOrder is the order of the ids that name a new item: "u:arxiv:1207.0580" for a work, "u:epoch:GPT-4" for a model.
 var idOrder = map[bool][]string{
 	true:  {"arxiv", "doi", "wikidata", "openalex", "acl", "dblp", "pwc"},
-	false: {"epoch", "aiid", "federal_register", "oecd_ai", "swe_bench", "wikidata", "pwc", "hub", "hub_dataset", "github", "arxiv", "doi"},
+	false: {"epoch", "aiid", "atlas", "federal_register", "oecd_ai", "swe_bench", "wikidata", "pwc", "hub", "hub_dataset", "github", "arxiv", "doi"},
 }
 
 func build(ms []member, rules []Rule, date string, taken map[string]bool) (*Item, string) {

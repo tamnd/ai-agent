@@ -46,6 +46,7 @@ var Adapters = map[string]Adapter{
 	"awards":               {Source: "awards", Gap: 2 * time.Second, Run: harvestAwards},
 	"standards":            {Source: "standards", Gap: time.Second, Run: harvestStandards},
 	"canon":                {Source: "canon", Run: harvestCanon},
+	"mitre-atlas":          {Source: "mitre-atlas", Run: harvestATLAS},
 	"surveys":              {Source: "surveys", Run: harvestSurveys},
 	"courses":              {Source: "courses", Run: harvestCourses},
 }

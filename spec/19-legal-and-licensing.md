@@ -78,7 +78,7 @@ Each row was checked on the date in `registers/sources.yaml`; "checked at M1" ma
 | model cards and dataset cards | per repository; most have no stated licence for the card text | D by default | facts, locators, short quotes |
 | AI Incident Database | per the AIID's terms for its snapshots (checked at M1, Q-23) | C or D | incident ids, dates, titles of reports as citations, classifications as facts; links to the reports; never the text of news reports |
 | MIT AI Risk Repository | CC BY 4.0 (checked at M1) | C | risk names, taxonomy ids, source documents as citations |
-| MITRE ATLAS | per its terms (checked at M1) | C | ids, names, technique structure |
+| MITRE ATLAS | Apache-2.0 (checked 2026-11-15) | C | ids, names, technique structure, maturity, dates; never the actor of a case study |
 | OWASP Top 10 for LLM Applications | CC BY-SA 4.0 | B | ids and names |
 | Stanford AI Index | report CC BY-ND 4.0; data per download | D for text and figures; facts free | numbers with locators |
 | OECD.AI | per dataset (checked at M1) | C or D | facts and ids |
