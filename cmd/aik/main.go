@@ -63,7 +63,7 @@ func init() {
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
 		{"universe", "join the inventories into the universe register: universe merge", cmdUniverse},
 		{"ingest", "make the result cards of 10.6 from the result rows of the inventories: ingest results", cmdIngest},
-		{"card", "write the cards of the card outcomes and update their facts: card sync [<catalog.jsonl>...]", cmdCard},
+		{"card", "write the cards of the card outcomes and update their facts: card sync [<catalog.jsonl>...]; card drift -base <dir>", cmdCard},
 		{"claims", "split the prose of nodes into sentences for the extraction pass of 07.6, and find the phrases of K04 and K05: claims extract <slug>...", cmdClaims},
 		{"facts", "compute the facts of topics/computed.yaml, the first, the largest or the most of a population, with its date: facts compute", cmdFacts},
 		{"cite", "check each claim against the stored text of its source: cite <slug>... | -all | show <work> [<locator>] | results", cmdCite},

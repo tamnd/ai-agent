@@ -246,6 +246,7 @@ AI changes daily. The promise of 02.3 point 8 is that a new model, benchmark, re
 | new terms | n-grams that rise fast in arXiv titles and abstracts and match no item (18.6) | universe rows `pending`, for the cataloguer |
 
 The job opens one PR per source, merged automatically when `aik check` passes and no fact of an existing card changed by more than its tolerance; otherwise a person merges it.
+`aik card drift -base <dir>` is that test: it compares the cards of the branch with those of a worktree of `main`, card by card (the same kind and key), and lists each fact that moved beyond the tolerance of 04.9 (`facts.Same`) or was dropped. A new card or a new fact of an existing card is not a move. It exits with 1 when it lists one.
 A card made by the daily job shows its harvest date, so a reader sees how fresh it is.
 
 **Other scheduled jobs:**
