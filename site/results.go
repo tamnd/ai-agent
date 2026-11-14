@@ -134,6 +134,11 @@ func scoreText(s results.Score) string {
 		return "?"
 	case s.Unit == "fraction":
 		return fmt.Sprintf("%.1f%%", 100**s.V)
+	case s.Unit == "rating" && len(s.Interval) == 2:
+		// A rating to the unit, as the arenas publish it; the card keeps the value of the source.
+		return fmt.Sprintf("%.0f [%.0f, %.0f]", *s.V, s.Interval[0], s.Interval[1])
+	case s.Unit == "rating":
+		return fmt.Sprintf("%.0f", *s.V)
 	case len(s.Interval) == 2:
 		return fmt.Sprintf("%g [%g, %g]", *s.V, s.Interval[0], s.Interval[1])
 	}

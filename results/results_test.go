@@ -148,6 +148,15 @@ func TestGroupOfRating(t *testing.T) {
 	if a == b || a == c || a != same {
 		t.Errorf("groups %q %q %q %q", a, b, c, same)
 	}
+	v := r("LMArena text", "2026-11-11")
+	v.ModelVariant = "High"
+	v.Setting["model_variant"] = "High"
+	if g, unknown := GroupOf(v); g != a || unknown != nil {
+		t.Errorf("a variant does not split the group of a rating: %q, want %q", g, a)
+	}
+	if s := v.SettingText(); s != "arena LMArena text, snapshot 2026-11-11" {
+		t.Errorf("the header of a rating group is %q", s)
+	}
 	acc, _ := GroupOf(&Result{Benchmark: "mmlu", Version: "test", Metric: "accuracy", Arena: "x", Snapshot: "2026-11-11"})
 	if acc != "mmlu@test/accuracy/" {
 		t.Errorf("a result that is not a rating ignores arena and snapshot: %q", acc)
