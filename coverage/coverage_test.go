@@ -5,11 +5,13 @@ package coverage
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/tamnd/ai-agent/card"
+	"github.com/tamnd/ai-agent/harvest"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
 )
@@ -86,6 +88,7 @@ func TestCompute(t *testing.T) {
 		{ID: "u:4", Outcome: "card", Target: "hinton-2012", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:6", Outcome: "card", Target: "ai://5TQH2W", Sources: []string{"openalex"}, File: "deep-learning-training.jsonl"},
 		{ID: "u:5", Outcome: "pending", Added: "2026-11-01", Sources: []string{"pwc-dump:methods"}, File: "deep-learning-training.jsonl"},
+		{ID: "u:7", Outcome: "card", Target: "srivastava-2014", Sources: []string{"epoch-ai:GPT-4", "huggingface:org/m", "helm:lite:x"}, File: "deep-learning-training.jsonl"},
 	}
 	in := Input{Corpus: c, Status: st, Rows: rows, Canon: []Canon{{ID: "goodfellow-2016-deep-learning"}},
 		Last: &Counts{0, 1, 1}, LastVersion: "2027.02", Now: time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)}
@@ -114,9 +117,28 @@ func TestCompute(t *testing.T) {
 	if len(r.Fails) != 0 {
 		t.Errorf("fails before M3: %q", r.Fails)
 	}
+	// A row of the harvest source epoch-ai is a row of the source epoch of 18.4; a row of helm, of the leaderboards.
+	for _, s := range []string{"epoch", "hf-hub", "leaderboards", "arxiv", "openalex", "pwc-dump"} {
+		if slices.Contains(r.Universe.Unharvested, s) {
+			t.Errorf("%s is unharvested, though a row has it: %q", s, r.Universe.Unharvested)
+		}
+	}
+	if !slices.Contains(r.Universe.Unharvested, "aiid") {
+		t.Errorf("aiid has no row but is not unharvested: %q", r.Universe.Unharvested)
+	}
 	in.Now = M3End.Add(time.Hour)
 	if r := Compute(in); len(r.Fails) != 1 || !strings.Contains(r.Fails[0], "u:2") {
 		t.Errorf("fails after M3: %q", r.Fails)
+	}
+}
+
+// TestSourceOf checks that every harvest adapter counts for a source of 18.4, so that a harvest that ran is not
+// reported as unharvested.
+func TestSourceOf(t *testing.T) {
+	for _, id := range harvest.Names() {
+		if !slices.Contains(Sources, SourceOf(id)) {
+			t.Errorf("the harvest source %s is %s, which is not a source of 18.4", id, SourceOf(id))
+		}
 	}
 }
 

@@ -272,11 +272,33 @@ type Canon struct {
 	Share float64 `json:"share"`
 }
 
-// Sources are the sources of 18.4, by the id that a row's sources field starts with. A source with no row is
-// unharvested.
+// Sources are the sources of 18.4. A source with no row is unharvested. A row's sources field starts with the id of the
+// harvest source that read it (13.2), which is the id of 18.4 or a part of one; sourceGroup gives the parts.
 var Sources = []string{"epoch", "hf-hub", "openalex", "arxiv", "semantic-scholar", "dblp", "openreview", "acl-anthology", "cvf",
 	"pwc-dump", "wikidata", "aiid", "oecd-ai", "eur-lex", "federal-register", "standards", "leaderboards", "canon", "surveys",
 	"courses", "github", "awards"}
+
+// sourceGroup gives the source of 18.4 that a harvest source is a part of, where the ids differ: the Epoch AI data on
+// models is epoch, its Benchmarking Hub is one of the leaderboards.
+var sourceGroup = map[string]string{
+	"epoch-ai":             "epoch",
+	"epoch-benchmarks":     "leaderboards",
+	"huggingface":          "hf-hub",
+	"acl":                  "acl-anthology",
+	"pwc-results":          "pwc-dump",
+	"swe-bench":            "leaderboards",
+	"open-llm-leaderboard": "leaderboards",
+	"lmarena":              "leaderboards",
+	"helm":                 "leaderboards",
+}
+
+// SourceOf gives the source of 18.4 of a harvest source id.
+func SourceOf(id string) string {
+	if g, ok := sourceGroup[id]; ok {
+		return g
+	}
+	return id
+}
 
 // M3End is the end of the window of M3 (21): after it, a core item below C3 is a failed promise.
 var M3End = time.Date(2027, 12, 31, 23, 59, 59, 0, time.UTC)
@@ -394,7 +416,7 @@ func Compute(in Input) *Report {
 		}
 		for _, s := range row.Sources {
 			src, _, _ := strings.Cut(s, ":")
-			harvested[src] = true
+			harvested[SourceOf(src)] = true
 			r.Universe.BySource[src]++
 		}
 		switch row.Outcome {
