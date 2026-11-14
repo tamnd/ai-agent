@@ -445,12 +445,16 @@ func cmdTest(args []string) error {
 	cacheDir := f.String("cache", "", "keep the results of passing tests in this directory, and reuse them while the inputs stay the same")
 	kind := f.String("kind", "cases", "cases runs the native tests and the shared cases; diff runs the differential test against the oracle on generated inputs (09.5); mutate runs the mutation test (09.6)")
 	maxMutants := f.Int("mutants", 150, "with -kind mutate, the largest number of mutants of one file, sampled with a fixed seed; 0 runs all")
+	jobs := f.Int("jobs", defaultJobs(), "with -kind mutate, the number of mutants that run at a time")
 	var d diffFlags
 	f.StringVar(&d.classes, "classes", "tiny,small,medium", "with -kind diff or mutate, the size classes to generate")
 	f.StringVar(&d.seeds, "seeds", "", "with -kind diff or mutate, a comma list of seeds; the default is seeds.pr of generated.yaml")
 	f.BoolVar(&d.write, "write-regress", false, "with -kind diff, add each shrunk failure to cases/regress.jsonl of the problem")
 	if err := parse(f, args); err != nil {
 		return err
+	}
+	if *jobs < 1 {
+		return usageError{"-jobs is at least 1"}
 	}
 	if *kind != "cases" && *kind != "diff" && *kind != "mutate" {
 		return usageError{"-kind is cases, diff or mutate, not " + *kind}
@@ -500,7 +504,7 @@ func cmdTest(args []string) error {
 	if *kind == "diff" || *kind == "mutate" {
 		d.root, d.box, d.out = c.Root, box, under(*root, *out)
 		if *kind == "mutate" {
-			return runMutate(r, nodes, want, problems, d, *maxMutants, tc, f.NArg() == 0)
+			return runMutate(r, nodes, want, problems, d, *maxMutants, *jobs, tc, f.NArg() == 0)
 		}
 		return runDiff(r, nodes, want, problems, d)
 	}

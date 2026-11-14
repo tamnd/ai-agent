@@ -302,6 +302,7 @@ As in algorithm 09.6, with the operators adapted to numerical code:
 - **Equivalent mutants.** Listed in `impl/<framework>/mutants.ignore` with a reason, at most 5% (rule X10). Example: removing the max subtraction in a softmax is equivalent on the fixtures but not on large logits, so the right answer is a test with large logits, not an ignore entry.
 - **The threshold.** At least **80%** of the non-equivalent mutants killed for X3 (rule X06). The threshold is lower than algorithm's 85% because numerical mutants near tolerances are harder to kill without making tests brittle. M2 measures the real distribution and may raise it (Default).
 - **The budget.** At most 150 mutants per file in PR runs, sampled with a fixed seed. The nightly run tests all mutants of files that changed since the last release.
+- **Workers.** `aik test -kind mutate -jobs N` runs N mutants at a time (the default is half the processors). Each mutant has its own build tree and, in the sandbox, its own containers, so the result and the order of the survivors do not depend on N. A run of the three Python frameworks of `bleu` took 54 minutes for 147 JAX mutants with one worker, past the 900 s of 8.9.2, so the workers are what keeps a node in its time.
 
 ## 8.9 Runner images and the sandbox
 
