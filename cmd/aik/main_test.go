@@ -26,11 +26,37 @@ func TestExitCodes(t *testing.T) {
 		{[]string{"harvest", "-due", "yearly", "-list"}, 2},
 		{[]string{"harvest", "-due", "weekly", "aiid"}, 2},
 		{[]string{"harvest", "-list", "no-such-source"}, 2},
+		{[]string{"card", "drift", "-root", corpus, "-base", corpus}, 0},
+		{[]string{"card", "drift", "-root", corpus}, 2},
+		{[]string{"card", "drift", "-base", corpus, "extra"}, 2},
 	}
 	for _, c := range cases {
 		if got := run(c.args); got != c.want {
 			t.Errorf("aik %v exits with %d, want %d", c.args, got, c.want)
 		}
+	}
+}
+
+func TestCardDrift(t *testing.T) {
+	base, head := t.TempDir(), t.TempDir()
+	write := func(root, line string) {
+		t.Helper()
+		dir := filepath.Join(root, "cards", "benchmark")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "_.jsonl"), []byte(line+"\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(base, `{"tag":"BBBBBB","kind":"benchmark","slug":"b","items":{"v":500,"src":"S:b"}}`)
+	write(head, `{"tag":"BBBBBB","kind":"benchmark","slug":"b","items":{"v":504,"src":"S:b"}}`)
+	if got := run([]string{"card", "drift", "-root", head, "-base", base}); got != 0 {
+		t.Errorf("a move within 1%% exits with %d", got)
+	}
+	write(head, `{"tag":"BBBBBB","kind":"benchmark","slug":"b","items":{"v":520,"src":"S:b"}}`)
+	if got := run([]string{"card", "drift", "-root", head, "-base", base, "-json"}); got != 1 {
+		t.Errorf("a move beyond 1%% exits with %d", got)
 	}
 }
 

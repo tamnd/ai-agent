@@ -6,14 +6,19 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/universe"
 )
 
 // cmdCard writes the cards of spec 04.6: aik card sync [<catalog.jsonl>...]. It makes the card of each item with
-// the outcome card, updates the facts of the cards that exist, and splits a shard that passes 5 MB (20.3).
+// the outcome card, updates the facts of the cards that exist, and splits a shard that passes 5 MB (20.3). aik card
+// drift compares the cards with those of a base tree.
 func cmdCard(args []string) error {
+	if len(args) > 0 && args[0] == "drift" {
+		return cardDrift(args[1:])
+	}
 	if len(args) == 0 || args[0] != "sync" {
-		return usageError{"aik card sync [flags] [<catalog.jsonl>...]"}
+		return usageError{"aik card sync [flags] [<catalog.jsonl>...] | aik card drift -base <dir> [flags]"}
 	}
 	f := newFlags("card sync", "[flags] [<catalog.jsonl>...]")
 	root := f.String("root", ".", "the root of the content repository")
@@ -56,6 +61,47 @@ func cmdCard(args []string) error {
 	}
 	if rep.Created > 0 {
 		fmt.Println("the new cards have provisional tags; run aik mint")
+	}
+	return nil
+}
+
+// cardDrift is aik card drift -base <dir>: the facts of the cards of base that the cards of root moved beyond their
+// tolerance or dropped (14.9). It exits with 1 when there is one, so that the daily job merges its pull request by
+// itself only when there is none.
+func cardDrift(args []string) error {
+	f := newFlags("card drift", "-base <dir> [flags]")
+	root := f.String("root", ".", "the root of the content repository with the change")
+	base := f.String("base", "", "the root of the same repository before the change, such as a git worktree of main")
+	asJSON := f.Bool("json", false, "print the moves as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if *base == "" || f.NArg() > 0 {
+		return usageError{"aik card drift -base <dir> [-root <dir>] [-json]"}
+	}
+	old, bad := card.Read(*base)
+	if len(bad) > 0 {
+		return fmt.Errorf("the base cards: %w", bad[0])
+	}
+	cur, bad := card.Read(*root)
+	if len(bad) > 0 {
+		return fmt.Errorf("the cards: %w", bad[0])
+	}
+	moves := card.Drift(old, cur)
+	if *asJSON {
+		if moves == nil {
+			moves = []card.Move{}
+		}
+		b, _ := json.Marshal(moves)
+		fmt.Println(string(b))
+	} else {
+		for _, m := range moves {
+			fmt.Println(m)
+		}
+		fmt.Printf("%d cards before, %d after; %d facts of existing cards moved beyond the tolerance or were dropped\n", len(old), len(cur), len(moves))
+	}
+	if len(moves) > 0 {
+		return errFindings
 	}
 	return nil
 }

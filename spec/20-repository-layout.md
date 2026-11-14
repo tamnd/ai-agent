@@ -131,6 +131,7 @@ aik
   mint                                      give tags to every NEW- id; update tags.reg
   promote <id>                              turn a card into a node directory, same tag (04.1)
   card sync [-kind K] [-source S]           write and update cards from inventories and universe outcomes; split shards
+  card drift -base <dir> [-json]            the facts of existing cards that moved beyond their tolerance or were dropped (14.9); exit 1 when one did
   claims extract <slug>                     find claim sentences and match them with claims.yaml (07.3)
   cite <slug..|-all> [-offline]             the citation check against ai-raw snapshots; writes prov/cite and manifests/works.jsonl (07.5, 13.6)
   cite show <work> ["<locator>"]            the places that the extraction of a work found, or the text of one place (13.6)
@@ -176,7 +177,7 @@ GitHub Actions of `tamnd/ai`, and the self-hosted build server for the heavy job
 | `build.yml` | push to `main`, nightly | `aik build` and `aik site build` and `aik site check` on the build server | no; a failure opens an issue |
 | `deploy.yml` | after `build.yml` on `main` | `aik site deploy -commit $H` and the live check (14.10) | no |
 | `harvest.yml` | each Monday for the weekly sources, the first Monday of the month also for the monthly ones, and by hand for one source | `aik harvest -due weekly` (`monthly`), then for each source `aik universe merge` and `aik card sync`; one PR per source | no |
-| `daily.yml` | 06:00 UTC | the daily freshness job of 14.9 | no |
+| `daily.yml` | 06:00 UTC | the daily freshness job of 14.9: `aik harvest -due daily`, then for each source `aik universe merge`, `aik card sync`, `aik check` and `aik card drift` against `main`; one PR per source, merged by the job when the check passes and nothing drifted | no |
 | `exp.yml` | monthly, and on demand with a label `exp: gpu` | `aik exp plan`, then `aik exp run -update` on the GPU pool under the cap (09.10); a PR with the new `results.json` | no |
 | `audit.yml` | daily | `aik cite -all`, then `aik audit` (`-links` on the weekly run): every rule with main's severities, the citation records of `prov/cite` with those that fail, the size alarm and the dead links, in `reports/audit.json`, in a PR when it changes. The report has no date, so it changes only when the state does | no |
 | `frameworks.yml` | a new framework release (08.2) | build the image, run all tests of that framework, open a PR with the new pin when they pass, or issues when they fail | no |
