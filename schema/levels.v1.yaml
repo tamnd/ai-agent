@@ -1,0 +1,108 @@
+# Generated from the code of packages status and coverage by go test ./schema -update. Do not edit; change the code.
+version: 1
+spec: 04.10, 06.10, 18.2
+ladders:
+  - id: W
+    name: writing
+    spec: "06.10"
+    levels:
+      - registered
+      - page
+      - draft
+      - standard
+      - complete
+      - reviewed
+  - id: G
+    name: grounding
+    spec: 07, 13.6
+    levels:
+      - no sources
+      - sourced
+      - checked
+      - verified
+  - id: X
+    name: execution
+    spec: "08.10"
+    levels:
+      - not checked yet
+      - runs and passes its tests
+      - agrees with the reference
+      - clean and mutation-tested
+      - reviewed
+  - id: R
+    name: reproduction
+    spec: "09.11"
+    levels:
+      - no experiment
+      - experiment run
+      - holds at small scale
+      - holds at two scales
+      - reviewed experiment
+  - id: F
+    name: formal
+    spec: "11"
+    levels:
+      - no Lean part
+      - statement checked
+      - proved
+      - steps linked
+  - id: V
+    name: visualization
+    spec: "12"
+    levels:
+      - none
+      - static frames
+      - interactive and checked
+      - reviewed
+  - id: D
+    name: data facts
+    spec: 04.9, 10.11
+    levels:
+      - a name and a source
+      - required facts
+      - primary sources
+      - reviewed facts
+  - id: H
+    name: human proof
+    spec: "06.5"
+    levels:
+      - no proof
+      - sketch
+      - full proof
+      - reviewed proof
+  - id: L
+    name: Lean algorithm
+    spec: "11"
+    levels:
+      - no Lean part
+      - spec and model
+      - correctness proved
+      - cost proved
+      - refinement proved
+  - id: I
+    name: implementation
+    spec: "08"
+    levels:
+      - not checked yet
+      - shared cases pass
+      - differential and mutation
+      - clean and measured
+      - reviewed
+coverage:
+  - registered
+  - carded
+  - paged
+  - grounded
+  - evidenced
+  - complete
+  - reviewed
+thresholds:
+  w_sources:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 5
+  w3_pitfall_items: 2
+  i_mutation_score: 0.85
+  x_mutation_score: 0.8

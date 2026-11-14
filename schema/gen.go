@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package schema holds the schemas of the files and records of spec 20.2 (node.v1.json, card.v1.json, claims.v1.json,
-// experiment.v1.json, expect.v1.json, facts.v1.yaml, record.v1.json) and the generator that makes them from the Go
+// experiment.v1.json, expect.v1.json, facts.v1.yaml, levels.v1.yaml, targets.v1.yaml, edges.md, record.v1.json) and the generator that makes them from the Go
 // types and tables that read those files, so a schema cannot drift from the code. The tests compare the files with the generator; go test ./schema -update writes them again.
 //
 // The code is the authority: aik check applies rules that a schema cannot say (a slug that exists, a role that the
@@ -20,7 +20,7 @@ import (
 
 // Files are the schema files, as the site publishes them at /data/schema/.
 //
-//go:embed *.json *.yaml
+//go:embed *.json *.yaml edges.md
 var Files embed.FS
 
 // Draft is the JSON Schema dialect of the files.

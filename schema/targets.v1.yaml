@@ -1,0 +1,117 @@
+# Generated from the code of package coverage by go test ./schema -update. Do not edit; change the code.
+version: 1
+spec: 04.10, 18.2
+code_kinds:
+  - architecture
+  - method
+  - metric
+targets:
+  - level: 2
+    ladder: W
+    min: 2
+    when: all
+  - level: 2
+    ladder: G
+    min: 1
+    when: all
+  - level: 3
+    ladder: W
+    min: 3
+    when: all
+  - level: 3
+    ladder: G
+    min: 2
+    when: all
+  - level: 3
+    ladder: D
+    min: 2
+    when: facts
+  - level: 4
+    ladder: X
+    min: 2
+    framework: numpy
+    when: code
+  - level: 4
+    ladder: X
+    min: 2
+    framework: pytorch
+    when: code
+  - level: 4
+    ladder: X
+    min: 2
+    framework: jax
+    when: code
+  - level: 4
+    ladder: R
+    min: 1
+    when: experiments
+  - level: 4
+    ladder: G
+    min: 3
+    when: all
+  - level: 5
+    ladder: W
+    min: 4
+    when: all
+  - level: 5
+    ladder: G
+    min: 3
+    when: all
+  - level: 5
+    ladder: X
+    min: 3
+    framework: numpy
+    when: code
+  - level: 5
+    ladder: X
+    min: 3
+    framework: pytorch
+    when: code
+  - level: 5
+    ladder: X
+    min: 2
+    framework: jax
+    when: code
+  - level: 5
+    ladder: R
+    min: 2
+    when: experiments
+  - level: 5
+    ladder: D
+    min: 2
+    when: facts
+  - level: 5
+    ladder: L
+    min: 2
+    when: lean-theorem
+  - level: 5
+    ladder: V
+    min: 2
+    when: scene
+  - level: 6
+    ladder: W
+    min: 5
+    when: all
+  - level: 6
+    ladder: X
+    min: 4
+    framework: numpy
+    when: code
+  - level: 6
+    ladder: X
+    min: 4
+    framework: pytorch
+    when: code
+  - level: 6
+    ladder: X
+    min: 4
+    framework: jax
+    when: code
+  - level: 6
+    ladder: R
+    min: 4
+    when: experiments
+  - level: 6
+    ladder: D
+    min: 3
+    when: facts

@@ -688,7 +688,8 @@ func visual(n *node.Node, env Env) (r Rung) {
 	return r
 }
 
-var wNames = []string{"stub", "outline", "basic", "standard", "complete", "reviewed"}
+// wNames are the names of the writing levels of 06.10.
+var wNames = []string{"registered", "page", "draft", "standard", "complete", "reviewed"}
 
 // Sections returns the level 2 headings of the body, in order.
 func Sections(body string) []string {
@@ -760,6 +761,14 @@ func prereqsExist(n *node.Node, c *node.Corpus) bool {
 	return true
 }
 
+// count writes a small number as a word, as the messages of the ladders do.
+func count(n int) string {
+	if n >= 0 && n < 10 {
+		return [...]string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}[n]
+	}
+	return fmt.Sprint(n)
+}
+
 // need is one requirement of a writing level.
 type need struct {
 	what string
@@ -802,28 +811,28 @@ func Writing(n *node.Node, env Env) (r Rung) {
 	if m := k.Main(); m != "" && !generated(m) {
 		levels[1] = append(levels[1], need{m, has(m)})
 	}
-	levels[1] = append(levels[1], need{"one source with a locator", located})
+	levels[1] = append(levels[1], need{"one source with a locator", func() bool { return located() && sources(Thresholds.Sources[1])() }})
 	for _, h := range k.Required {
 		if !generated(h) && h != k.Main() {
 			levels[2] = append(levels[2], need{h, has(h)})
 		}
 	}
-	levels[2] = append(levels[2], need{"at least two sources", sources(2)})
+	levels[2] = append(levels[2], need{fmt.Sprintf("at least %s sources", count(Thresholds.Sources[2])), sources(Thresholds.Sources[2])})
 	// The claims of a page are in the right form at W2 and found in their sources at W3 (06.11).
 	g := Grounding(n, env).Level
 	if len(n.Claims) > 0 {
 		levels[2] = append(levels[2], need{"every claim with a source and a locator (G1)", func() bool { return g >= 1 }})
 	}
 	levels[3] = append(levels[3], need{"the claims in claims.yaml, each found in a source by the citation check (G2)", func() bool { return g >= 2 }})
-	levels[3] = append(levels[3], need{"at least three sources", sources(3)}, need{"every prerequisite exists", linked})
+	levels[3] = append(levels[3], need{fmt.Sprintf("at least %s sources", count(Thresholds.Sources[3])), sources(Thresholds.Sources[3])}, need{"every prerequisite exists", linked})
 	if slices.Contains(k.Sections, "History") {
 		levels[3] = append(levels[3], need{"History with a source", func() bool { return has("History")() && n.History != nil }})
 	}
 	if slices.Contains(k.Sections, "Pitfalls") {
-		levels[3] = append(levels[3], need{"Pitfalls with at least two items", items("Pitfalls", 2)})
+		levels[3] = append(levels[3], need{fmt.Sprintf("Pitfalls with at least %s items", count(Thresholds.PitfallItems)), items("Pitfalls", Thresholds.PitfallItems)})
 	}
 	// The cross-family audit of spec 15.4 is not recorded yet, so W4 asks for the breadth that the canon needs.
-	levels[4] = []need{{"at least five sources", sources(5)}}
+	levels[4] = []need{{fmt.Sprintf("at least %s sources", count(Thresholds.Sources[4])), sources(Thresholds.Sources[4])}}
 	for lv := range 5 {
 		var miss []string
 		for _, nd := range levels[lv] {
