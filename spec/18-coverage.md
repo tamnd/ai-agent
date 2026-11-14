@@ -106,7 +106,7 @@ Counts are from the research of 01 in November 2026 (Estimate where marked).
 | Leaderboards (HELM, LMArena, SWE-bench, ARC Prize, Epoch's benchmarking hub, the Open LLM Leaderboard archive) | results | Estimate: about 100k rows | result, benchmark | by source; facts only |
 | Canon works (5.10) and frontier sources (`registers/surveys.yaml`) | named concepts, methods, theorems, findings | 19 canon works; Estimate: about 40 surveys | concept, method, theorem, finding, argument, open problem | names and locators only |
 | Courses and syllabi (5.7) | topics in reading order | Estimate: about 30 courses | concept, method; paths | names only |
-| GitHub | software repositories, stars, licences | Estimate: about 8k repositories over the threshold | software | metadata by API |
+| GitHub | software repositories, stars, licences | 1,977 repositories with an AI topic and 5,000 stars (2026-11-14) | software | metadata by API |
 | Award lists (Turing Award, the test-of-time and best paper awards of the main venues) | people, works | Estimate: about 1,500 entries | work, person, event | facts |
 
 A source that we know of and have not harvested is listed in the report as a gap of type `unharvested`, with its estimated size.
@@ -161,7 +161,7 @@ A curator or a person can override a rule for one item with a reason.
 
 **Software and hardware.**
 
-- S-S1: a software repository is a card when a node or a model card names it, or it has 5,000 GitHub stars and an AI topic. About 8,000; about 800 nodes, with bridge cards to programming where it owns the item.
+- S-S1: a software repository is a card when a node or a model card names it, or it has 5,000 GitHub stars and an AI topic. The first harvest (2026-11-14) found 1,977 repositories that are not forks over the threshold with one of the 53 topics of `crosswalk/github-topics.yaml` (87 searches), far under the estimate of 8,000, so the topic list is the lever if the cards are too few; about 800 nodes, with bridge cards to programming where it owns the item.
 - S-H1: every accelerator in Epoch's hardware data and every chip that a notable model trained on is a card; about 200 nodes and 500 cards.
 
 **Exercises and events.**
