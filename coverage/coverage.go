@@ -280,7 +280,7 @@ type Canon struct {
 // Sources are the sources of 18.4. A source with no row is unharvested. A row's sources field starts with the id of the
 // harvest source that read it (13.2), which is the id of 18.4 or a part of one; sourceGroup gives the parts.
 var Sources = []string{"epoch", "hf-hub", "openalex", "arxiv", "semantic-scholar", "dblp", "openreview", "acl-anthology", "cvf",
-	"pwc-dump", "wikidata", "aiid", "oecd-ai", "eur-lex", "federal-register", "standards", "leaderboards", "canon", "surveys",
+	"pwc-dump", "wikidata", "aiid", "risk-taxonomies", "oecd-ai", "eur-lex", "federal-register", "standards", "leaderboards", "canon", "surveys",
 	"courses", "github", "awards"}
 
 // sourceGroup gives the source of 18.4 that a harvest source is a part of, where the ids differ: the Epoch AI data on
@@ -295,6 +295,7 @@ var sourceGroup = map[string]string{
 	"open-llm-leaderboard": "leaderboards",
 	"lmarena":              "leaderboards",
 	"helm":                 "leaderboards",
+	"mitre-atlas":          "risk-taxonomies",
 }
 
 // ClosedSources are the sources of 18.4 that have no adapter, by the rules of 13.1, with the reason (spec 13.2). They

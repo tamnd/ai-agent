@@ -205,6 +205,16 @@ var Sources = []Source{
 		Note:   "The site says that copyright and all rights of the papers are retained by the authors or other holders, so only facts are kept. It lists no awards; the awards of S-W3 for CVPR and ICCV need the conferences' own pages.",
 	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "mitre-atlas", Name: "MITRE ATLAS",
+		URL: "https://atlas.mitre.org/", Owner: "The MITRE Corporation",
+		Licence: "Apache-2.0", Checked: "2026-11-15", Class: "C",
+		Access: "the one data file of the atlas-data repository, dist/ATLAS.yaml on raw.githubusercontent.com (whose robots.txt is a 404): the tactics, techniques, mitigations and case studies", Rate: "1 request a run",
+		Schedule: "monthly", Standing: "primary",
+		Facts:  "ATLAS and ATT&CK ids, names, the tactics of each technique, the parent of each sub-technique, maturity, the techniques each mitigation and case study names, dates, case study types and targets; never the descriptions, references or actors",
+		Credit: "MITRE ATLAS (Apache-2.0), https://atlas.mitre.org",
+		Note:   "Its LICENSE.txt reads: Copyright 2021-2026 MITRE, licensed under the Apache License, Version 2.0. A case study's actor can name a person, so it is never kept (19, P family). Techniques are risks (spec 04 names ATLAS as a risk taxonomy); an exercise case study is a finding, an incident one an incident.",
+	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "dblp", Name: "dblp computer science bibliography",
 		URL: "https://dblp.org/", Owner: "Schloss Dagstuhl - Leibniz Center for Informatics",
 		Licence: "CC0-1.0", Checked: "2026-11-14", Class: "A",
