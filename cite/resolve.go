@@ -53,6 +53,9 @@ func (d *Doc) resolve(r Ref) (Span, string) {
 		}
 		return Span{}, "the text has no abstract"
 	case "title-page":
+		if d.Title != nil {
+			return *d.Title, ""
+		}
 		return d.PageSpan(0), ""
 	case "theorem", "lemma", "definition", "proposition", "corollary":
 		return d.labelled(r)
@@ -146,7 +149,11 @@ func (d *Doc) marks(r Ref) (Span, string) {
 		ok := false
 		for _, m := range d.Marks {
 			if m.Kind == r.Kind && m.Num == num {
-				s = union(s, d.near(m.Start), found)
+				sp := d.near(m.Start)
+				if m.End > m.Start {
+					sp = Span{m.Start, m.End}
+				}
+				s = union(s, sp, found)
 				found, ok = true, true
 				break
 			}
@@ -289,27 +296,26 @@ func (d *Doc) labelled(r Ref) (Span, string) {
 	return s, ""
 }
 
-var paraRE = regexp.MustCompile(`^([0-9]+[a-z]?)((?:\([0-9a-z]+\))*)$`)
+var paraRE = regexp.MustCompile(`^([0-9]+[a-z]*)((?:\([0-9a-z]+\))*)$`)
 
-// provision resolves an article, a recital or an annex of a legal text, and the paragraph of an article.
+// provision resolves an article, a recital or an annex of a legal text to the text from its heading to the next
+// heading of its level or above (Provision), and the paragraph of an article to the text from its number to the next
+// one.
 func (d *Doc) provision(r Ref) (Span, string) {
-	word := strings.ToUpper(r.Kind[:1]) + r.Kind[1:]
 	num, paras := r.From, ""
-	if m := paraRE.FindStringSubmatch(r.From); m != nil {
+	if m := paraRE.FindStringSubmatch(r.From); m != nil && r.Kind == "article" {
 		num, paras = m[1], m[2]
 	}
-	start := regexp.MustCompile(`(?m)^\s*` + word + `\s+` + regexp.QuoteMeta(num) + `\b`)
-	loc := start.FindStringIndex(d.Text)
-	if loc == nil && r.Kind == "recital" {
-		loc = regexp.MustCompile(`(?m)^\s*\(` + regexp.QuoteMeta(num) + `\)`).FindStringIndex(d.Text)
+	var s Span
+	found := false
+	for _, p := range d.Provisions {
+		if p.Kind == r.Kind && p.Num == num {
+			s, found = Span{p.Start, p.End}, true
+			break
+		}
 	}
-	if loc == nil {
-		return Span{}, fmt.Sprintf("the text has no %s %s", r.Kind, num)
-	}
-	s := Span{loc[0], len(d.Text)}
-	next := regexp.MustCompile(`(?m)^\s*` + word + `\s+[0-9IVX]+[a-z]?\b`)
-	if m := next.FindStringIndex(d.Text[loc[1]:]); m != nil {
-		s.End = loc[1] + m[0]
+	if !found {
+		return Span{}, fmt.Sprintf("the text has no heading %s %s (%s)", r.Kind, num, d.provisionList(r.Kind))
 	}
 	if paras == "" {
 		return s, ""
@@ -331,6 +337,25 @@ func (d *Doc) provision(r Ref) (Span, string) {
 		}
 	}
 	return ps, ""
+}
+
+// provisionList says which provisions of a kind the text has, for the message of a place that it does not have.
+func (d *Doc) provisionList(kind string) string {
+	var ns []string
+	for _, p := range d.Provisions {
+		if p.Kind == kind {
+			ns = append(ns, p.Num)
+		}
+	}
+	switch {
+	case len(d.Provisions) == 0:
+		return "it has no headings of a legal text"
+	case len(ns) == 0:
+		return "it has no " + kind
+	case len(ns) > 12:
+		return fmt.Sprintf("it has %d, %s to %s", len(ns), ns[0], ns[len(ns)-1])
+	}
+	return "it has " + strings.Join(ns, ", ")
 }
 
 func union(a, b Span, ok bool) Span {

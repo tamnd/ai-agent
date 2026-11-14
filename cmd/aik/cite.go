@@ -67,7 +67,7 @@ func cmdCite(args []string) error {
 	if err != nil {
 		return err
 	}
-	ck := &citer{c: c, ix: ix, store: cite.DefaultStore(), offline: *offline, docs: map[string]*cite.Doc{}, failed: map[string]string{}}
+	ck := &citer{c: c, ix: ix, store: cite.DefaultStore(), offline: *offline, docs: map[string]*cite.Doc{}, prev: map[string]*cite.Doc{}, failed: map[string]string{}}
 	if *store != "" {
 		ck.store = cite.Store{Dir: *store}
 	}
@@ -102,16 +102,17 @@ type citer struct {
 	store   cite.Store
 	offline bool
 	docs    map[string]*cite.Doc
-	failed  map[string]string // works that could not be read, with why
-	last    time.Time         // the last request to arXiv
-	carried int               // the verdicts of the node that a new key kept, as what was judged is the same
+	prev    map[string]*cite.Doc // the texts that the index's records were made on, where a new extractor replaced them
+	failed  map[string]string    // works that could not be read, with why
+	last    time.Time            // the last request to arXiv
+	carried int                  // the verdicts of the node that a new key kept, as what was judged is the same
 }
 
 // carry tells if the verdict of the old record o of a source holds for its new record r (cite.Carry).
 func (ck *citer) carry(o, r cite.Record, cl *claims.Claim) bool {
 	snap, ok := ck.ix.Snapshots[r.Work]
 	d := ck.docs[snap.Hash]
-	return ok && d != nil && cite.Carry(o, r, cl, d, snap)
+	return ok && d != nil && cite.Carry(o, r, cl, d, ck.prev[snap.Hash], snap)
 }
 
 // node checks every source of every claim of n. It prints a line for each claim and returns the records and the
@@ -243,6 +244,9 @@ func (ck *citer) doc(ctx context.Context, w cite.Work) (cite.Snapshot, *cite.Doc
 			ck.docs[s.Hash] = d
 			return s, d, ""
 		}
+		if d := ck.store.AnyDoc(s.Hash); d != nil && d.Extractor == s.Extractor && ck.prev != nil {
+			ck.prev[s.Hash] = d // the text that the records were made on, before the new extractor replaces it
+		}
 		var err error
 		if b, err = ck.store.Get(s.Hash); err != nil {
 			return fail(err.Error())
@@ -318,7 +322,7 @@ func citeShow(args []string) error {
 	if err != nil {
 		return err
 	}
-	ck := &citer{c: c, ix: ix, store: cite.DefaultStore(), docs: map[string]*cite.Doc{}, failed: map[string]string{}}
+	ck := &citer{c: c, ix: ix, store: cite.DefaultStore(), docs: map[string]*cite.Doc{}, prev: map[string]*cite.Doc{}, failed: map[string]string{}}
 	if *store != "" {
 		ck.store = cite.Store{Dir: *store}
 	}
@@ -353,6 +357,18 @@ func citeShow(args []string) error {
 	fmt.Printf("%s, %s, snapshot %s, %d pages, %s\n", w.Slug, w.Version, snap.Hash[:12], len(d.Pages), d.Extractor)
 	if d.Abstract != nil {
 		fmt.Println("  the abstract")
+	}
+	if d.Title != nil {
+		fmt.Printf("  the title page (%d bytes)\n", d.Title.End-d.Title.Start)
+	}
+	provs := map[string][]string{}
+	for _, p := range d.Provisions {
+		provs[p.Kind] = append(provs[p.Kind], p.Num)
+	}
+	for _, k := range []string{"recital", "article", "annex"} {
+		if len(provs[k]) > 0 {
+			fmt.Printf("  %s %s\n", k, strings.Join(provs[k], ", "))
+		}
 	}
 	for _, h := range d.Heads {
 		fmt.Printf("  %s%s %s (page %d)\n", strings.Repeat("  ", strings.Count(h.Num, ".")), h.Num, h.Title, d.Page(h.Start)+1)

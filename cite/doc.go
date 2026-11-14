@@ -15,21 +15,26 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // ExtractorVersion is the version of the code that turns the text of a snapshot into a Doc. A change of it changes
 // the key of every check (spec 7.5), so every claim is checked again.
-const ExtractorVersion = "aik-doc-4"
+const ExtractorVersion = "aik-doc-5"
 
 // Doc is the text of a snapshot with the places that a locator can name (spec 13.6). Offsets are in bytes of Text.
 type Doc struct {
-	Extractor string   `json:"extractor"`
-	Text      string   `json:"text"`
-	Pages     []int    `json:"pages"` // the start of each page
-	Heads     []Head   `json:"heads"`
-	Marks     []Mark   `json:"marks"`
-	Abstract  *Span    `json:"abstract,omitempty"`
-	Warnings  []string `json:"warnings,omitempty"`
+	Extractor string `json:"extractor"`
+	Text      string `json:"text"`
+	Pages     []int  `json:"pages"` // the start of each page
+	Heads     []Head `json:"heads"`
+	Marks     []Mark `json:"marks"`
+	Abstract  *Span  `json:"abstract,omitempty"`
+	// Title is the title page of a text that has no pages, as a web page: the opening block before its first heading.
+	Title *Span `json:"title,omitempty"`
+	// Provisions are the recitals, articles and annexes of a legal text.
+	Provisions []Provision `json:"provisions,omitempty"`
+	Warnings   []string    `json:"warnings,omitempty"`
 }
 
 // Head is a numbered heading: a section, a subsection or an appendix.
@@ -45,6 +50,9 @@ type Mark struct {
 	Kind  string `json:"kind"`
 	Num   string `json:"num"`
 	Start int    `json:"start"`
+	// End is the end of a note of the markup of a web page, which is the place itself; the place of a mark with no
+	// end is the text around it.
+	End int `json:"end,omitempty"`
 }
 
 // Span is a part of the text.
@@ -81,35 +89,55 @@ func ExtractPDF(ctx context.Context, pdf []byte) (*Doc, error) {
 }
 
 var (
-	tagRE   = regexp.MustCompile(`(?is)<(script|style|nav|header|footer)\b.*?</(script|style|nav|header|footer)>|<[^>]+>`)
-	hOpenRE = regexp.MustCompile(`(?i)<h[1-6]\b[^>]*>`)
-	blockRE = regexp.MustCompile(`(?i)</(p|div|h[1-6]|li|tr|table|section|pre|blockquote)>|<br\s*/?>`)
+	tagRE = regexp.MustCompile(`(?is)<(script|style|nav|header|footer)\b.*?</(script|style|nav|header|footer)>|<[^>]+>`)
+	// An inline tag is no space: "Union</span>." is "Union.".
+	inlineRE = regexp.MustCompile(`(?i)</?(?:a|span|em|strong|b|i|u|sup|sub|abbr|cite|code|small|mark|q|time|font|var|kbd|s|del|ins)\b[^>]*>`)
+	hOpenRE  = regexp.MustCompile(`(?i)<h[1-6]\b[^>]*>`)
+	preRE    = regexp.MustCompile(`(?is)<pre\b.*?</pre>`)
+	spaceRE  = regexp.MustCompile(`[ \t\r\n\f\v]+`)
+	blockRE  = regexp.MustCompile(`(?i)</(p|div|h[1-6]|li|tr|table|section|pre|blockquote)>|<br\s*/?>`)
 )
 
-// ExtractHTML reads the text of a web page, with one line for each heading and block. Its headings are those of its
-// markup: a line of a table of contents, as "Bibliography" in the contents of an entry of the Stanford Encyclopedia,
-// looks like a heading in the text, and a page has no later page to tell the contents from the body.
+// ExtractHTML reads the text of a web page, with one line for each heading and block, and the runs of white space
+// of the markup collapsed. Its headings are those of its markup: a line of a table of contents, as "Bibliography" in
+// the contents of an entry of the Stanford Encyclopedia, looks like a heading in the text, and a page has no later
+// page to tell the contents from the body. Its footnotes are the notes of its markup, and its title page is the text
+// before its first heading.
 func ExtractHTML(page []byte) *Doc {
-	d := Parse(htmlText(string(page)))
+	src := string(page)
+	hs := hTagRE.FindAllStringSubmatchIndex(src, -1)
+	ns := noteRE.FindAllStringSubmatchIndex(src, -1)
+	// A mark before each heading and note of the markup tells where it is in the text.
+	var ins []int
+	for _, m := range hs {
+		ins = append(ins, m[0])
+	}
+	for _, m := range ns {
+		ins = append(ins, m[0])
+	}
+	text, at := markedText(src, ins)
+	d := parse(text)
 	d.Extractor = "html+" + ExtractorVersion
 	var cands []cand
 	var stops []int
-	done, at := 0, 0 // the text before the byte done of the page is at bytes of the text
-	for _, m := range hTagRE.FindAllStringSubmatchIndex(string(page), -1) {
-		// The heading starts where the text of the page before it ends, give or take the blank lines. The conversion is
-		// local, so the text of the page before it is the text before the last heading and the text in between.
-		at += len(clean(htmlText(string(page[done:m[0]]))))
-		done = m[0]
-		title := strings.Join(strings.Fields(html.UnescapeString(tagRE.ReplaceAllString(string(page[m[4]:m[5]]), " "))), " ")
+	firstHead := len(d.Text)
+	for k, m := range hs {
+		start := at[k]
+		if start < 0 {
+			continue // in a part of the page that is not text, as a nav
+		}
+		title := inlineText(src[m[4]:m[5]])
 		if title == "" {
 			continue
 		}
-		start := min(at, len(d.Text))
 		if i := strings.Index(d.Text[start:], title); i >= 0 && i < 200 {
 			start += i
 		}
+		if src[m[2]] >= '2' {
+			firstHead = min(firstHead, start)
+		}
 		h := headRE.FindStringSubmatch(title)
-		if refsRE.MatchString(title) || (h == nil && page[m[2]] <= '2') {
+		if refsRE.MatchString(title) || (h == nil && src[m[2]] <= '2') {
 			// The references end the body, and so does a heading of the top level with no number, as "Conclusion".
 			stops = append(stops, start)
 			continue
@@ -123,16 +151,208 @@ func ExtractHTML(page []byte) *Doc {
 	}
 	if heads := chain(cands); len(heads) > 0 {
 		d.Heads = heads
+		d.dropInsideProvisions()
 		d.ends(stops)
 	}
+	// The footnotes are the notes of the markup; a line that starts with a number in the last third of a page, which is
+	// a footnote of a PDF, is anything in a page that has no pages.
+	marks := d.Marks[:0]
+	for _, mk := range d.Marks {
+		if mk.Kind != "footnote" {
+			marks = append(marks, mk)
+		}
+	}
+	d.Marks = marks
+	var notes []Mark
+	for k, m := range ns {
+		start := at[len(hs)+k]
+		if start < 0 {
+			continue
+		}
+		for start < len(d.Text) && blank(d.Text[start]) {
+			start++
+		}
+		num := ""
+		if m[2] >= 0 {
+			num = src[m[2]:m[3]]
+		} else if f := noteNumRE.FindStringSubmatch(d.Text[start:min(len(d.Text), start+40)]); f != nil {
+			num = f[1]
+		}
+		if num != "" {
+			notes = append(notes, Mark{Kind: "footnote", Num: strings.TrimLeft(num, "0"), Start: start})
+		}
+	}
+	// A note runs to the next note, or to the end of its paragraph.
+	for i := range notes {
+		n := &notes[i]
+		n.End = min(len(d.Text), n.Start+maxNote)
+		if i+1 < len(notes) && notes[i+1].Start < n.End && notes[i+1].Start > n.Start {
+			n.End = notes[i+1].Start
+		} else if j := strings.Index(d.Text[n.Start:n.End], "\n\n"); j > 0 {
+			n.End = n.Start + j
+		}
+	}
+	d.Marks = append(d.Marks, notes...)
+	slices.SortStableFunc(d.Marks, func(a, b Mark) int { return a.Start - b.Start })
+	// The title page is the opening block, up to the first heading: a heading of the markup below the title, a
+	// numbered heading, or the first recital, division or article of a legal text.
+	end := firstHead
+	if len(d.Heads) > 0 {
+		end = min(end, d.Heads[0].Start)
+	}
+	if len(d.Provisions) > 0 {
+		end = min(end, d.Provisions[0].Start)
+	}
+	if end > MaxTitlePage {
+		end = MaxTitlePage
+		if i := strings.LastIndexByte(d.Text[:end], '\n'); i > 0 {
+			end = i
+		}
+		for end > 0 && !utf8.RuneStart(d.Text[end]) {
+			end--
+		}
+	}
+	d.Title = &Span{0, end}
 	return d
 }
 
-var hTagRE = regexp.MustCompile(`(?is)<h([1-6])\b[^>]*>(.*?)</h[1-6]>`)
+// maxNote is the most text that a note of a web page holds, in bytes.
+const maxNote = 3000
+
+// MaxTitlePage is the most text that the title page of a web page holds, in bytes.
+const MaxTitlePage = 4000
+
+var (
+	hTagRE = regexp.MustCompile(`(?is)<h([1-6])\b[^>]*>(.*?)</h[1-6]>`)
+	// A footnote of the markup: a note of the Official Journal (class oj-note), an element of class footnote, or one
+	// whose id is fn3, fn:3 or footnote-3.
+	noteRE    = regexp.MustCompile(`(?i)<(?:p|li|div|aside)\b[^>]*?\b(?:class="[^"]*\b(?:oj-note|footnote)\b[^"]*"|id="(?:fn|footnote)[-:_]?0*([0-9]{1,3})")[^>]*>`)
+	noteNumRE = regexp.MustCompile(`^\s*[(\[]?\s*([0-9]{1,3})\s*[)\]]?[.\s]`)
+	// A superscript: <sup>, or a span of class super, as the Official Journal writes 10<span class="oj-super">25</span>.
+	htmlSupRE = regexp.MustCompile(`(?is)(<sup\b[^>]*>|<span\b[^>]*\bclass="[^"]*\bsuper(?:script)?\b[^"]*"[^>]*>)(.*?)</(?:sup|span)>`)
+	expRE     = regexp.MustCompile(`^[-−]?[0-9]{1,3}$`)
+	markerRE  = regexp.MustCompile("\uE000([0-9]+)\uE001")
+)
+
+// markedText gives the text of a page and the offset in it of each offset of the page in ins, or -1 for an offset in
+// a part of the page that is not text. It puts a mark at each offset, reads the text, and finds the marks.
+func markedText(src string, ins []int) (string, []int) {
+	order := make([]int, len(ins))
+	for i := range order {
+		order[i] = i
+	}
+	slices.SortStableFunc(order, func(a, b int) int { return ins[a] - ins[b] })
+	var b strings.Builder
+	last := 0
+	for _, k := range order {
+		b.WriteString(src[last:ins[k]])
+		b.WriteString("\uE000" + strconv.Itoa(k) + "\uE001")
+		last = ins[k]
+	}
+	b.WriteString(src[last:])
+	raw := clean(htmlText(b.String()))
+	at := make([]int, len(ins))
+	for i := range at {
+		at[i] = -1
+	}
+	var t strings.Builder
+	last = 0
+	for _, m := range markerRE.FindAllStringSubmatchIndex(raw, -1) {
+		t.WriteString(raw[last:m[0]])
+		if k, err := strconv.Atoi(raw[m[2]:m[3]]); err == nil && k < len(at) {
+			at[k] = t.Len()
+		}
+		last = m[1]
+	}
+	t.WriteString(raw[last:])
+	text, pos := squash(t.String())
+	for i, a := range at {
+		if a >= 0 {
+			at[i] = pos[a]
+		}
+	}
+	return text, at
+}
+
+// squash collapses the runs of spaces and tabs of a text to one space, trims its lines and keeps at most one empty line
+// between two lines. pos maps each offset of the text to its offset in the squashed text.
+func squash(s string) (string, []int) {
+	var b strings.Builder
+	b.Grow(len(s))
+	pos := make([]int, len(s)+1)
+	nl, space := 2, false // the new lines just written, 2 at the start; a space waits for the next word
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case ' ', '\t', '\v', '\r':
+			pos[i] = b.Len()
+			space = nl == 0
+		case '\n':
+			space = false
+			pos[i] = b.Len()
+			if nl < 2 {
+				b.WriteByte('\n')
+			}
+			nl++
+		default:
+			if space {
+				b.WriteByte(' ')
+				space = false
+			}
+			pos[i] = b.Len()
+			b.WriteByte(c)
+			nl = 0
+		}
+	}
+	pos[len(s)] = b.Len()
+	return b.String(), pos
+}
+
+// inlineText is the text of a fragment of markup on one line.
+func inlineText(s string) string {
+	return strings.Join(strings.Fields(html.UnescapeString(tagRE.ReplaceAllString(inlineRE.ReplaceAllString(supText(s), ""), " "))), " ")
+}
+
+// supText writes a number in superscript after a digit as a power: 10<sup>25</sup> is 10^25, which Numbers reads as
+// 1e25. Another superscript, as a footnote mark, is left to the markup.
+func supText(s string) string {
+	var b strings.Builder
+	last := 0
+	for _, m := range htmlSupRE.FindAllStringSubmatchIndex(s, -1) {
+		inner := s[m[4]:m[5]]
+		v := strings.TrimSpace(html.UnescapeString(tagRE.ReplaceAllString(inner, "")))
+		open := strings.ToLower(s[m[2]:m[3]])
+		if m[0] == 0 || s[m[0]-1] < '0' || s[m[0]-1] > '9' || !expRE.MatchString(v) || strings.Contains(open, "note") || strings.Contains(inner, "<a") {
+			continue
+		}
+		b.WriteString(s[last:m[0]])
+		b.WriteString("^" + strings.ReplaceAll(v, "−", "-"))
+		last = m[1]
+	}
+	b.WriteString(s[last:])
+	return b.String()
+}
+
+// flow writes the white space of the source of a page as a browser shows it: a run of spaces and new lines is one
+// space, except in a block of preformatted text. The ends of blocks are the new lines of the text.
+func flow(s string) string {
+	var b strings.Builder
+	at := 0
+	for _, m := range preRE.FindAllStringIndex(s, -1) {
+		b.WriteString(spaceRE.ReplaceAllString(s[at:m[0]], " "))
+		b.WriteString(s[m[0]:m[1]])
+		at = m[1]
+	}
+	b.WriteString(spaceRE.ReplaceAllString(s[at:], " "))
+	return b.String()
+}
 
 func htmlText(s string) string {
+	s = supText(s)
+	s = flow(s)
 	s = hOpenRE.ReplaceAllString(s, "\n")
 	s = blockRE.ReplaceAllString(s, "\n")
+	s = inlineRE.ReplaceAllString(s, "")
 	s = tagRE.ReplaceAllString(s, " ")
 	return html.UnescapeString(s)
 }
@@ -163,8 +383,9 @@ var (
 // Parse finds the places of a text: pages at form feeds, numbered headings in order, captions, equation numbers and
 // footnotes. It keeps a heading only when its number follows the one before (2 after 1.3, 3.2 after 3.1), so that a
 // number at the start of a line of a table or a list is not taken for a heading.
-func Parse(text string) *Doc {
-	text = clean(text)
+func Parse(text string) *Doc { return parse(clean(text)) }
+
+func parse(text string) *Doc {
 	d := &Doc{Text: text, Pages: []int{0}}
 	for i := 0; i < len(text); i++ {
 		if text[i] == '\f' {
@@ -309,6 +530,8 @@ func Parse(text string) *Doc {
 		cands = append(cands, cand{Head{Num: num, Title: title, Start: l.off}, n, w})
 	}
 	d.Heads = chain(cands)
+	d.legal(lines)
+	d.dropInsideProvisions()
 	d.ends(stops)
 	d.footnotes(lines)
 	return d
