@@ -36,6 +36,7 @@ var Adapters = map[string]Adapter{
 	"acl":                  {Source: "acl", Gap: time.Second, Run: harvestACL},
 	"dblp":                 {Source: "dblp", Gap: 10 * time.Second, Run: harvestDBLP},
 	"federal-register":     {Source: "federal-register", Gap: time.Second, Run: harvestFedReg},
+	"eur-lex":              {Source: "eur-lex", Gap: time.Second, Run: harvestEurLex},
 	"oecd-ai":              {Source: "oecd-ai", Gap: time.Second, Run: harvestOECD},
 	"swe-bench":            {Source: "swe-bench", Gap: time.Second, Run: harvestSWEBench},
 	"open-llm-leaderboard": {Source: "open-llm-leaderboard", Gap: time.Second, Run: harvestOpenLLM},
