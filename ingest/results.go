@@ -29,9 +29,10 @@ import (
 	"github.com/tamnd/ai-agent/results"
 )
 
-// ModelsFile maps the names that sources give to models to model slugs, for the names that do not match the name or
-// an alias of one model card or node. A name mapped to "none" is a system, not a model, and its rows are not ingested.
-const ModelsFile = "crosswalk/result-models.yaml"
+// CrosswalkFile maps the names that sources give to models, benchmark versions and metrics, for the names that do not
+// match the name or an alias of one node or card: models to a model slug, or to "none" for a system that is not a
+// model, whose rows are not ingested; benchmarks to "benchmark@version"; metrics to a metric slug.
+const CrosswalkFile = "crosswalk/results.yaml"
 
 // ReportDir holds the record of each run, reports/ingest/results-<date>.json.
 const ReportDir = "reports/ingest"
@@ -71,10 +72,12 @@ type Report struct {
 
 // The reasons of a miss.
 const (
-	NoModel       = "no model card or node has this name; add the model, an alias, or a line of " + ModelsFile
-	Ambiguous     = "the name matches more than one model; add a line of " + ModelsFile
-	BadCrosswalk  = ModelsFile + " maps the name to a slug that is not a model"
+	NoModel       = "no model card or node has this name; add the model, an alias, or a line of " + CrosswalkFile
+	Ambiguous     = "the name matches more than one model; add a line of " + CrosswalkFile
+	BadCrosswalk  = CrosswalkFile + " maps the name to a slug of another kind"
 	NoBenchmark   = "not a benchmark node or card (M02)"
+	NoBenchName   = "no line of " + CrosswalkFile + " gives the benchmark and version of this name"
+	NoMetricName  = "no metric node or card has this name; add an alias or a line of " + CrosswalkFile
 	NoVersion     = "the benchmark has no such version (10.3)"
 	NoMetric      = "not a metric node or card (M01)"
 	NotResultRow  = "the row lacks a field of 10.6.1"
@@ -83,31 +86,35 @@ const (
 
 // Resolver finds the slugs of the models, benchmarks and metrics of a corpus.
 type Resolver struct {
-	kind     map[string]string          // slug to kind
-	names    map[string]map[string]bool // name key to model slugs
-	cross    map[string]string          // name as written to slug, or "none"
+	kind     map[string]string                     // slug to kind
+	names    map[string]map[string]map[string]bool // kind, name key, slugs
+	cross    map[string]map[string]string          // section (models, benchmarks, metrics), name as written, slug
 	versions map[string]map[string]*results.Version
 }
 
 // NewResolver indexes the corpus and reads the crosswalk.
 func NewResolver(c *node.Corpus) (*Resolver, error) {
-	r := &Resolver{kind: map[string]string{}, names: map[string]map[string]bool{}, cross: map[string]string{},
-		versions: results.Load(c).Versions}
-	addName := func(name, slug string) {
+	r := &Resolver{kind: map[string]string{}, names: map[string]map[string]map[string]bool{},
+		cross: map[string]map[string]string{}, versions: results.Load(c).Versions}
+	named := map[string]bool{"model": true, "metric": true}
+	addName := func(kind, name, slug string) {
 		if k := NameKey(name); k != "" {
-			if r.names[k] == nil {
-				r.names[k] = map[string]bool{}
+			if r.names[kind] == nil {
+				r.names[kind] = map[string]map[string]bool{}
 			}
-			r.names[k][slug] = true
+			if r.names[kind][k] == nil {
+				r.names[kind][k] = map[string]bool{}
+			}
+			r.names[kind][k][slug] = true
 		}
 	}
 	for _, n := range c.Nodes {
 		r.kind[n.Slug] = n.Kind
-		if n.Kind == "model" {
-			addName(n.Slug, n.Slug)
-			addName(n.Name, n.Slug)
+		if named[n.Kind] {
+			addName(n.Kind, n.Slug, n.Slug)
+			addName(n.Kind, n.Name, n.Slug)
 			for _, a := range n.Aliases {
-				addName(a, n.Slug)
+				addName(n.Kind, a, n.Slug)
 			}
 		}
 	}
@@ -118,30 +125,34 @@ func NewResolver(c *node.Corpus) (*Resolver, error) {
 		if _, ok := r.kind[cd.Slug]; !ok {
 			r.kind[cd.Slug] = cd.Kind
 		}
-		if cd.Kind == "model" {
-			addName(cd.Slug, cd.Slug)
-			addName(cd.Name, cd.Slug)
+		if named[cd.Kind] {
+			addName(cd.Kind, cd.Slug, cd.Slug)
+			addName(cd.Kind, cd.Name, cd.Slug)
 			var aliases []string
 			_ = json.Unmarshal(cd.Fields["aliases"], &aliases)
 			for _, a := range aliases {
-				addName(a, cd.Slug)
+				addName(cd.Kind, a, cd.Slug)
 			}
 		}
 	}
-	b, err := os.ReadFile(filepath.Join(c.Root, ModelsFile))
+	b, err := os.ReadFile(filepath.Join(c.Root, CrosswalkFile))
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 	case err != nil:
 		return nil, err
 	default:
-		var doc struct {
-			Models map[string]string `yaml:"models"`
-		}
+		var doc map[string]map[string]string
 		if err := yaml.Unmarshal(b, &doc); err != nil {
-			return nil, fmt.Errorf("%s: %w", ModelsFile, err)
+			return nil, fmt.Errorf("%s: %w", CrosswalkFile, err)
 		}
-		for name, slug := range doc.Models {
-			r.cross[strings.TrimSpace(name)] = strings.TrimSpace(slug)
+		for sec, m := range doc {
+			if sec != "models" && sec != "benchmarks" && sec != "metrics" {
+				return nil, fmt.Errorf("%s: the section %q is not models, benchmarks or metrics", CrosswalkFile, sec)
+			}
+			r.cross[sec] = map[string]string{}
+			for name, slug := range m {
+				r.cross[sec][strings.TrimSpace(name)] = strings.TrimSpace(slug)
+			}
 		}
 	}
 	return r, nil
@@ -156,7 +167,7 @@ var (
 // order, so "Claude 4.5 Opus" and "claude-opus-4.5" have one key.
 func NameKey(name string) string {
 	s := strings.ToLower(name)
-	s = caseRE.ReplaceAllString(s, "$1$3 $2$4")
+	s = caseRE.ReplaceAllString(caseRE.ReplaceAllString(s, "$1$3 $2$4"), "$1$3 $2$4")
 	words := strings.FieldsFunc(s, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) })
 	sort.Strings(words)
 	return strings.Join(words, " ")
@@ -167,24 +178,7 @@ func NameKey(name string) string {
 // slug, the variant and the reason of a miss. A slug of "none" means the name is not a model.
 func (r *Resolver) Model(name string) (slug, variant, miss string) {
 	name = strings.TrimSpace(name)
-	try := func(n string) (string, string) {
-		if s, ok := r.cross[n]; ok {
-			if s != "none" && r.kind[s] != "model" {
-				return "", BadCrosswalk
-			}
-			return s, ""
-		}
-		set := r.names[NameKey(n)]
-		switch len(set) {
-		case 0:
-			return "", NoModel
-		case 1:
-			for s := range set {
-				return s, ""
-			}
-		}
-		return "", Ambiguous
-	}
+	try := func(n string) (string, string) { return r.named("models", "model", n, NoModel) }
 	slug, miss = try(name)
 	if miss != NoModel {
 		return slug, "", miss
@@ -197,13 +191,71 @@ func (r *Resolver) Model(name string) (slug, variant, miss string) {
 	return "", "", NoModel
 }
 
+// named resolves a name of a kind: the section of the crosswalk, then the names of the nodes and cards of the kind.
+func (r *Resolver) named(sec, kind, name, none string) (string, string) {
+	if s, ok := r.cross[sec][name]; ok {
+		if s != "none" && r.kind[s] != kind {
+			return "", BadCrosswalk
+		}
+		return s, ""
+	}
+	set := r.names[kind][NameKey(name)]
+	switch len(set) {
+	case 0:
+		return "", none
+	case 1:
+		for s := range set {
+			return s, ""
+		}
+	}
+	return "", Ambiguous
+}
+
+// Benchmark resolves the benchmark and version of a row: the fields benchmark and version, or the name that the
+// source gives (benchmark_name) by the crosswalk. It gives the name to report with a miss.
+func (r *Resolver) Benchmark(f map[string]any) (bench, version, name, miss string) {
+	bench, _ = f["benchmark"].(string)
+	version, _ = f["version"].(string)
+	if bench == "" {
+		name, _ = f["benchmark_name"].(string)
+		x, ok := r.cross["benchmarks"][strings.TrimSpace(name)]
+		if !ok {
+			return "", "", name, NoBenchName
+		}
+		if bench, version, ok = strings.Cut(x, "@"); !ok {
+			return "", "", name, BadCrosswalk
+		}
+	}
+	switch {
+	case r.kind[bench] != "benchmark":
+		return "", "", bench, NoBenchmark
+	case r.versions[bench][version] == nil:
+		return "", "", bench + "@" + version, NoVersion
+	}
+	return bench, version, "", ""
+}
+
+// Metric resolves the metric of a row: the field metric, which must be a metric slug, or the name that the source
+// gives (metric_name) by the crosswalk and the names of the metrics.
+func (r *Resolver) Metric(f map[string]any) (slug, name, miss string) {
+	if m, _ := f["metric"].(string); m != "" {
+		if r.kind[m] != "metric" {
+			return "", m, NoMetric
+		}
+		return m, "", ""
+	}
+	name, _ = f["metric_name"].(string)
+	slug, miss = r.named("metrics", "metric", strings.TrimSpace(name), NoMetricName)
+	if miss != "" {
+		return "", name, miss
+	}
+	return slug, "", ""
+}
+
 // row are the fields of a result row.
 type row struct {
 	Model        string         `json:"model"`
 	ModelVariant string         `json:"model_variant"`
-	Benchmark    string         `json:"benchmark"`
-	Version      string         `json:"version"`
-	Metric       string         `json:"metric"`
 	Score        results.Score  `json:"score"`
 	Setting      map[string]any `json:"setting"`
 	Source       results.Source `json:"source"`
@@ -340,8 +392,9 @@ func Results(c *node.Corpus, o Options) (*Report, error) {
 			}
 			rep.Rows++
 			var rr row
-			if json.Unmarshal(mustJSON(hr.Fields), &rr) != nil || rr.Model == "" || rr.Benchmark == "" ||
-				rr.Version == "" || rr.Metric == "" || rr.Score.V == nil || rr.Score.Unit == "" ||
+			fields := map[string]any{}
+			if json.Unmarshal(mustJSON(hr.Fields), &rr) != nil || json.Unmarshal(mustJSON(hr.Fields), &fields) != nil ||
+				rr.Model == "" || rr.Score.V == nil || rr.Score.Unit == "" ||
 				rr.Source.Src == "" || rr.Source.Loc == "" || len(rr.Setting) == 0 {
 				misses[[2]string{NotResultRow, src + ":" + hr.ID}]++
 				rep.Unresolved++
@@ -357,22 +410,21 @@ func Results(c *node.Corpus, o Options) (*Report, error) {
 				rep.Skipped++
 				continue
 			}
-			bad := ""
-			switch {
-			case res.kind[rr.Benchmark] != "benchmark":
-				bad, why = rr.Benchmark, NoBenchmark
-			case res.versions[rr.Benchmark][rr.Version] == nil:
-				bad, why = rr.Benchmark+"@"+rr.Version, NoVersion
-			case res.kind[rr.Metric] != "metric":
-				bad, why = rr.Metric, NoMetric
+			bench, version, bad, why := res.Benchmark(fields)
+			if why == "" {
+				fields["benchmark"], fields["version"] = bench, version
+				var metric string
+				if metric, bad, why = res.Metric(fields); why == "" {
+					fields["metric"] = metric
+				}
 			}
 			if why != "" {
 				misses[[2]string{why, bad}]++
 				rep.Unresolved++
 				continue
 			}
-			fields := map[string]any{}
-			_ = json.Unmarshal(mustJSON(hr.Fields), &fields)
+			delete(fields, "benchmark_name")
+			delete(fields, "metric_name")
 			fields["model"] = slug
 			if rr.ModelVariant == "" && variant != "" && !effort(rr.Setting, variant) {
 				fields["model_variant"] = variant

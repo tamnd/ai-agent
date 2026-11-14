@@ -43,7 +43,7 @@ tamnd/ai/
     acm-ccs-2012.yaml  arxiv.yaml  openalex.yaml  wikidata.yaml  wikipedia.yaml  pwc.yaml  hf-tasks.yaml
     epoch.yaml  aiid.yaml  mit-ai-risk.yaml  nist-ai-100.yaml  iso-22989.yaml  cs2023-ai.yaml  philpapers.yaml
     algorithm.yaml  math2.yaml  programming.yaml
-    result-models.yaml                   the model of each name of a leaderboard that aik ingest results cannot match (10.6.2)
+    results.yaml                         the models, benchmark versions and metrics of the names of result sources (10.6.2)
   prov/
     <tag>.jsonl                          provenance of node files (04.8)
     cite/<tag>.jsonl                     the records of the citation check of the claims of a node (13.6)

@@ -75,8 +75,9 @@ func setup(t *testing.T) (string, cite.Store, string) {
 	write(t, filepath.Join(root, "cards", "benchmark", "_.jsonl"),
 		`{"tag":"BBBBB1","kind":"benchmark","slug":"swe-bench","name":"SWE-bench","versions":[{"id":"verified","name":"SWE-bench Verified"}]}`+"\n")
 	write(t, filepath.Join(root, "cards", "metric", "_.jsonl"),
-		`{"tag":"CCCCC1","kind":"metric","slug":"percent-resolved","name":"Percent resolved"}`+"\n")
-	write(t, filepath.Join(root, ModelsFile), "models:\n  Sonar: none\n  Old Opus: claude-opus-4-5\n  Bad: swe-bench\n")
+		`{"tag":"CCCCC1","kind":"metric","slug":"percent-resolved","name":"Percent resolved","aliases":["% Resolved"]}`+"\n")
+	write(t, filepath.Join(root, CrosswalkFile), "models:\n  Sonar: none\n  Old Opus: claude-opus-4-5\n  Bad: swe-bench\n"+
+		"benchmarks:\n  SWE-bench Verified: swe-bench@verified\n  Odd: swe-bench\n")
 	st := cite.Store{Dir: filepath.Join(root, "raw")}
 	snap, err := st.Put([]byte(snapshot), cite.Meta{})
 	if err != nil {
@@ -116,15 +117,27 @@ func TestResults(t *testing.T) {
 	lite.Fields["version"] = "lite2"
 	empty := resultRow("verified/e", "Claude Opus 4.5", 1, snap)
 	delete(empty.Fields, "setting")
-	rep := run(t, root, st, []harvest.Row{opus, dup, sonnet, old, sonar, gpt, mystery, bad, lite, empty})
-	if rep.Rows != 10 || rep.New != 3 || rep.Duplicates != 1 || rep.Skipped != 1 || rep.Unresolved != 5 {
+	// A row of Papers with Code names the benchmark and the metric as the source does.
+	named := resultRow("verified/n", "Claude 3.5 Sonnet", 33.3, snap)
+	for _, k := range []string{"benchmark", "version", "metric"} {
+		delete(named.Fields, k)
+	}
+	named.Fields["benchmark_name"], named.Fields["metric_name"] = "SWE-bench Verified", "% resolved"
+	odd := resultRow("verified/o", "Claude 3.5 Sonnet", 1, snap)
+	delete(odd.Fields, "benchmark")
+	odd.Fields["benchmark_name"] = "Odd"
+	unnamed := resultRow("verified/u", "Claude 3.5 Sonnet", 2, snap)
+	delete(unnamed.Fields, "benchmark")
+	unnamed.Fields["benchmark_name"] = "SWE-bench Lite"
+	rep := run(t, root, st, []harvest.Row{opus, dup, sonnet, old, sonar, gpt, mystery, bad, lite, empty, named, odd, unnamed})
+	if rep.Rows != 13 || rep.New != 4 || rep.Duplicates != 1 || rep.Skipped != 1 || rep.Unresolved != 7 {
 		t.Fatalf("report %+v", rep)
 	}
-	if rep.Cite[results.CiteFound] != 2 || rep.Cite[results.CiteNotFound] != 1 {
-		t.Errorf("cite %v; want 2 found (opus, old) and 1 not found (sonnet: 50 is not in the record)", rep.Cite)
+	if rep.Cite[results.CiteFound] != 2 || rep.Cite[results.CiteNotFound] != 2 {
+		t.Errorf("cite %v; want 2 found (opus, old) and 2 not found (sonnet and named: no record has them)", rep.Cite)
 	}
 	want := map[string]string{"GPT 4": Ambiguous, "Mystery 9": NoModel, "Bad": BadCrosswalk, "swe-bench@lite2": NoVersion,
-		"swe-bench:verified/e": NotResultRow}
+		"swe-bench:verified/e": NotResultRow, "Odd": BadCrosswalk, "SWE-bench Lite": NoBenchName}
 	for _, m := range rep.Missing {
 		if want[m.Name] != m.Reason {
 			t.Errorf("miss %q: %q, want %q", m.Name, m.Reason, want[m.Name])
@@ -138,8 +151,8 @@ func TestResults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(lines) != 3 {
-		t.Fatalf("%d result cards, want 3", len(lines))
+	if len(lines) != 4 {
+		t.Fatalf("%d result cards, want 4", len(lines))
 	}
 	got := map[string]map[string]any{}
 	for _, l := range lines {
@@ -174,6 +187,10 @@ func TestResults(t *testing.T) {
 	if shown != 2 {
 		t.Errorf("%d results shown, want the 2 that the citation check found", shown)
 	}
+	if n := got["verified/n"]; n["benchmark"] != "swe-bench" || n["version"] != "verified" || n["metric"] != "percent-resolved" ||
+		n["benchmark_name"] != nil || n["metric_name"] != nil {
+		t.Errorf("named: %v", n)
+	}
 	// A second run with the same rows changes nothing; a new score updates the card and keeps its tag.
 	again := run(t, root, st, []harvest.Row{opus, sonnet, old})
 	if again.Unchanged != 3 || again.New != 0 || again.Updated != 0 {
@@ -185,7 +202,7 @@ func TestResults(t *testing.T) {
 		t.Errorf("third run %+v", third)
 	}
 	after, _ := card.ReadKind(filepath.Join(root, "cards", "result"))
-	if len(after) != 3 {
-		t.Errorf("%d cards after the update, want 3", len(after))
+	if len(after) != 4 {
+		t.Errorf("%d cards after the update, want 4", len(after))
 	}
 }
