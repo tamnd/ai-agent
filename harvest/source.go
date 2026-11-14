@@ -145,6 +145,16 @@ var Sources = []Source{
 		Credit: "OECD.AI Policy Observatory, https://oecd.ai",
 		Note:   "The site states no licence for the database, so it is D: names, ids, years and categories only. The initiatives are reported by the governments and organisations themselves.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "swe-bench", Name: "SWE-bench leaderboards",
+		URL: "https://www.swebench.com/", Owner: "the SWE-bench team (Princeton and Stanford)",
+		Licence: "CC-BY-NC-4.0", Checked: "2026-11-14", Class: "D",
+		Access: "the data file of the site in its repository (github.com/SWE-bench/swe-bench.github.io, data/leaderboards.json) from raw.githubusercontent.com: every leaderboard in one request; robots.txt of swebench.com sets no content signal and disallows nothing", Rate: "1 request per 1 s",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "the system, the model, the score (% resolved), the date, the scaffold, the attempts and the submitter of each entry; never the logs or the trajectories",
+		Credit: "SWE-bench, https://www.swebench.com",
+		Note:   "The site is CC BY-NC 4.0, so it is D: names and numbers only. An entry run by the maintainers with mini-SWE-agent is independent of the model's developer; an entry that a developer submits for its own model is self-reported (10.6.1).",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.

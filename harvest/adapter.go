@@ -34,6 +34,7 @@ var Adapters = map[string]Adapter{
 	"acl":              {Source: "acl", Gap: time.Second, Run: harvestACL},
 	"federal-register": {Source: "federal-register", Gap: time.Second, Run: harvestFedReg},
 	"oecd-ai":          {Source: "oecd-ai", Gap: time.Second, Run: harvestOECD},
+	"swe-bench":        {Source: "swe-bench", Gap: time.Second, Run: harvestSWEBench},
 }
 
 // Names are the source ids of the adapters, sorted.
