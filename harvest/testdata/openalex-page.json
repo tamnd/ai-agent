@@ -1,0 +1,8 @@
+{"meta":{"count":78526,"page":1,"per_page":3},"results":[
+{"id":"https://openalex.org/W2626778328","doi":"https://doi.org/10.48550/arXiv.1706.03762","display_name":"Attention Is All You Need","publication_year":2017,"publication_date":"2017-06-12","cited_by_count":60000,"type":"preprint","ids":{"openalex":"https://openalex.org/W2626778328","doi":"https://doi.org/10.48550/arxiv.1706.03762","mag":"2626778328"},
+ "primary_topic":{"id":"https://openalex.org/T10181","display_name":"Natural Language Processing Techniques","subfield":{"id":"https://openalex.org/subfields/1702"}},
+ "authorships":[{"author":{"id":"https://openalex.org/A1","display_name":"Ashish  Vaswani","orcid":null},"institutions":[{"id":"https://openalex.org/I2"},{"id":"https://openalex.org/I1"}]},
+                {"author":{"id":"https://openalex.org/A2","display_name":"Noam Shazeer","orcid":null},"institutions":[{"id":"https://openalex.org/I1"}]}]},
+{"id":"https://openalex.org/W1","doi":null,"display_name":"","publication_year":2017,"publication_date":"2017-01-01","cited_by_count":5,"type":"article","ids":{},"primary_topic":null,"authorships":[]},
+{"id":"https://openalex.org/W99","doi":"https://doi.org/10.1109/CVPR.2017.243","display_name":"Densely Connected Convolutional Networks","publication_year":2017,"publication_date":"2017-07-01","cited_by_count":40000,"type":"article","ids":{"mag":7},"primary_topic":null,"authorships":[]}
+]}

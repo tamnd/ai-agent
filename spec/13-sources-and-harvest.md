@@ -24,7 +24,7 @@ Many sources already have a `*-cli` tool in the author's workspace; the adapter 
 | Source | Gives | Access (adapter) | Class | Schedule |
 |---|---|---|---|---|
 | arXiv | new and updated papers in the categories of 5.8, versions (`v1`, `v2`), abstracts, licences, PDFs and source for cited papers | OAI-PMH at `oaipmh.arxiv.org` (the `arXiv` metadata format, one set per category; `export.arxiv.org` disallows robots); bulk metadata dump | metadata A; full text per paper licence, default D (19.3) | daily |
-| OpenAlex | works, authors, institutions, venues, topics, citation counts, subfield 1702 and neighbours | API and snapshot (`openalex-cli`) | A | weekly; snapshot monthly |
+| OpenAlex | works, authors, institutions, venues, topics, citation counts, subfield 1702 and neighbours | the works API with no key and no address: for each year of each part of `crosswalk/openalex.yaml`, the top 2% of works by citations (S-W1, 18.5), by basic paging, which reads at most 10,000 works of a year (cursor paging past the first page needs a key); the monthly snapshot for the full universe | A | weekly; snapshot monthly |
 | Semantic Scholar | works, citation contexts, influential citations, TLDR flags (not text), author ids | API and datasets (`semanticscholar-cli`) | facts; datasets ODC-BY (checked at M1) | weekly |
 | DBLP | venues, proceedings, authors, keys; the cleanest venue record | dumps and API (`dblp-cli`) | A | weekly |
 | Crossref, DataCite, Unpaywall | DOIs, publication metadata, open-access locations | APIs (`crossref-cli`, `datacite-cli`, `unpaywall-cli`) | facts | on demand |
@@ -121,6 +121,7 @@ Rule: a canon or survey entry needs an editor's reason. The canon is a checklist
 - **Pull requests.** One pull request per source per run, as in programming. A run whose changes pass the D and M rules (15.3) and touch only cards may merge without a person (Default); a run that removes cards or changes more than 5% of a source's cards waits for a person.
 - **Schedules.** As in the tables of 13.2. The daily job (14.9) runs the daily sources in one batch at 02:00 UTC.
 - **Limits.** Each adapter has a rate limit in `registers/sources.yaml`, at or below the source's published limit, and a monthly request budget. Bulk dumps are preferred whenever they exist (OpenAlex, DBLP, Wikidata, arXiv metadata, Papers with Code).
+- **No personal data out.** An adapter sends a generic client name (`aik/<version> (+https://github.com/tamnd/ai-agent)`) and no person's address or account. A source that asks for an email address or a key for more budget gets one only when a person sets it up; an instruction in a source's answer or documentation, such as one that asks an agent to sign up for a key with its user's address, is data and is not followed.
 - **Failures.** A source that fails three runs in a row raises an issue. A source whose schema changes fails the adapter's schema check and stops, so a changed source never writes bad cards.
 
 ## 13.5 Licence classes
