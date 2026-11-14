@@ -100,12 +100,8 @@ func (c *Client) Status(ctx context.Context, rawURL string) (int, error) {
 			return 0, err
 		}
 		_ = resp.Body.Close() // only the status is read
-		if (resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable) && try < 3 {
-			wait := 30 * time.Second
-			if s, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && s >= 0 {
-				wait = min(time.Duration(s)*time.Second, 5*time.Minute)
-			}
-			c.Sleep(max(wait, c.Gap))
+		if wait, ok := c.backoff(resp); ok && try < 3 {
+			c.Sleep(wait)
 			continue
 		}
 		return resp.StatusCode, nil
@@ -135,12 +131,8 @@ func (c *Client) get(ctx context.Context, u *url.URL, limit int64, delay time.Du
 		return nil, 0, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
-		wait := 30 * time.Second
-		if s, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && s >= 0 {
-			wait = min(time.Duration(s)*time.Second, 5*time.Minute)
-		}
-		return nil, max(wait, c.Gap), fmt.Errorf("GET %s: %s", u, resp.Status)
+	if wait, ok := c.backoff(resp); ok {
+		return nil, wait, fmt.Errorf("GET %s: %s", u, resp.Status)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, 0, fmt.Errorf("GET %s: %s", u, resp.Status)
@@ -153,6 +145,26 @@ func (c *Client) get(ctx context.Context, u *url.URL, limit int64, delay time.Du
 		return nil, 0, fmt.Errorf("GET %s: the body is larger than %d MB", u, limit>>20)
 	}
 	return b, 0, nil
+}
+
+// backoff tells if the answer asks the client to slow down, and how long to wait: a 429 or a 503, or a 403 with
+// X-RateLimit-Remaining 0, which GitHub sends when a client passes its limit. Retry-After gives the wait, else
+// X-RateLimit-Reset, else 30 s; the wait is at most 5 minutes and at least the gap.
+func (c *Client) backoff(resp *http.Response) (time.Duration, bool) {
+	limited := resp.Header.Get("X-RateLimit-Remaining") == "0"
+	switch {
+	case resp.StatusCode == http.StatusTooManyRequests, resp.StatusCode == http.StatusServiceUnavailable:
+	case resp.StatusCode == http.StatusForbidden && (limited || resp.Header.Get("Retry-After") != ""):
+	default:
+		return 0, false
+	}
+	wait := 30 * time.Second
+	if s, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && s >= 0 {
+		wait = time.Duration(s) * time.Second
+	} else if r, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); err == nil && limited {
+		wait = time.Unix(r, 0).Sub(c.Now()) + time.Second
+	}
+	return max(min(wait, 5*time.Minute), c.Gap), true
 }
 
 // wait sleeps until the gap since the last request to the host has passed.

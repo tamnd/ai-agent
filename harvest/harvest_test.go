@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -739,6 +740,9 @@ func TestPercentile(t *testing.T) {
 		if p := Percentile(OpenAlexNeed(n), n); p < 98 {
 			t.Errorf("the last work of the top 2%% of %d has the percentile %v", n, p)
 		}
+	}
+}
+
 func TestGitHub(t *testing.T) {
 	total, items, err := GitHubPage(fixture(t, "github-page.json"))
 	if err != nil || total != 2 || len(items) != 2 {
@@ -789,5 +793,36 @@ func TestGitHub(t *testing.T) {
 	}
 	if _, err := gitHubTopics(root); err == nil {
 		t.Error("a bad topic gives no error")
+	}
+}
+
+func TestBackoff(t *testing.T) {
+	c, _ := testClient(time.Second)
+	now := c.Now()
+	resp := func(code int, h map[string]string) *http.Response {
+		r := &http.Response{StatusCode: code, Header: http.Header{}}
+		for k, v := range h {
+			r.Header.Set(k, v)
+		}
+		return r
+	}
+	reset := strconv.FormatInt(now.Add(40*time.Second).Unix(), 10)
+	for _, tc := range []struct {
+		name string
+		r    *http.Response
+		want time.Duration
+		ok   bool
+	}{
+		{"GitHub's limit", resp(403, map[string]string{"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": reset}), 41 * time.Second, true},
+		{"a secondary limit", resp(403, map[string]string{"Retry-After": "60"}), time.Minute, true},
+		{"a plain 403", resp(403, nil), 0, false},
+		{"a 429 with no header", resp(429, nil), 30 * time.Second, true},
+		{"a long Retry-After", resp(503, map[string]string{"Retry-After": "3600"}), 5 * time.Minute, true},
+		{"a 404", resp(404, map[string]string{"X-RateLimit-Remaining": "0"}), 0, false},
+	} {
+		got, ok := c.backoff(tc.r)
+		if ok != tc.ok || ok && (got < tc.want-time.Second || got > tc.want+time.Second) {
+			t.Errorf("%s: %v %v, want %v %v", tc.name, got, ok, tc.want, tc.ok)
+		}
 	}
 }
