@@ -378,7 +378,8 @@ func zipRecords(b []byte) map[string][]float64 {
 	return out
 }
 
-// jsonRecords maps each string value of an object of a JSON document to the numbers of that object, or is nil when
+// jsonRecords maps each string value of an object of a JSON document to the numbers of that object, and the string
+// value of the first cell of a list of cells (objects with a key value) to the numbers of the cells, or is nil when
 // the document is not JSON.
 func jsonRecords(b []byte) map[string][]float64 {
 	d := json.NewDecoder(bytes.NewReader(b))
@@ -389,6 +390,7 @@ func jsonRecords(b []byte) map[string][]float64 {
 	}
 	out := map[string][]float64{}
 	var walk func(any)
+	var cells func([]any)
 	walk = func(x any) {
 		switch t := x.(type) {
 		case map[string]any:
@@ -410,9 +412,35 @@ func jsonRecords(b []byte) map[string][]float64 {
 				out[s] = append(out[s], nums...)
 			}
 		case []any:
+			cells(t)
 			for _, c := range t {
 				walk(c)
 			}
+		}
+	}
+	// A row of a table of HELM is a list of cells, each an object with a value, and the first cell names the row: the
+	// row is the record, so the model's name maps to the scores of the other cells.
+	cells = func(row []any) {
+		var name string
+		var nums []float64
+		for i, c := range row {
+			m, ok := c.(map[string]any)
+			if !ok {
+				return
+			}
+			switch y := m["value"].(type) {
+			case string:
+				if i == 0 {
+					name = y
+				}
+			case json.Number:
+				if f, err := y.Float64(); err == nil {
+					nums = append(nums, f)
+				}
+			}
+		}
+		if name != "" && len(nums) > 0 {
+			out[name] = append(out[name], nums...)
 		}
 	}
 	walk(v)

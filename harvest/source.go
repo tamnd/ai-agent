@@ -205,6 +205,16 @@ var Sources = []Source{
 		Credit: "LMArena leaderboard data (CC BY 4.0), https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset",
 		Note:   "A rating is the preference of the voters of one arena over one period, comparable only inside one snapshot of one arena (10.10). The dataset's notes list the changes of method: Bradley-Terry in place of Elo from 2024-01-09, style control by default from 2025-05-16, re-weighting by frequency from 2025-07-23. The Agent Arena configs give an IPS score, not a rating, and are not read. ARC Prize is not a source: the terms of arcprize.org forbid access by a bot or a script and the aggregation of its content (read 2026-11-14), so its results come from Epoch AI's Benchmarking Hub.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "helm", Name: "HELM (Holistic Evaluation of Language Models), the published leaderboards",
+		URL: "https://crfm.stanford.edu/helm/", Owner: "Stanford Center for Research on Foundation Models",
+		Licence: "none stated for the results (the code is Apache-2.0)", Checked: "2026-11-15", Class: "D",
+		Access: "the list of projects (crfm.stanford.edu/helm/project_metadata.json), then for the newest release of each project of crosswalk/helm.yaml its summary.json, schema.json, groups.json and the main table groups/<group>.json, from the public bucket storage.googleapis.com/crfm-helm-public: 4 requests a project; the bucket has no robots.txt", Rate: "1 request per 1 s",
+		Schedule: "monthly; a project gets a new release a few times a year", Standing: "secondary-reference",
+		Facts:  "the score of each model on each scenario of the main table of a project (Lite, Classic, Capabilities, MMLU, Safety, AIR-Bench, MedHELM, Finance, Long Context, Instruct), with its metric, the model's id in HELM, its developer and the date of the release",
+		Credit: "HELM, Stanford CRFM, https://crfm.stanford.edu/helm/",
+		Note:   "The results state no licence, so they are D: names and numbers only. CRFM ran every model on its own harness, prompts and settings, so the results are independent of the developers, but comparable only inside one release of one project. A score of a proportion (exact match, F1, accuracy, rates) is a fraction; a rating (Jury Score, WB Score, Instruct's 1 to 5 scales) or a text metric (BLEU, ROUGE) is a number. The mean win rate and the mean score are of the table and are not read.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.
