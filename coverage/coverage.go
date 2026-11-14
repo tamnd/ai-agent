@@ -506,3 +506,14 @@ func LoadCanon(root string) ([]Canon, error) {
 	}
 	return out, nil
 }
+
+// CoreIDs are the node slugs, node tags and card keys that a core row of the universe targets.
+func CoreIDs(rows []Row) map[string]bool {
+	core := map[string]bool{}
+	for _, row := range rows {
+		if id := targetID(row.Target); id != "" && row.Core {
+			core[id] = true
+		}
+	}
+	return core
+}
