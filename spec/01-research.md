@@ -67,8 +67,8 @@ Many large training datasets have documented problems: LAION-5B was withdrawn in
 | Source | Count | Note |
 |---|---|---|
 | AI Incident Database (AIID) | highest incident id about 1,797 at the end of October 2026; the October snapshot export had 1,713 incidents | ids are not dense; each incident has reports (news articles) and a taxonomy classification |
-| MIT AI Risk Repository | a living database of risks extracted from published taxonomies, with a causal and a domain taxonomy | licence CC BY 4.0 (checked at M1) |
-| MITRE ATLAS | tactics, techniques and case studies of attacks on AI systems | |
+| MIT AI Risk Repository | a living database of risks extracted from published taxonomies, with a causal and a domain taxonomy | licence CC BY 4.0 (checked 2026-11-15) |
+| MITRE ATLAS | tactics, techniques and case studies of attacks on AI systems | licence Apache-2.0 (checked 2026-11-15) |
 | OWASP Top 10 for LLM Applications | the ten main risk classes of LLM applications | CC BY-SA 4.0 |
 
 **What it means.** Incidents are cards linked to risks with `instance_of` (04.7), and risk nodes cite the taxonomies that list them (04.5).
@@ -138,8 +138,8 @@ The tree of 05.2 has 615 sub-areas, so a sub-area holds about 50 nodes on averag
 | Lilian Weng's blog, Jay Alammar's illustrated guides, Karpathy's lectures and repositories | clear long-form explanations with figures | personal, not exhaustive, not maintained as reference | all rights reserved unless stated |
 | Stanford Encyclopedia of Philosophy | long, reviewed, versioned entries on AI and mind | philosophy only | all rights reserved; names only (19.3) |
 | Stanford AI Index | the yearly numbers of the field | a report, not a reference; one year at a time | CC BY-ND 4.0 |
-| OECD.AI | the policy observatory; national initiatives; incidents monitor | policy only | per dataset (checked at M1) |
-| AI Incident Database | incidents with reports and taxonomies | incidents only | per snapshot terms (checked at M1) |
+| OECD.AI | the policy observatory; national initiatives; incidents monitor | policy only | no licence stated for the policy database, so facts only (checked 2026-11-14) |
+| AI Incident Database | incidents with reports and taxonomies | incidents only | CC BY-SA 4.0 unless noted, by its snapshots' license.txt; reports keep their own rights (checked 2026-11-14) |
 | Interpretable Machine Learning (Molnar), the Deep Learning book (Goodfellow et al.) online, course sites (CS229, CS231n, fast.ai) | good structure and order | under copyright or tied to one course | as stated per source |
 
 **What it means.** Each piece exists somewhere, and no one joins them.

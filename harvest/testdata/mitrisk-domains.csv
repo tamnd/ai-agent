@@ -1,0 +1,23 @@
+,,,,,Updated: 03 December 2025
+,Domain Taxonomy of AI Risks,,,,
+,This page is mobile-friendly,,,,
+,Description of Taxonomy,,,,
+,"The Domain Taxonomy of AI Risks adapted from Weidinger (2021) classifies risks into 7 AI risk domains: (1) Discrimination & Toxicity, (2) Privacy & Security, (3) Misinformation, (4) Malicious Actors & Misuse, (5) Human-Computer Interaction, (6) Socioeconomic & Environmental, and (7) AI System Safety, Failures, & Limitations.",,,,
+,,,,,
+,How to use,,,,
+,"This taxonomy makes it possible to use our database to, for instance, identify all mentions of risks related to Discrimination & Toxicity, and the sources from which they originate.  ",,,,
+,,,,,
+,,,,,
+,,Domain,,Sub-domain,Description 
+,1,Discrimination & Toxicity,1.1,Unfair discrimination and misrepresentation,"Unequal treatment of individuals or groups by AI, often based on race, gender, or other sensitive characteristics, resulting in unfair outcomes and representation of those groups."
+,,,1.2,Exposure to toxic content,"AI exposing users to harmful, abusive, unsafe or inappropriate content. May involve AI creating, describing, providing advice, or encouraging action. Examples of toxic content include hate-speech, violence, extremism, illegal acts, child sexual abuse material, as well as content that violates community norms such as profanity, inflammatory political speech, or pornography."
+,,,1.3,Unequal performance across groups,"Accuracy and effectiveness of AI decisions and actions is dependent on group membership, where decisions in AI system design and biased training data lead to unequal outcomes, reduced benefits, increased effort, and alienation of users."
+,4,Malicious actors,4.1,"Disinformation, surveillance, and influence at scale","Using AI systems to conduct large-scale disinformation campaigns, malicious surveillance, or targeted and sophisticated automated censorship and propaganda, with the aim to manipulate political processes, public opinion and behavior."
+,,,4.2,"Cyberattacks, weapon development or use, and mass harm","Using AI systems to develop cyber weapons (e.g., coding cheaper, more effective malware), develop new or enhance existing weapons (e.g., Lethal Autonomous Weapons or CBRNE), or use weapons to cause mass harm."
+,,More information,,,
+,,🌐 https://airisk.mit.edu/,,,
+,,Feedback/Contact us,,,
+,,"💬 Use this form to offer feedback, and suggest resources or risks to add",,,
+,,📧 Email: pslat[at]mit.edu,,,
+,,"📄 Cite as: Cite as: Slattery, P., Saeri, A. K., Grundy, E. A. C., Graham, J., Noetel, M., Uuk, R., Dao, J., Pour, S., Casper, S., & Thompson, N. (2025). The AI Risk Repository: A comprehensive meta-review, database, and taxonomy of risks from artificial intelligence. arXiv preprint arXiv:2408.12622. https://arxiv.org/abs/2408.12622",,,
+,,This work is licensed under CC BY 4.0,,,

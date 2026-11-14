@@ -205,6 +205,16 @@ var Sources = []Source{
 		Note:   "The site says that copyright and all rights of the papers are retained by the authors or other holders, so only facts are kept. It lists no awards; the awards of S-W3 for CVPR and ICCV need the conferences' own pages.",
 	},
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "mit-ai-risk", Name: "MIT AI Risk Repository",
+		URL: "https://airisk.mit.edu/", Owner: "the MIT FutureTech AI Risk Repository team",
+		Licence: "CC-BY-4.0", Checked: "2026-11-15", Class: "C",
+		Access: "the CSV export of three sheets of the repository's Google Sheet (the Domain Taxonomy, the AI Risk Database, the Included resources), which the robots.txt of docs.google.com allows (/spreadsheet); the download form of the site asks for an email and is not used", Rate: "1 request per 1 s",
+		Schedule: "monthly", Standing: "secondary-reference",
+		Facts:  "domain and sub-domain names and codes, risk category and sub-category names, Ev_ids, the entity, intent and timing codes, and the documents (titles, years, DOIs, authors) that name each risk; never the descriptions or the quoted evidence",
+		Credit: "Slattery et al., The AI Risk Repository (CC BY 4.0), https://airisk.mit.edu",
+		Note:   "Each sheet says: This work is licensed under CC BY 4.0. A new version of the repository is a new spreadsheet, and the old one then says it is outdated: the adapter stops on that note until MITRiskSheet is updated. The rows of additional evidence are quotes and are not read.",
+	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
 		ID: "mitre-atlas", Name: "MITRE ATLAS",
 		URL: "https://atlas.mitre.org/", Owner: "The MITRE Corporation",
 		Licence: "Apache-2.0", Checked: "2026-11-15", Class: "C",
