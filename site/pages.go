@@ -47,13 +47,25 @@ var kindRank = func() map[string]int {
 var levelRank = map[string]int{"intro": 6, "core": 4, "advanced": 2}
 
 func (b *builder) addSearch(n *node.Node) {
+	b.search = append(b.search, searchOf(b.c, n))
+}
+
+// searchOf is the entry of search.json for a node.
+func searchOf(c *node.Corpus, n *node.Node) searchEntry {
 	area := ""
-	if a := b.area(strings.SplitN(n.Area, "/", 2)[0]); a != nil {
+	if a := areaOf(c, strings.SplitN(n.Area, "/", 2)[0]); a != nil {
 		area = a.Name
 	}
-	b.search = append(b.search, searchEntry{
+	return searchEntry{
 		Name: n.Name, URL: "/" + n.Slug + "/", Kind: kindName(n.Kind), Summary: n.Summary,
 		Aliases: n.Aliases, Area: area, Tag: n.Tag, IDs: searchIDs(n.SameAs), Rank: kindRank[n.Kind] + levelRank[n.Level],
+	}
+}
+
+// sortSearch puts the entries of search.json in the order that the palette breaks ties in.
+func sortSearch(es []searchEntry) {
+	sort.Slice(es, func(i, j int) bool {
+		return es[i].Rank > es[j].Rank || (es[i].Rank == es[j].Rank && es[i].Name < es[j].Name)
 	})
 }
 
