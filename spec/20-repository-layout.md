@@ -170,7 +170,7 @@ GitHub Actions of `tamnd/ai`, and the self-hosted build server for the heavy job
 |---|---|---|---|
 | `check.yml` | every PR | `aik fmt -check`, `aik check -changed`, `aik claims extract`, `aik test` and `aik exp run -class cpu-small` for the changed nodes, `aik copycheck` on changed prose and code | yes |
 | `tags.yml` | every PR | no tag reused or retired; `NEW-` ids only on PRs that run `aik mint` before merge | yes |
-| `lean.yml` | PRs that touch `lean/` | `aik lean build`, `aik lean check` | yes |
+| `lean.yml` | PRs that touch `lean/` | `aik lean build`, which also runs `aik lean steps` | yes |
 | `build.yml` | push to `main`, nightly | `aik build` and `aik site build` and `aik site check` on the build server | no; a failure opens an issue |
 | `deploy.yml` | after `build.yml` on `main` | `aik site deploy -commit $H` and the live check (14.10) | no |
 | `harvest.yml` | weekly per source | `aik harvest`, `aik universe merge`, `aik card sync`; one PR per source | no |

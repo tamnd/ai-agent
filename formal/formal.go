@@ -171,7 +171,7 @@ type Finding struct {
 }
 
 // Severities are the severities of the F rules of spec 11: a block rule stops a merge, and a level rule keeps the node below the level that needs it.
-var Severities = map[string]string{"F01": "block", "F02": "level", "F03": "block", "F06": "level", "F07": "block", "F10": "warn"}
+var Severities = map[string]string{"F01": "block", "F02": "level", "F03": "block", "F06": "level", "F07": "block", "F08": "level", "F10": "warn"}
 
 func (f Finding) String() string { return f.Rule + " " + f.Where + ": " + f.Msg }
 

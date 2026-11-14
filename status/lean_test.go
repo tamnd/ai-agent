@@ -5,6 +5,7 @@ package status
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/tamnd/ai-agent/formal"
@@ -142,5 +143,57 @@ func TestTheoremLadders(t *testing.T) {
 	reviewtest.Pass(t, root, n, "proof-proof", filepath.Join(root, path))
 	if r := human(n, env); r.Level != 3 {
 		t.Errorf("a reviewed proof: %s, want H3 (next %v)", r.Label, r.Next)
+	}
+}
+
+// F3 links the steps of the page proof to the Lean proof (11.6, F08); on a core node the lean-statement review must
+// also hash the page proof.
+func TestF3(t *testing.T) {
+	root := t.TempDir()
+	const m = "AI.T.Thm"
+	rel := "nodes/t/thm"
+	mod := filepath.Join(root, "lean", "AI", "T", "Thm.lean")
+	proof := filepath.Join(root, rel, "derivations", "proof.md")
+	write := func(path, s string) {
+		t.Helper()
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(mod, "-- step: one\ntheorem a : True := trivial\n\ntheorem thm : True := by\n  -- step: two\n  have h : True := trivial\n  exact h\n")
+	write(proof, "1. A. {#step-one}\n2. B. {#step-two}\n")
+	std := []string{"propext"}
+	stmt := m + ".thm"
+	ds := formal.Decls{
+		m + ".a": {Decl: m + ".a", Kind: "theorem", Module: m, Type: "True", Axioms: std, Pos: &formal.Pos{Line: 2, EndLine: 2}},
+		stmt:     {Decl: stmt, Kind: "theorem", Module: m, Type: "True", Axioms: std, Pos: &formal.Pos{Line: 4, EndLine: 7}},
+	}
+	n := &node.Node{Front: node.Front{Kind: "theorem", Slug: "thm", Tag: "AAAAAA", Level: "intro",
+		Lean: map[string]string{"module": m, "statement": stmt, "steps": "derivations/proof.md"}},
+		Rel: rel, Dir: filepath.Join(root, rel)}
+	env := Env{Corpus: &node.Corpus{Root: root}, Decls: ds}
+	if r := lean(n, env); r.Level != 3 || r.Label != "F3" {
+		t.Errorf("linked steps: %s, want F3 (next %v)", r.Label, r.Next)
+	}
+	write(proof, "1. B. {#step-two}\n2. A. {#step-one}\n")
+	if r := lean(n, env); r.Level != 2 || len(r.Next) != 1 || !strings.Contains(r.Next[0], "(F08)") {
+		t.Errorf("steps out of order: %s, want F2 with F08 (next %v)", r.Label, r.Next)
+	}
+	write(proof, "1. A. {#step-one}\n2. B. {#step-two}\n")
+	n.Level = "core"
+	reviewtest.Pass(t, root, n, "lean-statement", mod)
+	if r := lean(n, env); r.Level != 2 || !strings.Contains(strings.Join(r.Next, " "), "does not hash derivations/proof.md") {
+		t.Errorf("a core node whose review does not hash the page proof: %s, want F2 (next %v)", r.Label, r.Next)
+	}
+	reviewtest.Pass(t, root, n, "lean-statement", mod, proof)
+	if r := lean(n, env); r.Level != 3 {
+		t.Errorf("a core node with the steps reviewed: %s, want F3 (next %v)", r.Label, r.Next)
+	}
+	n.Lean["steps"] = ""
+	if r := lean(n, env); r.Level != 2 || !strings.Contains(r.Next[0], "lean.steps") {
+		t.Errorf("no lean.steps: %s, want F2 (next %v)", r.Label, r.Next)
 	}
 }

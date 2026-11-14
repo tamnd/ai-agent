@@ -148,11 +148,11 @@ Statements may be committed with `sorry` proofs, at F1, in modules marked `-- st
 F3 asks that the proof on the page and the proof in Lean follow the same steps, so that a reader can move from one to the other.
 
 - The page proof (`derivations/proof.md`, 06.5) gives each step an id: `{#step-inner-grows}`, `{#step-norm-bounded}`, `{#step-combine}`.
-- The Lean proof marks the block that proves each step with a comment `-- step: <id>` on the line before a `have`, a `calc` or a tactic block (as in 11.4).
-- `aik lean steps` extracts both lists and checks (rule F08):
-  1. every step id of the page appears in the Lean proof, in the same order (a Lean proof may have extra internal steps, unmarked);
-  2. every marked Lean step builds on its own: the statement of the `have` is elaborated and recorded in `build/lean/steps.jsonl`;
-  3. the back-translation check (11.7) of each marked `have` agrees with the page step's text, as an advisory check.
+- The Lean proof marks the block that proves each step with a comment `-- step: <id>` on the line before it: a lemma of the module that proves the step, or a `have`, a `calc` or a tactic block inside the proof of the theorem (as in 11.4). The id may leave out the prefix `step-`, so `-- step: inner-grows` marks `{#step-inner-grows}`.
+- `aik lean steps [slug]` extracts both lists and checks (rule F08):
+  1. every step id of the page is marked in the Lean module, in the same order; each mark names a step of the page, once (a Lean proof may have extra internal steps, unmarked);
+  2. every marked step builds: the declaration that proves it, the lemma that the comment heads or the theorem whose proof holds the marked block, is in the build with no `sorry` and only the axioms of 11.5. The steps go to `build/lean/steps.jsonl`, one line per mark: the node, the id, the module and line, the declaration, the statement (the elaborated type of a lemma, or the source of the marked block up to its `:=`) and whether it builds. `aik lean build` writes the same file;
+  3. the back-translation check (11.7) of each marked step agrees with the page step's text, as an advisory check.
 - The page renders the proof with a "Lean" toggle on each step, which shows the Lean statement of that step and links the source line (16.4).
 
 ## 11.7 Fidelity
@@ -165,21 +165,27 @@ A proof is only as good as its statement. Fidelity is the check that the Lean st
 2. **Definitions agree with the page on small cases.** `AITest/` evaluates the definitions on small instances and compares with the page's worked example (06.6): the Bellman update of the page's gridworld gives the page's values; F1 of the page's confusion matrix gives the page's number (rule F06).
 3. **Back-translation.** A model writes the Lean statement back into English without seeing the page, and a model of another family compares it with the page's statement. A disagreement opens an issue. This check advises; it never raises a level.
 
-**Human review (needed for F1 to count on core nodes).** A reviewer who is not the author records `reviews/<tag>/lean-statement.yaml`:
+**Human review (needed for F1 to count on core nodes).** A reviewer who is not the author records `reviews/<tag>/lean-statement.yaml`, a review record of 15.5 against the checklist `checklists/lean/statement/vN.md`:
 
 ```yaml
-reviewer: alice                    # in registers/reviewers.reg
+tag: XSZ95D
+part: lean-statement
+hashes:
+  node.md: b3:…                                          # the statement section of the page
+  /lean/AI/LearningTheory/PacBoundFiniteHypothesisClass.lean: b3:…
+  derivations/proof.md: b3:…                             # when the review covers the steps, for F3
+checklist: lean/statement/v1
+reviewer: github:alice                                   # in registers/reviewers.yaml, with the skill lean
+verdict: pass
 date: 2027-03-02
-page_statement: blake3:…           # the statement section of the page
-lean_statement: blake3:…           # the elaborated type of the cited theorem, from the extractor
-page_proof: blake3:…               # derivations/proof.md, when the review covers the steps
-verdict:
-  statement_matches_page: yes
-  hypotheses_match: yes            # or "stronger in Lean", with a note
-  steps_match: yes                 # needed for F3
-notes: >-
-  The page says "a unit vector u"; Lean has hu : ‖u‖ = 1. Same meaning.
+items:
+  - {check: "1", result: pass}                           # the statement matches the page
+  - {check: "2", result: pass, note: "The page says a unit vector u; Lean has hu : ‖u‖ = 1. Same meaning."}
+  - {check: "3", result: n/a}                            # the steps match, when derivations/proof.md is hashed
+interests: none
 ```
+
+`aik review -w <slug> lean-statement` writes the template with the hashes. For F3 on a core node, the record must hash the page proof that `lean.steps` names: the reviewer has then checked that the marked Lean steps prove what the page steps say.
 
 The review counts only while all hashes are current; any change drops the node until a new review, as in algorithm and math2 (rule F02). A reviewer checks in particular: the domain (finite or general hypothesis classes; discounted or average reward), the quantifiers (for all distributions, for some sample size), constants (a bound with a `log(1/δ)` and the exact constant the page prints), and that the page does not claim more than Lean proves.
 
@@ -192,7 +198,7 @@ The ladder of 04.10, with the exact checks:
 | F0 | no Lean part | |
 | F1 | the statement is in Lean and builds; the definitions pass the small-case tests; the hypotheses are shown satisfiable; for the core, the statement review is current | F01, F02 (core), F05, F06 |
 | F2 | F1, and the theorem is proved with the standard axioms only | F03, F04 |
-| F3 | F2, and the page proof's steps are linked to the Lean proof's steps, and the review's `steps_match` is current | F08 |
+| F3 | F2, and the page proof's steps are linked to the Lean proof's steps; for the core, the statement review is current and hashes the page proof | F08, F02 (core) |
 
 For a `concept` or `metric` node with a Lean part (softmax, F1, cross-entropy), F2 means its listed properties are proved. For a theorem whose page has no proof of its own (a long proof only cited), F3 does not apply.
 
@@ -227,6 +233,6 @@ The rules are listed in 15.3 with their severities. In short:
 | F05 | each cited theorem has an `example` that satisfies all its hypotheses |
 | F06 | the definitions agree with the page's worked example on the small-case tests |
 | F07 | the module path mirrors the node path, or is listed in `registers/lean-paths.yaml` |
-| F08 | at F3, every step id of the page proof appears in the Lean proof in order, and each marked step builds |
+| F08 | at F3, every step id of the page proof is marked in the Lean proof in order, each mark names a page step once, and each marked step builds; a failure keeps the node at F2 (level) |
 | F09 | no Lean formalization of an empirical claim (a finding, a scaling law, a benchmark result) |
 | F10 | each module builds in at most 120 seconds on the CI runner |

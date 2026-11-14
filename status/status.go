@@ -439,11 +439,29 @@ func formalRung(n *node.Node, env Env) (r Rung) {
 		return r
 	}
 	r.Level = 2
-	steps := n.Lean["steps"]
-	if steps == "" {
-		steps = "the page proof"
+	page, steps, ok, err := formal.NodeSteps(env.Corpus.Root, n, env.Decls)
+	if !ok {
+		r.Next = []string{"F3 links the steps of the page proof to the Lean proof: name it in lean.steps, give its steps ids {#step-…}, and mark them with -- step: comments, which `aik lean steps` checks (11.6, F08)"}
+		return r
 	}
-	r.Next = []string{"F3 links the steps of " + steps + " to the Lean proof with -- step: comments, which `aik lean steps` checks (11.6, F08)"}
+	if err != nil {
+		r.Next = []string{"lean.steps: " + err.Error()}
+		return r
+	}
+	for _, f := range formal.CheckSteps(n, page, steps) {
+		need = append(need, f.Msg+" (F08)")
+	}
+	if n.Level == "core" {
+		proof := filepath.Join(n.Dir, filepath.FromSlash(n.Lean["steps"]))
+		if ok, why := Reviewed(env.Corpus.Root, n, "lean-statement", proof); !ok {
+			need = append(need, "a review of the steps, with "+n.Lean["steps"]+" in the hashes of the lean-statement review: "+why)
+		}
+	}
+	if len(need) > 0 {
+		r.Next = need
+		return r
+	}
+	r.Level = 3
 	return r
 }
 
