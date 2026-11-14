@@ -320,6 +320,9 @@ func Of(n *node.Node, env Env) Status {
 var hNames = []string{"no proof", "sketch", "full proof", "reviewed proof"}
 
 func human(n *node.Node, env Env) (r Rung) {
+	if Formal(n) {
+		return theoremProof(n, env)
+	}
 	r = Rung{Max: 3}
 	defer func() { r.Label, r.Name = fmt.Sprintf("H%d", r.Level), hNames[r.Level] }()
 	if len(n.Proofs) == 0 {
@@ -393,9 +396,109 @@ func sortedKeys[V any](m map[string]V) []string {
 	return ks
 }
 
+// Formal tells if the Lean part of a node is a statement and its proof, on the F ladder of 04.10, rather than a model,
+// a spec and the theorems about them: a theorem node, and a concept or a metric that names lean.statement and no model.
+func Formal(n *node.Node) bool {
+	return n.Kind == "theorem" || (n.Lean["statement"] != "" && n.Lean["model"] == "" && n.Lean["spec"] == "")
+}
+
+// theoremProof is the H ladder of a theorem: its proof is the derivation of kind proof (06.5), a sketch at H1, a full
+// proof at H2, and a full proof that a person reviewed at H3.
+func theoremProof(n *node.Node, env Env) (r Rung) {
+	r = Rung{Max: 3}
+	defer func() { r.Label, r.Name = fmt.Sprintf("H%d", r.Level), hNames[r.Level] }()
+	var proofs, full []node.Derivation
+	for _, d := range n.Derivations {
+		if d.Front.Kind == "proof" {
+			proofs = append(proofs, d)
+			if d.Front.Status == "full" {
+				full = append(full, d)
+			}
+		}
+	}
+	if len(proofs) == 0 {
+		r.Next = []string{"add derivations/proof.md, a derivation of kind proof (06.5)"}
+		return r
+	}
+	r.Level = 1
+	if len(full) == 0 {
+		r.Next = []string{proofs[0].ID + " is a sketch; a full proof covers every step (06.5)"}
+		return r
+	}
+	r.Level = 2
+	root := env.Corpus.Root
+	for _, d := range full {
+		if ok, why := Reviewed(root, n.Tag, "proof-"+d.ID, filepath.Join(root, filepath.FromSlash(d.Path))); !ok {
+			r.Next = append(r.Next, d.ID+": "+why)
+		}
+	}
+	if len(r.Next) < len(full) {
+		r.Level = 3
+		r.Next = nil
+	}
+	return r
+}
+
+var fNames = []string{"no Lean part", "statement checked", "proved", "steps linked"}
+
+// formalRung is the F ladder of 04.10 and 11: F1 when the statement builds, passes the rules of the lean field and, on
+// a core node, has a fidelity review (11.7); F2 when its proof uses only the allowed axioms, so no sorry (11.5); F3
+// when the steps of the page proof are linked to the Lean proof (11.6).
+func formalRung(n *node.Node, env Env) (r Rung) {
+	r = Rung{Max: 3}
+	defer func() { r.Label, r.Name = fmt.Sprintf("F%d", r.Level), fNames[r.Level] }()
+	mod := n.Lean["module"]
+	if mod == "" {
+		r.Next = []string{"name a Lean module and the theorem in lean.module and lean.statement (11.4)"}
+		return r
+	}
+	file := filepath.Join(env.Corpus.Root, "lean", filepath.FromSlash(strings.ReplaceAll(mod, ".", "/"))+".lean")
+	if _, err := os.Stat(file); err != nil {
+		r.Next = []string{"the module " + mod + " does not exist"}
+		return r
+	}
+	stmt := n.Lean["statement"]
+	if stmt == "" {
+		r.Next = []string{"name the theorem in lean.statement (11.4)"}
+		return r
+	}
+	if env.Decls == nil {
+		r.Next = []string{"run `aik lean build` to check the Lean part"}
+		return r
+	}
+	var need []string
+	for _, f := range formal.CheckNode(n, env.Decls) {
+		need = append(need, f.Where+": "+f.Msg+" ("+f.Rule+")")
+	}
+	if n.Level == "core" {
+		if ok, why := Reviewed(env.Corpus.Root, n.Tag, "lean-statement", file); !ok {
+			need = append(need, "a fidelity review of the statement: "+why)
+		}
+	}
+	if len(need) > 0 {
+		r.Next = need
+		return r
+	}
+	r.Level = 1
+	if bad := env.Decls[stmt].Disallowed(); len(bad) > 0 {
+		r.Next = []string{stmt + " uses the axiom " + strings.Join(bad, ", ") + " (F03)"}
+		return r
+	}
+	r.Level = 2
+	steps := n.Lean["steps"]
+	if steps == "" {
+		steps = "the page proof"
+	}
+	r.Next = []string{"F3 links the steps of " + steps + " to the Lean proof with -- step: comments, which `aik lean steps` checks (11.6, F08)"}
+	return r
+}
+
 var lNames = []string{"no Lean part", "spec and model", "correctness proved", "cost proved", "refinement proved"}
 
 func lean(n *node.Node, env Env) (r Rung) {
+	if Formal(n) {
+		return formalRung(n, env)
+	}
 	r = Rung{Max: 4}
 	defer func() { r.Label, r.Name = fmt.Sprintf("L%d", r.Level), lNames[r.Level] }()
 	mod := n.Lean["module"]

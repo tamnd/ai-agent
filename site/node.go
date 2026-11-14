@@ -534,7 +534,16 @@ func (b *builder) card(n *node.Node, p *NodePage) *Card {
 	}
 	c.Props = props(n.Properties)
 	s := p.Status
+	proofAt := "#correctness"
 	switch {
+	case status.Formal(n):
+		// A theorem: proved at F2, its statement only at F1 (11.12), and its human proof in the section Proof.
+		proofAt = "#proof"
+		if s.L.Level >= 2 {
+			c.Evidence = append(c.Evidence, Badge{Text: "Proved in Lean", Tick: true, Href: "#formal-proof"})
+		} else if s.L.Level == 1 {
+			c.Evidence = append(c.Evidence, Badge{Text: "Lean statement only", Href: "#formal-proof"})
+		}
 	case s.L.Level >= 3:
 		c.Evidence = append(c.Evidence, Badge{Text: "Proved in Lean: correctness and cost", Tick: true, Href: "#formal-proof"})
 	case s.L.Level == 2:
@@ -542,11 +551,11 @@ func (b *builder) card(n *node.Node, p *NodePage) *Card {
 	}
 	switch {
 	case s.H.Level >= 3:
-		c.Evidence = append(c.Evidence, Badge{Text: "Proof reviewed", Tick: true, Href: "#correctness"})
+		c.Evidence = append(c.Evidence, Badge{Text: "Proof reviewed", Tick: true, Href: proofAt})
 	case s.H.Level == 2:
-		c.Evidence = append(c.Evidence, Badge{Text: "Full proof", Href: "#correctness"})
+		c.Evidence = append(c.Evidence, Badge{Text: "Full proof", Href: proofAt})
 	case s.H.Level == 1:
-		c.Evidence = append(c.Evidence, Badge{Text: "Proof sketch", Href: "#correctness"})
+		c.Evidence = append(c.Evidence, Badge{Text: "Proof sketch", Href: proofAt})
 	}
 	tested := 0
 	var names []string

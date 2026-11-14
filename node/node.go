@@ -182,6 +182,24 @@ type Proof struct {
 	Body  string     `json:"-"`
 }
 
+// DerivationFront is the front matter of a file of derivations/ (spec 06.5).
+type DerivationFront struct {
+	ID      string   `yaml:"id" json:"id"`
+	Derives []string `yaml:"derives" json:"derives"`
+	Kind    string   `yaml:"kind" json:"kind"`     // identity, gradient, bound, count, cost, proof or limit
+	Status  string   `yaml:"status" json:"status"` // full or sketch
+	Check   string   `yaml:"check,omitempty" json:"check,omitempty"`
+	Lean    string   `yaml:"lean,omitempty" json:"lean,omitempty"`
+}
+
+// Derivation is one file of derivations/. A derivation of kind proof is the human proof of a theorem node.
+type Derivation struct {
+	ID    string          `json:"id"`
+	Path  string          `json:"path"`
+	Front DerivationFront `json:"front"`
+	Body  string          `json:"-"`
+}
+
 // Preset is a named input of a scene (spec 10.4).
 type Preset struct {
 	Name  string         `yaml:"name" json:"name"`
@@ -200,7 +218,9 @@ type Node struct {
 	Forbidden []string `json:"-"` // front matter keys that rule T05 rejects
 	Impls     []Impl   `json:"impls,omitempty"`
 	Proofs    []Proof  `json:"proofs,omitempty"`
-	Scene     string   `json:"scene,omitempty"` // path of viz/scene.ts, relative to the root
+	// Derivations are the files of derivations/, in the order of their names.
+	Derivations []Derivation `json:"derivations,omitempty"`
+	Scene       string       `json:"scene,omitempty"` // path of viz/scene.ts, relative to the root
 	// ArchScene is the path of viz/shapes.scene.yaml, the architecture scene of 12.6, relative to the root.
 	ArchScene string   `json:"arch_scene,omitempty"`
 	Presets   []Preset `json:"presets,omitempty"`
@@ -300,6 +320,9 @@ func Read(root, dir string) (*Node, error) {
 		return nil, err
 	}
 	if err := readProofs(root, n); err != nil {
+		return nil, err
+	}
+	if err := readDerivations(root, n); err != nil {
 		return nil, err
 	}
 	if err := readScene(root, n); err != nil {
@@ -423,6 +446,42 @@ func readProofs(root string, n *Node) error {
 		pr.Path = filepath.ToSlash(rel)
 		pr.Body = string(body)
 		n.Proofs = append(n.Proofs, pr)
+	}
+	return nil
+}
+
+// readDerivations reads derivations/*.md. A file without front matter, as a numeric check's notes, is skipped; its id
+// defaults to its name.
+func readDerivations(root string, n *Node) error {
+	paths, err := filepath.Glob(filepath.Join(n.Dir, "derivations", "*.md"))
+	if err != nil {
+		return err
+	}
+	sort.Strings(paths)
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		if !bytes.HasPrefix(b, []byte("---")) {
+			continue
+		}
+		front, body, _, err := SplitFront(b)
+		if err != nil {
+			return fmt.Errorf("%s: %w", p, err)
+		}
+		var d Derivation
+		if err := yaml.Unmarshal(front, &d.Front); err != nil {
+			return fmt.Errorf("%s: front matter: %w", p, err)
+		}
+		d.ID = d.Front.ID
+		if d.ID == "" {
+			d.ID = strings.TrimSuffix(filepath.Base(p), ".md")
+		}
+		rel, _ := filepath.Rel(root, p)
+		d.Path = filepath.ToSlash(rel)
+		d.Body = string(body)
+		n.Derivations = append(n.Derivations, d)
 	}
 	return nil
 }
