@@ -22,6 +22,7 @@ func cmdHarvest(args []string) error {
 	root := f.String("root", ".", "the root of the content repository")
 	all := f.Bool("all", false, "harvest every source")
 	due := f.String("due", "", "harvest the sources whose schedule is this period: "+strings.Join(harvest.Periods, ", "))
+	list := f.Bool("list", false, "print the ids of the sources that would run, one a line, and harvest nothing")
 	limit := f.Int("limit", 0, "keep at most this many rows of each kind; a partial run removes no rows")
 	since := f.String("since", "", "keep only rows from this date (YYYY-MM-DD); a partial run removes no rows")
 	offline := f.Bool("offline", false, "do not fetch; read the newest snapshots of the manifest from the store")
@@ -46,10 +47,19 @@ func cmdHarvest(args []string) error {
 			return usageError{"-due takes one of " + strings.Join(harvest.Periods, ", ") + ", and no source and no -all"}
 		}
 		names = harvest.Due(*due)
-		if len(names) == 0 {
+		if len(names) == 0 && !*list {
 			fmt.Println("no source is due " + *due)
 			return nil
 		}
+	}
+	if *list {
+		for _, n := range names {
+			if _, ok := harvest.Adapters[n]; !ok {
+				return usageError{fmt.Sprintf("no source %q", n)}
+			}
+			fmt.Println(n)
+		}
+		return nil
 	}
 	if len(names) == 0 {
 		return usageError{"give a source (" + strings.Join(harvest.Names(), ", ") + ") or -all"}
