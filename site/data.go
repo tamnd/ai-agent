@@ -9,19 +9,16 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/tamnd/ai-agent/card"
 	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/results"
 )
 
-// The datasets of 16.10 that the build writes, as JSON Lines. The Parquet, CSV and GraphML forms, the code, the
-// experiments and the pages are not written yet; the manifest lists them under not_built.
+// The forms of the datasets of 16.10 that the build does not write yet; the manifest lists them under not_built.
 var notBuilt = []string{
-	"items, models, results and works as Parquet; models and results as CSV; graph as GraphML",
-	"models, works, incidents and policy as their own datasets (their cards are in items)",
-	"code, experiments and pages",
+	"items, models, results and works as Parquet",
+	"works as its own dataset (its cards are in items)",
 }
 
 // Dataset is one dataset of the manifest.
@@ -80,20 +77,44 @@ func (j *jsonl) add(v any) error {
 	return nil
 }
 
-// datasets writes the datasets of 16.10 to dir: items/<kind>.jsonl with the record of every node and card, claims.jsonl,
-// graph.jsonl and results.jsonl, and manifest.json. nodes holds the records of the nodes with their ladders. Like the
-// site, the datasets go to a new directory that replaces dir at the end, so a failed build leaves the old ones.
+// dataFile is a file of a dataset before it is written; rows counts the records in it (the lines of a JSON Lines file,
+// the rows of a CSV file without its header, the edges of a GraphML file, the files of a tarball).
+type dataFile struct {
+	path string
+	data []byte
+	rows int
+}
+
+// datasets writes the datasets of 16.10 to dir and their manifest.json: items/<kind>.jsonl with the record of every node
+// and card, models.csv, results as JSON Lines and CSV, claims.jsonl, the graph as JSON Lines and GraphML,
+// incidents.jsonl, policy.jsonl, experiments.jsonl, code.jsonl with a tarball of each framework, and pages/<top>.jsonl.
+// nodes holds the records of the nodes with their ladders. Like the site, the datasets go to a new directory that
+// replaces dir at the end, so a failed build leaves the old ones.
 func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 	items := map[string]*jsonl{}
-	var cl, gr, rs jsonl
+	var cl, gr, rs, inc, pol jsonl
+	var all []Record
+	var edges []Edge
 	add := func(r Record) error {
+		all = append(all, r)
 		if items[r.Kind] == nil {
 			items[r.Kind] = &jsonl{}
 		}
 		if err := items[r.Kind].add(r); err != nil {
 			return err
 		}
+		switch r.Kind {
+		case "incident":
+			if err := inc.add(r); err != nil {
+				return err
+			}
+		case "policy", "provision":
+			if err := pol.add(r); err != nil {
+				return err
+			}
+		}
 		for _, e := range r.Out {
+			edges = append(edges, e)
 			if err := gr.add(e); err != nil {
 				return err
 			}
@@ -124,56 +145,140 @@ func (b *builder) datasets(dir string, g *Graph, nodes []Record) error {
 			return err
 		}
 	}
+	var shownResults []*results.Result
 	for _, r := range g.Results().Results {
 		if r.Card == nil || shown[r.Card] == nil {
 			continue
 		}
+		shownResults = append(shownResults, r)
 		if err := rs.add(ResultLine{URL: g.URL(Thing{Card: r.Card}), Result: r, Group: r.Group}); err != nil {
 			return err
 		}
 	}
 
+	var ex, code jsonl
+	tars := map[string]*tarball{}
+	pages := map[string]*jsonl{}
+	for _, n := range b.c.Nodes {
+		url := b.opt.BaseURL + "/" + n.Slug + "/"
+		for _, e := range n.Exps {
+			if b.hiddenExp(n, e) {
+				continue
+			}
+			l := ExperimentLine{Item: n.Slug, URL: url, ID: e.Slug, Path: e.Rel, Results: e.Results}
+			var err error
+			if e.Design != nil {
+				if l.Design, err = asJSON(e.Design); err != nil {
+					return err
+				}
+			}
+			if e.Expect != nil {
+				if l.Expect, err = asJSON(e.Expect); err != nil {
+					return err
+				}
+			}
+			if err := ex.add(l); err != nil {
+				return err
+			}
+		}
+		for _, im := range n.Impls {
+			l := b.codeLine(n, im)
+			if err := code.add(l); err != nil {
+				return err
+			}
+			if l.Ladder != "X" {
+				continue
+			}
+			if tars[im.Lang] == nil {
+				tars[im.Lang] = newTarball()
+			}
+			for _, f := range l.Files {
+				if err := tars[im.Lang].add(im.Lang+"/"+n.Slug+"/"+f.Name, f.Content); err != nil {
+					return err
+				}
+			}
+		}
+		if !HasTwin(n) {
+			continue
+		}
+		md, err := os.ReadFile(filepath.Join(n.Dir, "node.md"))
+		if err != nil {
+			return err
+		}
+		top := topArea(n.Area)
+		if pages[top] == nil {
+			pages[top] = &jsonl{}
+		}
+		if err := pages[top].add(PageLine{Item: n.Slug, Tag: n.Tag, URL: url, Area: n.Area, Licence: "CC-BY-SA-4.0", Markdown: string(md)}); err != nil {
+			return err
+		}
+	}
+
+	m := Manifest{AsOf: b.meta.Date, Commit: b.opt.Commit, Version: b.opt.Version, Schema: "record.v1", NotBuilt: notBuilt}
+	var out []dataFile
+	set := func(name, licence string, fs ...dataFile) {
+		d := Dataset{Name: name, Licence: licence}
+		for _, f := range fs {
+			sum := sha256.Sum256(f.data)
+			d.Files = append(d.Files, DataFile{Path: f.path, Rows: f.rows, Bytes: len(f.data), SHA256: hex.EncodeToString(sum[:])})
+			out = append(out, f)
+		}
+		m.Datasets = append(m.Datasets, d)
+	}
+	lines := func(p string, j *jsonl) dataFile { return dataFile{p, j.buf.Bytes(), j.rows} }
+	const open = "CC0-1.0 where the sources allow it, otherwise per field (19.2)"
+
+	var fs []dataFile
+	for _, k := range sortedKeys(items) {
+		fs = append(fs, lines("items/"+k+".jsonl", items[k]))
+	}
+	set("items", open, fs...)
+	models, nm, err := modelsCSV(all)
+	if err != nil {
+		return err
+	}
+	set("models", open, dataFile{"models.csv", models, nm})
+	rcsv, err := resultsCSV(g, shownResults)
+	if err != nil {
+		return err
+	}
+	set("results", open, lines("results.jsonl", &rs), dataFile{"results.csv", rcsv, rs.rows})
+	set("claims", "CC0-1.0; the text of a claim quotes the prose, CC-BY-SA-4.0", lines("claims.jsonl", &cl))
+	set("graph", "CC0-1.0", lines("graph.jsonl", &gr), dataFile{"graph.graphml", graphML(all, edges), gr.rows})
+	set("incidents", open, lines("incidents.jsonl", &inc))
+	set("policy", open, lines("policy.jsonl", &pol))
+	set("experiments", "MIT for the code and the designs; the results are CC0-1.0", lines("experiments.jsonl", &ex))
+	fs = []dataFile{lines("code.jsonl", &code)}
+	for _, fw := range sortedKeys(tars) {
+		data, err := tars[fw].close()
+		if err != nil {
+			return err
+		}
+		fs = append(fs, dataFile{"code/" + fw + ".tar.gz", data, tars[fw].files})
+	}
+	set("code", "MIT", fs...)
+	fs = nil
+	for _, top := range sortedKeys(pages) {
+		fs = append(fs, lines("pages/"+top+".jsonl", pages[top]))
+	}
+	set("pages", "CC-BY-SA-4.0", fs...)
+
 	next := filepath.Clean(dir) + ".next"
 	_ = os.RemoveAll(next)
-	m := Manifest{AsOf: b.meta.Date, Commit: b.opt.Commit, Version: b.opt.Version, Schema: "record.v1", NotBuilt: notBuilt}
-	write := func(name string, j *jsonl) (DataFile, error) {
-		full := filepath.Join(next, filepath.FromSlash(name))
+	for _, f := range out {
+		full := filepath.Join(next, filepath.FromSlash(f.path))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
-			return DataFile{}, err
-		}
-		sum := sha256.Sum256(j.buf.Bytes())
-		return DataFile{Path: name, Rows: j.rows, Bytes: j.buf.Len(), SHA256: hex.EncodeToString(sum[:])}, os.WriteFile(full, j.buf.Bytes(), 0o644)
-	}
-	kinds := make([]string, 0, len(items))
-	for k := range items {
-		kinds = append(kinds, k)
-	}
-	sort.Strings(kinds)
-	ds := Dataset{Name: "items", Licence: "CC0-1.0 where the sources allow it, otherwise per field (19.2)"}
-	for _, k := range kinds {
-		f, err := write("items/"+k+".jsonl", items[k])
-		if err != nil {
 			return err
 		}
-		ds.Files = append(ds.Files, f)
-	}
-	m.Datasets = append(m.Datasets, ds)
-	for _, d := range []struct {
-		name, licence string
-		j             *jsonl
-	}{
-		{"claims", "CC0-1.0; the text of a claim quotes the prose, CC-BY-SA-4.0", &cl},
-		{"graph", "CC0-1.0", &gr},
-		{"results", "CC0-1.0 where the sources allow it, otherwise per field (19.2)", &rs},
-	} {
-		f, err := write(d.name+".jsonl", d.j)
-		if err != nil {
+		if err := os.WriteFile(full, f.data, 0o644); err != nil {
 			return err
 		}
-		m.Datasets = append(m.Datasets, Dataset{Name: d.name, Licence: d.licence, Files: []DataFile{f}})
 	}
 	mb, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(next, 0o755); err != nil {
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(next, "manifest.json"), append(mb, '\n'), 0o644); err != nil {
