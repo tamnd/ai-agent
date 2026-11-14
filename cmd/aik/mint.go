@@ -97,6 +97,18 @@ func (m minted) key() string {
 	return m.n.Slug
 }
 
+// regKey is the key of the line of tags.reg. A result card writes no slug: its slug is its tag in lowercase (04.4),
+// so after the mint the key has the new tag.
+func (m minted) regKey() string {
+	if m.c != nil && m.c.Kind == "result" && m.c.Slug == strings.ToLower(m.c.Tag) {
+		if m.c.Owner != "" {
+			return m.c.Owner + "/" + strings.ToLower(m.tag)
+		}
+		return strings.ToLower(m.tag)
+	}
+	return m.key()
+}
+
 func (m minted) rel() string {
 	if m.c != nil {
 		return m.c.File
@@ -182,7 +194,7 @@ func cmdMint(args []string) error {
 			return err
 		}
 		moved[m.old()] = m.tag
-		fmt.Fprintf(&lines, "%s %s\n", m.tag, m.key())
+		fmt.Fprintf(&lines, "%s %s\n", m.tag, m.regKey())
 	}
 	kinds := make([]string, 0, len(cards))
 	for kind := range cards {
