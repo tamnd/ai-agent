@@ -46,6 +46,16 @@ var Sources = []Source{
 		Facts:  "secondary for parameters, training compute, dates and hardware specifications",
 		Credit: "Data from Epoch AI, Data on AI Models (CC BY 4.0), https://epoch.ai/data/ai-models",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "epoch-benchmarks", Name: "Epoch AI, Benchmarking Hub",
+		URL: "https://epoch.ai/benchmarks", Owner: "Epoch AI",
+		Licence: "CC-BY-4.0", Checked: "2026-11-14", Class: "C",
+		Access: "benchmark_data.zip, one request: a CSV for each benchmark, benchmark_metadata.csv and model_metadata.csv",
+		Rate:   "1 request per 2 s", Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "results: Epoch AI's own runs, with the date, the standard error and the log; and the scores it copies from other leaderboards, with their source",
+		Credit: "Epoch AI, 'Capabilities & benchmarking' (CC BY 4.0), https://epoch.ai/benchmarks",
+		Note:   "Only the benchmarks that benchmark_metadata.csv maps to a file and a score column are read; the score keeps the hub's number and its scale (fraction or percent).",
+	},
 	{
 		ID: "pwc-dump", Name: "Papers with Code, the final data dump",
 		URL: "https://huggingface.co/datasets/pwc-archive/files", Owner: "Papers with Code (Meta AI); archived by the pwc-archive organization on Hugging Face",
