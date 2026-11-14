@@ -110,6 +110,8 @@ type Run struct {
 	// Skipped counts the items of the source that the adapter did not keep, and Notes says why.
 	Skipped int
 	Notes   []string
+	// Partial is set by an adapter that could not read a part of the source, so that the run removes no row.
+	Partial bool
 
 	prior []Snapshot
 	snaps []Snapshot
@@ -181,7 +183,7 @@ func (r *Run) Skip(n int, why string) {
 // keeps the snapshot and the date of the run that last changed it, so a weekly run is a small diff.
 func (r *Run) Finish(rows []Row, o Options) (*Report, error) {
 	rep := &Report{Source: r.Source.ID, Date: r.Date, Adapter: r.adapterName(), Licence: r.Source.Licence, Class: r.Source.Class,
-		Partial: o.Limit > 0 || o.Since != "", Skipped: r.Skipped, Notes: r.Notes}
+		Partial: o.Limit > 0 || o.Since != "" || r.Partial, Skipped: r.Skipped, Notes: r.Notes}
 	if r.Client != nil {
 		rep.Requests = r.Client.Requests
 	}

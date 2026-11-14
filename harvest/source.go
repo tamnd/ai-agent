@@ -34,7 +34,7 @@ type Source struct {
 	Note     string `yaml:"note,omitempty"`
 }
 
-// Sources are the five sources of M0 (spec 21.2, deliverable 6). The licences were read on the sources' own pages
+// Sources are the sources that an adapter reads (13.2), the first five of M0 (spec 21.2, deliverable 6). The licences were read on the sources' own pages
 // on the date in Checked; a person approves each class (13.10).
 var Sources = []Source{
 	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
@@ -184,6 +184,16 @@ var Sources = []Source{
 		Facts:  "the raw score of each open model on IFEval, BBH, MATH Level 5, GPQA, MuSR and MMLU-PRO, with its precision, revision and submission date",
 		Credit: "Open LLM Leaderboard (Hugging Face), https://huggingface.co/datasets/open-llm-leaderboard/contents",
 		Note:   "The dataset states no licence, so it is D: names and numbers only. Hugging Face ran every model on one harness and protocol, so its results are independent of the developers. The score is the raw score of the harness; the leaderboard's normalized score is in the notes.",
+	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "lmarena", Name: "LMArena (arena.ai), the published leaderboards",
+		URL: "https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset", Owner: "LMArena",
+		Licence: "CC-BY-4.0", Checked: "2026-11-14", Class: "C",
+		Access: "the split latest of each config of the dataset lmarena-ai/leaderboard-dataset, from the rows endpoint of the dataset server of Hugging Face, 100 rows a request; the rows of the category overall are kept", Rate: "1 request per 1 s",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "the rating of each model in each arena, with its 95% interval, its number of battles, its rank, the developer and the date the leaderboard was published",
+		Credit: "LMArena leaderboard data (CC BY 4.0), https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset",
+		Note:   "A rating is the preference of the voters of one arena over one period, comparable only inside one snapshot of one arena (10.10). The dataset's notes list the changes of method: Bradley-Terry in place of Elo from 2024-01-09, style control by default from 2025-05-16, re-weighting by frequency from 2025-07-23. The Agent Arena configs give an IPS score, not a rating, and are not read. ARC Prize is not a source: the terms of arcprize.org forbid access by a bot or a script and the aggregation of its content (read 2026-11-14), so its results come from Epoch AI's Benchmarking Hub.",
 	},
 }
 

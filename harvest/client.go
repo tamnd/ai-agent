@@ -132,10 +132,10 @@ func (c *Client) get(ctx context.Context, u *url.URL, limit int64, delay time.Du
 	}
 	defer resp.Body.Close()
 	if wait, ok := c.backoff(resp.StatusCode, resp.Header); ok {
-		return nil, wait, fmt.Errorf("GET %s: %s", u, resp.Status)
+		return nil, wait, &StatusError{URL: u.String(), Code: resp.StatusCode, Status: resp.Status}
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, 0, fmt.Errorf("GET %s: %s", u, resp.Status)
+		return nil, 0, &StatusError{URL: u.String(), Code: resp.StatusCode, Status: resp.Status}
 	}
 	b, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
@@ -348,3 +348,12 @@ func matchLen(pat, path string) int {
 	}
 	return len(pat)
 }
+
+// StatusError is an answer of a host that is not 200 OK.
+type StatusError struct {
+	URL    string
+	Code   int
+	Status string
+}
+
+func (e *StatusError) Error() string { return fmt.Sprintf("GET %s: %s", e.URL, e.Status) }

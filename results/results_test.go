@@ -134,3 +134,22 @@ func TestTolerance(t *testing.T) {
 		}
 	}
 }
+
+// A rating is comparable only inside one snapshot of one arena (10.10).
+func TestGroupOfRating(t *testing.T) {
+	r := func(arena, snap string) *Result {
+		return &Result{Tag: "T", Benchmark: "lmarena", Version: "text", Metric: "rating", Arena: arena, Snapshot: snap,
+			Setting: map[string]any{"harness": "LMArena"}}
+	}
+	a, _ := GroupOf(r("LMArena text", "2026-11-11"))
+	b, _ := GroupOf(r("LMArena text", "2026-11-04"))
+	c, _ := GroupOf(r("LMArena vision", "2026-11-11"))
+	same, _ := GroupOf(r("LMArena text", "2026-11-11"))
+	if a == b || a == c || a != same {
+		t.Errorf("groups %q %q %q %q", a, b, c, same)
+	}
+	acc, _ := GroupOf(&Result{Benchmark: "mmlu", Version: "test", Metric: "accuracy", Arena: "x", Snapshot: "2026-11-11"})
+	if acc != "mmlu@test/accuracy/" {
+		t.Errorf("a result that is not a rating ignores arena and snapshot: %q", acc)
+	}
+}
