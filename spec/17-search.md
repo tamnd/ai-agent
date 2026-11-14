@@ -251,6 +251,10 @@ These are the search misses of 18.6, and the coverage report counts them.
 
 `registers/search-eval.yaml` is the evaluation set. `aik search eval` runs it against the built index, in the same code as the browser, and the build fails when a gate fails.
 
+Each entry of the set is a query `q`, its `class` (`title`, `alias`, `id`, `acronym`, `version`, `question` or `log`, after the rows below) and `want`, the slug, tag or path of the expected item or a list of them.
+The browser and the evaluation share one script, `find.js`, which `aik search eval` runs in goja on the `search.json` of the build.
+A query none of whose items is in the index is pending: the report lists it and no gate counts it, so that the set can name core nodes before they are written.
+
 **The set** (Estimate: 4,000 queries at M3):
 
 | Source | Count | Expected result |

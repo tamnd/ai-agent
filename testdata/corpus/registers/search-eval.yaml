@@ -1,0 +1,10 @@
+# The evaluation set of the search (17.10), small, so that aik site check runs the gates on the test corpus.
+- {q: BINARY SEARCH, class: title, want: binary-search}
+- {q: binray search, class: title, want: binary-search}
+- {q: big o notation, class: alias, want: asymptotic-notation}
+- {q: 2b7qdx, class: id, want: binary-search}
+- {q: 7NVRNT, class: id, want: loop-invariant}
+- {q: how to prove a loop is correct, class: question, want: loop-invariant}
+- {q: find a key in a sorted array, class: question, want: [binary-search, search-in-sorted-array]}
+- {q: lower bound by counting comparisons, class: question, want: comparison-model}
+- {q: interpolation search, class: title, want: interpolation-search}

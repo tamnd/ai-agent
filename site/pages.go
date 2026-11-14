@@ -32,6 +32,7 @@ type searchEntry struct {
 	Aliases []string `json:"a,omitempty"`
 	Area    string   `json:"r,omitempty"`
 	Tag     string   `json:"t,omitempty"`
+	IDs     []string `json:"i,omitempty"` // the ids of same_as as scheme:value, which the palette matches exactly (17.2)
 	Rank    int      `json:"-"`
 }
 
@@ -52,8 +53,33 @@ func (b *builder) addSearch(n *node.Node) {
 	}
 	b.search = append(b.search, searchEntry{
 		Name: n.Name, URL: "/" + n.Slug + "/", Kind: kindName(n.Kind), Summary: n.Summary,
-		Aliases: n.Aliases, Area: area, Tag: n.Tag, Rank: kindRank[n.Kind] + levelRank[n.Level],
+		Aliases: n.Aliases, Area: area, Tag: n.Tag, IDs: searchIDs(n.SameAs), Rank: kindRank[n.Kind] + levelRank[n.Level],
 	})
+}
+
+// searchIDs are the ids of same_as that a reader can type: not the title of a Wikipedia article, which the name and the
+// aliases already hold, and not the slug of the node itself.
+func searchIDs(m map[string]any) []string {
+	var out []string
+	for scheme, v := range m {
+		if scheme == "wikipedia" || scheme == "al" {
+			continue
+		}
+		var vs []any
+		switch t := v.(type) {
+		case []any:
+			vs = t
+		default:
+			vs = []any{t}
+		}
+		for _, x := range vs {
+			if s := strings.TrimSpace(fmt.Sprint(x)); s != "" && x != nil {
+				out = append(out, scheme+":"+s)
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Item is one row of a list.
