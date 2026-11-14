@@ -3,6 +3,7 @@
 package viz
 
 import (
+	"encoding/json"
 	"os/exec"
 	"slices"
 	"strings"
@@ -155,5 +156,37 @@ func TestCheckArchFraction(t *testing.T) {
 	r := CheckArch(f, d, []map[string]int64{in})
 	if len(r.Fails) > 0 {
 		t.Errorf("a config that both reject fails the check: %v", r.Fails)
+	}
+}
+
+// A contract with no derived config variable, or no bound axis, gives empty lists, not null, so that the scene runs.
+func TestCheckArchNoDerived(t *testing.T) {
+	f, err := shapes.Read("testdata/arch-plain", "testdata/arch-plain")
+	if err != nil || f == nil {
+		t.Fatalf("read: %v", err)
+	}
+	if ps := f.Check(); len(ps) > 0 {
+		t.Fatalf("shapes.yaml: %v", ps)
+	}
+	d, fails := CompileArch("linear", f, GenArch(f, "Linear"), links)
+	if len(fails) > 0 {
+		t.Fatalf("compile: %v", fails)
+	}
+	b, err := json.Marshal(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(b), "null") {
+		t.Errorf("the scene data has a null: %s", b)
+	}
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("node is not installed")
+	}
+	samples, err := f.Sample(1, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := CheckArch(f, d, samples); r.Skipped != "" || len(r.Fails) > 0 {
+		t.Errorf("check: skipped %q, fails %v", r.Skipped, r.Fails)
 	}
 }

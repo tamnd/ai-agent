@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# A linear classifier: a shape contract with no derived config variable, so that the scene has an empty list of them.
+config:
+  d_in:    {meaning: "number of input features", symbol: "d", example: 4, sample: [1, 8]}
+  classes: {meaning: "number of classes", symbol: "K", example: 3, sample: [2, 9]}
+axes:
+  B: {meaning: "batch", example: 2}
+  D: d_in
+  K: classes
+blocks:
+  - id: linear
+    meaning: "a fully connected layer from the features to the logits"
+    inputs: {x: "(B, D)"}
+    outputs: {logits: "(B, K)"}
+    params: "D * K + K"
+    flops_forward: "2 * B * D * K"
+model:
+  params: {formula: "linear.params", meaning: "all parameters"}
+  sources:
+    - {work: test-work, locator: "Section 1"}
+configs:
+  small: {meaning: "a small classifier", d_in: 10, classes: 2, source: {work: test-work, locator: "Table 1"}}
+  large: {meaning: "a large classifier", d_in: 784, classes: 10, source: {work: test-work, locator: "Table 1"}}
