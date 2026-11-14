@@ -4,8 +4,6 @@
 package status
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,12 +13,11 @@ import (
 	"slices"
 	"strings"
 
-	"go.yaml.in/yaml/v3"
-
 	"github.com/tamnd/ai-agent/bridge"
 	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/formal"
 	"github.com/tamnd/ai-agent/node"
+	"github.com/tamnd/ai-agent/review"
 )
 
 // Rung is the level of one ladder, with the reasons that it is not higher.
@@ -179,15 +176,6 @@ type Results struct {
 	Tests []Test `json:"tests"`
 }
 
-// Review is a review record, reviews/<tag>/<part>.yaml (spec 13.2).
-type Review struct {
-	Part     string `yaml:"part"`
-	Hash     string `yaml:"hash"`
-	Reviewer string `yaml:"reviewer"`
-	Date     string `yaml:"date"`
-	Verdict  string `yaml:"verdict"`
-}
-
 // Env is what the ladders read besides the node.
 type Env struct {
 	Corpus  *node.Corpus
@@ -255,43 +243,9 @@ func LoadResults(dir string) (map[string]map[string]Test, error) {
 	return out, nil
 }
 
-// Hash is the hash that a review binds to: sha256 of the file, in hex.
-func Hash(path string) (string, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	s := sha256.Sum256(b)
-	return hex.EncodeToString(s[:]), nil
-}
-
-// Reviewed tells if reviews/<tag>/<part>.yaml exists, approves, and binds to the current hash of file.
-func Reviewed(root, tag, part, file string) (bool, string) {
-	if tag == "" {
-		return false, "the node has no tag yet"
-	}
-	b, err := os.ReadFile(filepath.Join(root, "reviews", tag, part+".yaml"))
-	if errors.Is(err, os.ErrNotExist) {
-		return false, "no review record reviews/" + tag + "/" + part + ".yaml"
-	}
-	if err != nil {
-		return false, err.Error()
-	}
-	var r Review
-	if err := yaml.Unmarshal(b, &r); err != nil {
-		return false, "the review record does not parse"
-	}
-	h, err := Hash(file)
-	if err != nil {
-		return false, err.Error()
-	}
-	if r.Hash != h {
-		return false, "the review is for an older version of the file"
-	}
-	if r.Verdict != "" && r.Verdict != "approve" {
-		return false, "the review does not approve"
-	}
-	return true, ""
+// Reviewed tells whether the review record of the part of n counts for file (spec 15.5), and why not.
+func Reviewed(root string, n *node.Node, part, file string) (bool, string) {
+	return review.Check(root, n, part, file)
 }
 
 // Of computes the ladders of n.
@@ -357,7 +311,7 @@ func human(n *node.Node, env Env) (r Rung) {
 	r.Level = 2
 	root := env.Corpus.Root
 	for _, p := range full {
-		if ok, why := Reviewed(root, n.Tag, "proof-"+p.ID, filepath.Join(root, p.Path)); !ok {
+		if ok, why := Reviewed(root, n, "proof-"+p.ID, filepath.Join(root, p.Path)); !ok {
 			r.Next = append(r.Next, p.ID+": "+why)
 		}
 	}
@@ -428,7 +382,7 @@ func theoremProof(n *node.Node, env Env) (r Rung) {
 	r.Level = 2
 	root := env.Corpus.Root
 	for _, d := range full {
-		if ok, why := Reviewed(root, n.Tag, "proof-"+d.ID, filepath.Join(root, filepath.FromSlash(d.Path))); !ok {
+		if ok, why := Reviewed(root, n, "proof-"+d.ID, filepath.Join(root, filepath.FromSlash(d.Path))); !ok {
 			r.Next = append(r.Next, d.ID+": "+why)
 		}
 	}
@@ -471,7 +425,7 @@ func formalRung(n *node.Node, env Env) (r Rung) {
 		need = append(need, f.Where+": "+f.Msg+" ("+f.Rule+")")
 	}
 	if n.Level == "core" {
-		if ok, why := Reviewed(env.Corpus.Root, n.Tag, "lean-statement", file); !ok {
+		if ok, why := Reviewed(env.Corpus.Root, n, "lean-statement", file); !ok {
 			need = append(need, "a fidelity review of the statement: "+why)
 		}
 	}
@@ -531,7 +485,7 @@ func lean(n *node.Node, env Env) (r Rung) {
 		need = append(need, "name the spec of the problem in lean.spec")
 	}
 	if n.Level == "core" {
-		if ok, why := Reviewed(env.Corpus.Root, n.Tag, "lean-spec", file); !ok {
+		if ok, why := Reviewed(env.Corpus.Root, n, "lean-spec", file); !ok {
 			need = append(need, "a fidelity review of the spec: "+why)
 		}
 	}
@@ -870,7 +824,7 @@ func Writing(n *node.Node, env Env) (r Rung) {
 		}
 	}
 	file := filepath.Join(n.Dir, "node.md")
-	if ok, why := Reviewed(env.Corpus.Root, n.Tag, "text", file); !ok {
+	if ok, why := Reviewed(env.Corpus.Root, n, "text", file); !ok {
 		r.Level = 4
 		r.Next = []string{"a review of the text: " + why}
 		return r

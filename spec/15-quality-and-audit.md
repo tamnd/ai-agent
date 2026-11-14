@@ -228,27 +228,33 @@ As in algorithm: a review is a file `reviews/<tag>/<part>.yaml`, in a signed com
 
 ```yaml
 tag: 5TQH2W
-part: text                   # text | impl-<framework> | experiment | lean-spec | scene | facts | positions
+part: text                   # text | positions | facts | contract | impl-<framework> | exp/<slug> | scene | lean-spec | lean-statement | proof-<id>
 hashes: {node.md: b3:91ac…, claims.yaml: b3:22f0…, derivations/expectation-scaling.md: b3:4b7d…}
-checklist: text/v1           # 15.7
+checklist: text/method/v1    # 15.7
 reviewer: "github:alice"
 verdict: pass                # pass | changes
 date: 2027-04-02
-items:
-  - {check: claims-scope, result: pass}
-  - {check: history-facts, result: pass, note: "checked Hinton 2012 arXiv v1 date"}
+items:                       # one per question of the checklist, by its number
+  - {check: "1", result: pass}
+  - {check: "8", result: pass, note: "checked Hinton 2012 arXiv v1 date"}
 attest:                      # optional: paywalled sources read (07.5) and independence (07.4)
   - {claim: c-variance-shift-with-bn, work: li-2019-disharmony-cvpr, read: true, supports: true}
 independence: []
 interests: "none"            # the reviewer's statement of interests for this item
 ```
 
+- `hashes` holds the BLAKE3 hash of every file of the part, by its path from the node directory, or from the root of the repository with a leading "/" for a file outside it (`/lean/AI/Dropout.lean`). The files of a part: `text` and `positions`, node.md, claims.yaml and derivations/; `facts`, facts.yaml; `contract`, contract.yaml; `impl-<framework>`, impl/<framework>/; `exp/<slug>`, the experiment's directory; `scene`, viz/; `lean-spec` and `lean-statement`, the Lean module; `proof-<id>`, the proof or derivation with that id.
+- `aik review <slug> <part> -reviewer github:<login> -w` writes the record to fill in: the current hashes, the newest checklist of the part and the kind, and one item per question. `aik review <slug> <part> -check` tells whether the record counts, and why not.
+
 | Part | Raises | Reviewer skill in `registers/reviewers.yaml` |
 |---|---|---|
 | `text` | W5 | `domain:<top area>` |
 | `impl-<framework>` | X4 for that framework | `code:<framework>` |
-| `experiment` | R4 | `exp`, and `domain:<top area>` |
-| `lean-spec` | F1 (the statement matches the page) | `lean` |
+| `exp/<slug>` | R4 | `exp`, and `domain:<top area>` |
+| `lean-spec` | F1 of an algorithm (the spec matches the page) | `lean` |
+| `lean-statement` | F1 of a theorem (the statement matches the page, 11.7) | `lean` |
+| `proof-<id>` | H3 (the page proof is checked) | `domain:<top area>` |
+| `contract` | the contract of an interface (09) | `code:<any framework>`, or `domain:<top area>` |
 | `scene` | V3 | `viz` or `domain:<top area>` |
 | `facts` | D3 | `data`, or `law:<jurisdiction>` for policy and provision facts |
 | `positions` | the neutrality part of W5 on contested pages | `domain:<top area>`, and the conditions below |
@@ -256,8 +262,8 @@ interests: "none"            # the reviewer's statement of interests for this it
 A review counts only when all of these hold:
 
 - The reviewer is not an author of any reviewed hash (by provenance, 04.8).
-- The reviewer has the skill for the part in `registers/reviewers.yaml` (14.11), with a signing key there.
-- The verdict is `pass`, every checklist item is `pass` or `n/a`, and the hashes are the current hashes of the files.
+- The reviewer has the skill for the part in `registers/reviewers.yaml` (14.11), with a signing key there. The commit of the record is signed with that key; CI checks the signature, as it has the history, and the build checks the rest.
+- The verdict is `pass`, every question of the checklist file has an item that is `pass` or `n/a`, the hashes are the current hashes of the files, and `interests` is stated ("none" when there are none).
 - **Conflicts of interest.** A reviewer employed by, or paid by, the developer of a model, system or dataset, or the body that made a policy, cannot give W5 to its page or review its contested sections. They may review `facts` (D3) with their interest stated in `interests`, because they often know the facts best, and the page shows "facts reviewed by a reviewer from <organization>" (Default, Q-29).
 - **Contested pages.** A reviewer who has published for one position must say so in `interests`. A `positions` review then needs a second reviewer who holds another position or none (Q-19).
 - **Staleness.** A changed hash makes the record stale. The record stays in the history, and the page loses the level until a new review. A reviewer can renew a stale review with a diff review of the changed lines only, recorded with `basis: <old record>`.

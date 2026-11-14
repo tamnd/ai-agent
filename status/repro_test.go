@@ -12,6 +12,7 @@ import (
 
 	claimpkg "github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/exp"
+	"github.com/tamnd/ai-agent/internal/reviewtest"
 	"github.com/tamnd/ai-agent/node"
 )
 
@@ -120,11 +121,7 @@ func TestReproLadder(t *testing.T) {
 	runAll()
 	level(3, "reviews the design and the results")
 	for _, e := range n.Exps {
-		h, err := Hash(filepath.Join(e.Dir, exp.ResultsFile))
-		if err != nil {
-			t.Fatal(err)
-		}
-		writeFiles(t, filepath.Join(root, "reviews", n.Tag), map[string]string{"exp/" + e.Slug + ".yaml": "part: exp/" + e.Slug + "\nhash: " + h + "\nreviewer: a\nverdict: approve\n"})
+		reviewtest.Pass(t, root, n, "exp/"+e.Slug, filepath.Join(e.Dir, exp.ResultsFile))
 	}
 	level(4, "")
 	if r := Repro(n, env); r.Name != "reviewed experiment" || r.Next != nil {

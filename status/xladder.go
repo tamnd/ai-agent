@@ -160,7 +160,7 @@ func xImpl(n *node.Node, im node.Impl, env Env) (r Rung) {
 	if main == nil {
 		return r
 	}
-	ok, why := Reviewed(env.root(), n.Tag, "impl-"+im.Lang, filepath.Join(env.root(), filepath.FromSlash(main.Path)))
+	ok, why := Reviewed(env.root(), n, "impl-"+im.Lang, filepath.Join(env.root(), filepath.FromSlash(main.Path)))
 	if !ok {
 		r.Next = append(r.Next, "X4 needs a review of this exact file by a person who is not the author (15.5): "+why)
 		return r

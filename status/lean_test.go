@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/tamnd/ai-agent/formal"
+	"github.com/tamnd/ai-agent/internal/reviewtest"
 	"github.com/tamnd/ai-agent/node"
 )
 
@@ -138,16 +139,7 @@ func TestTheoremLadders(t *testing.T) {
 	if r := human(n, env); r.Level != 2 {
 		t.Errorf("a full proof: %s, want H2 (next %v)", r.Label, r.Next)
 	}
-	h, err := Hash(filepath.Join(root, path))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(filepath.Join(root, "reviews", "XSZ95D"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, "reviews", "XSZ95D", "proof-proof.yaml"), []byte("hash: "+h+"\nverdict: approve\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	reviewtest.Pass(t, root, n, "proof-proof", filepath.Join(root, path))
 	if r := human(n, env); r.Level != 3 {
 		t.Errorf("a reviewed proof: %s, want H3 (next %v)", r.Label, r.Next)
 	}

@@ -51,7 +51,7 @@ func Data(n *node.Node, env Env) *Rung {
 		return r
 	}
 	r.Level = 2
-	ok, why := Reviewed(env.root(), n.Tag, "facts", filepath.Join(n.Dir, facts.File))
+	ok, why := Reviewed(env.root(), n, "facts", filepath.Join(n.Dir, facts.File))
 	if !ok {
 		r.Next = []string{"a reviewer checks the facts against the primary sources: " + why}
 		return r
