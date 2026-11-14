@@ -394,11 +394,14 @@ func (b *builder) resolve(slug string) (string, string, bool) {
 }
 
 // area finds a top area or a sub-area by its id.
-func (b *builder) area(id string) *node.Area {
-	if a, ok := b.c.AreaByID[id]; ok {
+func (b *builder) area(id string) *node.Area { return areaOf(b.c, id) }
+
+// areaOf finds an area by its path or by its id.
+func areaOf(c *node.Corpus, id string) *node.Area {
+	if a, ok := c.AreaByID[id]; ok {
 		return a
 	}
-	for _, a := range b.c.AreaByID {
+	for _, a := range c.AreaByID {
 		if a.ID == id {
 			return a
 		}
@@ -604,9 +607,7 @@ func (b *builder) finish() error {
 			return err
 		}
 	}
-	sort.Slice(b.search, func(i, j int) bool {
-		return b.search[i].Rank > b.search[j].Rank || (b.search[i].Rank == b.search[j].Rank && b.search[i].Name < b.search[j].Name)
-	})
+	sortSearch(b.search)
 	data, err := json.Marshal(b.search)
 	if err != nil {
 		return err
