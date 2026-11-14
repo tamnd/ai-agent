@@ -134,39 +134,20 @@ func shapeRefs(f *shapes.File, body string) string {
 	if !strings.Contains(body, "{shape:") {
 		return body
 	}
-	lines := strings.Split(body, "\n")
-	fence := ""
-	for i, l := range lines {
-		t := strings.TrimSpace(l)
-		if strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~") {
-			if fence == "" {
-				fence = t[:3]
-			} else if strings.HasPrefix(t, fence) {
-				fence = ""
+	return outsideMarkdownCode(body, func(s string) string {
+		return shapes.RefRE.ReplaceAllStringFunc(s, func(m string) string {
+			sm := shapes.RefRE.FindStringSubmatch(m)
+			if f == nil {
+				return m
 			}
-			continue
-		}
-		if fence != "" {
-			continue
-		}
-		parts := strings.Split(l, "`")
-		for j := 0; j < len(parts); j += 2 { // the even parts are outside code spans
-			parts[j] = shapes.RefRE.ReplaceAllStringFunc(parts[j], func(m string) string {
-				sm := shapes.RefRE.FindStringSubmatch(m)
-				if f == nil {
-					return m
-				}
-				tex, v, err := f.Ref(sm[1], sm[2])
-				switch {
-				case err != nil:
-					return m
-				case v != nil:
-					return shapes.Group(v)
-				}
-				return "$" + tex + "$"
-			})
-		}
-		lines[i] = strings.Join(parts, "`")
-	}
-	return strings.Join(lines, "\n")
+			tex, v, err := f.Ref(sm[1], sm[2])
+			switch {
+			case err != nil:
+				return m
+			case v != nil:
+				return shapes.Group(v)
+			}
+			return "$" + tex + "$"
+		})
+	})
 }

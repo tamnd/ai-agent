@@ -22,6 +22,7 @@ func (r *run) shapes(n *node.Node) {
 			r.add("X09", Level, n.Rel+"/node.md", 0, "the architecture has no %s with its shapes, parameter count and FLOP formulas (08.6)", shapes.FileName)
 		}
 		r.shapeRefs(n)
+		r.factRefs(n)
 		return
 	}
 	ps := f.Check()
@@ -36,6 +37,7 @@ func (r *run) shapes(n *node.Node) {
 		}
 	}
 	r.shapeRefs(n)
+	r.factRefs(n)
 	if len(ps) > 0 {
 		return
 	}
@@ -73,6 +75,22 @@ func (r *run) shapeRefs(n *node.Node) {
 			}
 			if _, _, err := n.Shapes.Ref(m[1], m[2]); err != nil {
 				r.add("X20", Block, n.Rel+"/node.md", n.BodyLine+i, "%s: %v", m[0], err)
+			}
+		}
+	}
+}
+
+// factRefs checks that each {fact:<item>/<field>} of the prose names a fact that the item holds (rule D01), and that
+// a computed fact comes from aik facts compute (rule D08).
+func (r *run) factRefs(n *node.Node) {
+	for i, line := range strings.Split(n.Body, "\n") {
+		for _, m := range node.FactRefRE.FindAllStringSubmatch(line, -1) {
+			_, err := r.c.Fact(m[1], m[2])
+			switch {
+			case errors.Is(err, node.ErrComputed):
+				r.add("D08", Block, n.Rel+"/node.md", n.BodyLine+i, "%s: %v", m[0], err)
+			case err != nil:
+				r.add("D01", Block, n.Rel+"/node.md", n.BodyLine+i, "%s: %v", m[0], err)
 			}
 		}
 	}
