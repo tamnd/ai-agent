@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tamnd/ai-agent/computed"
 	"os"
 	"path/filepath"
 	"sort"
@@ -118,6 +119,11 @@ type Corpus struct {
 	BridgeErrors []error
 	// Pins are the datasets of registers/data-pins.yaml (spec 9.5), by id. It is nil when the register does not exist.
 	Pins map[string]*exp.Pin
+	// ComputedDefs are the definitions of topics/computed.yaml (04.9), Computed their results by id, and ComputedErrs
+	// the definitions that have no result, with the reason.
+	ComputedDefs []computed.Def
+	Computed     map[string]*computed.Result
+	ComputedErrs map[string]error
 }
 
 // Load reads the whole content tree at root.
@@ -224,6 +230,12 @@ func Load(root string) (*Corpus, error) {
 	var bs []*bridge.Card
 	bs, c.BridgeErrors = bridge.Read(root)
 	c.Bridges = bridge.NewSet(bs)
+	defs, err := computed.Read(root)
+	if err != nil {
+		c.Errors = append(c.Errors, err)
+	}
+	c.ComputedDefs = defs
+	c.compute()
 	return c, nil
 }
 

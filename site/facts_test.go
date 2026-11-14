@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/tamnd/ai-agent/card"
+	"github.com/tamnd/ai-agent/computed"
 	"github.com/tamnd/ai-agent/facts"
 	"github.com/tamnd/ai-agent/node"
 )
@@ -40,5 +41,20 @@ func TestFactRefs(t *testing.T) {
 	}
 	if strings.Count(got, "[^fact-1]:") != 1 {
 		t.Errorf("the footnote of a source is written once:\n%s", got)
+	}
+}
+
+func TestComputedRef(t *testing.T) {
+	c := &node.Corpus{Computed: map[string]*computed.Result{"biggest": {
+		ID: "biggest", Sentence: "Among the model cards, the model with the most total parameters is Big (2 trillion parameters), as of 2026-11-14.",
+		Src: "S:epoch-ai", Loc: "Parameters", AsOf: "2026-11-14"}}}
+	got := factRefs(c, "{fact:computed/biggest}. And {fact:computed/other}.\n")
+	for _, want := range []string{
+		"Among the model cards, the model with the most total parameters is Big (2 trillion parameters), as of 2026-11-14[^fact-1]. And {fact:computed/other}.",
+		"[^fact-1]: S:epoch-ai, Parameters (2026-11-14)\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("factRefs: no %q in\n%s", want, got)
+		}
 	}
 }

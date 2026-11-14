@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/tamnd/ai-agent/computed"
 	"github.com/tamnd/ai-agent/facts"
 )
 
@@ -14,15 +15,22 @@ import (
 // params.total of the item llama-3-1-405b. The item is a node slug or a card key; the field is the last part.
 var FactRefRE = regexp.MustCompile(`\{fact:([a-z0-9][a-z0-9/-]*)/([a-z][a-z0-9_.-]*)\}`)
 
-// ErrComputed is the error of a reference to a computed fact, {fact:computed/<id>}, which only aik facts compute
-// produces (rule D08).
-var ErrComputed = errors.New("computed facts come from aik facts compute, which does not produce them yet (D08)")
+// ErrComputed is the error of a reference to a computed fact, {fact:computed/<id>}, that aik facts compute does not
+// produce (rule D08): it has no definition in topics/computed.yaml, or its definition gives no result.
+var ErrComputed = errors.New("a computed fact comes from aik facts compute (D08)")
 
 // Fact finds the fact field of an item: a record of the facts.yaml of the node with that slug, or else a fact field
 // of the card with that key, as a record with the card's source.
 func (c *Corpus) Fact(item, field string) (facts.Fact, error) {
 	if item == "computed" {
-		return facts.Fact{}, ErrComputed
+		if r := c.Computed[field]; r != nil {
+			return facts.Fact{ID: field, Value: r.Value, Unit: r.Unit, AsOf: r.AsOf,
+				Sources: []facts.Source{{Src: r.Src, Loc: r.Loc, Value: r.Value, AsOf: r.AsOf}}}, nil
+		}
+		if err := c.ComputedErrs[field]; err != nil {
+			return facts.Fact{}, fmt.Errorf("%w: %w", ErrComputed, err)
+		}
+		return facts.Fact{}, fmt.Errorf("%w: %s has no definition in %s", ErrComputed, field, computed.File)
 	}
 	if n := c.BySlug[item]; n != nil {
 		for _, f := range n.Facts {

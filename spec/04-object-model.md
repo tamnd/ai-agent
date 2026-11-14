@@ -355,6 +355,20 @@ Rules:
 - **Time.** A fact that is true only at a date (a price, a rank, an "in force" status, a count of users) has `as_of`, and the page prints the date next to the value. Rule D07 rejects a time-bound fact without `as_of`. The time-bound ids are `access`, `licence`, `status`, `price`, `users`, `downloads`, `likes`, `stars` and `rank`, and the ids under them.
 - **Computed facts.** Ranks, "first", "largest", "most cited" and similar facts are computed by the build from the registers (`aik facts compute`), with the date and the population ("the largest open-weights dense model by total parameters among the model cards, as of 2026-11-13"). They are never written by hand.
 
+  The definitions are in `topics/computed.yaml`, a list of entries with `id`, `kind`, `where`, `measure`, `order`, `what` and `population`:
+
+  ```yaml
+  - id: most-params-open-weights
+    kind: model
+    where: {accessibility: Open weights (unrestricted)}
+    measure: params.total
+    order: max
+    what: the model with the most total parameters
+    population: the model cards with open weights
+  ```
+
+  The population is every node and card of the kind whose `where` fields match, without case; a field with a list of values, such as `country`, matches when one of its values does. A node shadows the card with its tag. The measure is a fact id of the cards or of `facts.yaml`, a number or a date; `order: max` picks the largest or the latest, `min` the smallest or the first. Items that do not give the measure are counted as missing, and a tie names every tied item. The `as_of` of the result is the latest date of the data of the population: the harvest date of a card, or the `as_of` of the source of a node fact. `aik facts compute` writes `build/facts/computed.json` with the item, the value, its source, the count, the missing, the ties and the sentence, and exits 1 when a definition gives no result.
+
 ## 4.10 The computed ladders
 
 The build computes seven ladders for each node that can have them. No person and no agent writes them (rule T05). A review counts only for the hash that it reviewed; when the file changes, the level drops until a new review, as in math2 and algorithm.
