@@ -131,9 +131,14 @@ func (r *run) reverseFields() {
 	}
 }
 
-// foundationPath reports a core node with no path of prereqs back to a foundation (E09).
+// foundationPath reports a core node with no path of prereqs back to a foundation (E09). The rule is about what a
+// reader learns first, so it covers the kinds whose form is a node (04.2): the ideas, the tasks and the metrics. A
+// record kind with a full page, such as a person, a model or a law, is read for its facts and has no prerequisites.
 func (r *run) foundationPath(g *graph.Graph, n *node.Node) {
 	if n.Level != "core" || isFoundation(r.c, n.Slug) {
+		return
+	}
+	if k, ok := node.Kind(n.Kind); !ok || k.Form != "node" || k.ID == "area" {
 		return
 	}
 	for _, k := range g.Closure(n.Slug, false, "prereqs") {
@@ -184,20 +189,21 @@ func prose(body string) string {
 	return b.String()
 }
 
-// names tells if a text names the target: a link to its page, [[al:slug]] for a neighbour, or its name or an alias.
+// names tells if a text names the target: a link to its page, [[slug]] or [[al:slug]] with or without a label, or its
+// name or an alias.
 func names(c *node.Corpus, text, target string) bool {
 	low := strings.ToLower(text)
 	has := func(names ...string) bool {
 		return slices.ContainsFunc(names, func(s string) bool { return s != "" && strings.Contains(low, strings.ToLower(s)) })
 	}
 	if site, slug, ok := bridge.Split(target); ok {
-		if strings.Contains(text, "[["+site+":"+slug+"]]") {
+		if strings.Contains(text, "[["+site+":"+slug+"]]") || strings.Contains(text, "[["+site+":"+slug+"|") {
 			return true
 		}
 		b := c.Bridges.Find(target)
 		return b != nil && has(append([]string{b.Name}, b.Aliases...)...)
 	}
-	for _, l := range []string{"](/" + target + "/", "](/" + target + ")", "](/" + target + "#"} {
+	for _, l := range []string{"](/" + target + "/", "](/" + target + ")", "](/" + target + "#", "[[" + target + "]]", "[[" + target + "|"} {
 		if strings.Contains(text, l) {
 			return true
 		}

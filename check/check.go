@@ -64,7 +64,7 @@ var Rules = map[string]string{
 	"E06": "evaluated_on is derived from the result cards only, never written by hand",
 	"E07": "architecture targets are architectures; the lineage edges fine_tuned_from, distilled_from and merged_from join models",
 	"E08": "no edge points to its own node; see_also has at most 8 targets",
-	"E09": "each core node has a path of prereqs back to ai-foundations, math-for-ai or deep-learning-foundations, or to a bridge card of math2 or algorithm",
+	"E09": "each core node of a kind whose form is a node (an idea, a task or a metric) has a path of prereqs back to ai-foundations, math-for-ai or deep-learning-foundations, or to a bridge card of math2 or algorithm",
 	"E10": "each related_to edge has a note on the difference: a note on the edge, or a sentence of the text that names the target",
 	"E11": "no reverse edge is written by hand; the build derives them",
 	"E13": "evidence_for and evidence_against edges carry a claim id and a role (07.3)",
