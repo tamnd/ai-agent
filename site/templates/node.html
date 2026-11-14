@@ -12,7 +12,8 @@
 {{with .Withdrawn}}<p class="notice withdrawn" role="note">{{.}}</p>{{end}}
 {{with .Legal}}<p class="notice legal" role="note">This page is a summary, not legal advice. Only the {{with .Official}}<a href="{{.}}" rel="external">official text</a>{{else}}official text{{end}} of the law has legal effect.</p>{{end}}
 {{with .Card}}{{template "card" .}}{{end}}
-{{with .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .}}{{template "link" .}}{{end}}</nav>{{end}}
+<nav class="path-strip" aria-label="Your path" data-path-strip hidden></nav>
+{{if .Prereqs}}<nav class="read-first" aria-label="Read first"><span>Read first</span>{{range .Prereqs}}{{template "link" .}}{{end}}{{with $.PathURL}}<a class="all" href="{{.}}">The full reading path</a>{{end}}</nav>{{end}}
 <div class="prose">{{.Body}}</div>
 {{with .Facts}}{{template "fact-table" .}}{{end}}
 {{with .Leads}}<section class="leads"><h2 class="small">Where this leads</h2><ul class="chips">{{range .}}<li style="--hue: {{.Hue}}">{{template "link" .}}</li>{{end}}</ul></section>{{end}}

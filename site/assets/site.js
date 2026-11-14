@@ -139,4 +139,20 @@
       if (to) location.replace(to + location.search + location.hash);
     }).catch(function () {});
   }
+  // The next-step strip (16.12): on a page of the path that the reader follows, the previous and the next step.
+  var strip = d.querySelector("[data-path-strip]");
+  if (strip) {
+    try {
+      var fp = JSON.parse(localStorage.getItem("ai-path") || "null");
+      var at = fp && fp.steps ? fp.steps.map(function (s) { return s.u; }).indexOf(location.pathname) : -1;
+      if (at >= 0) {
+        var e = function (s) { return String(s || "").replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+        var prev = fp.steps[at - 1], next = fp.steps[at + 1];
+        strip.innerHTML = '<span>Step ' + (at + 1) + ' of ' + fp.steps.length + ' of <a href="' + e(fp.url) + '">' + e(fp.title) + '</a></span>' +
+          (prev ? '<a rel="prev" href="' + e(prev.u) + '">← ' + e(prev.n) + '</a>' : '') +
+          (next ? '<a rel="next" href="' + e(next.u) + '">' + e(next.n) + ' →</a>' : '<span>The end of the path</span>');
+        strip.hidden = false;
+      }
+    } catch (err) {}
+  }
 })();

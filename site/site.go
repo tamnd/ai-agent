@@ -25,6 +25,7 @@ import (
 	"github.com/tamnd/ai-agent/check"
 	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/formal"
+	"github.com/tamnd/ai-agent/graph"
 	"github.com/tamnd/ai-agent/katex"
 	"github.com/tamnd/ai-agent/markup"
 	"github.com/tamnd/ai-agent/node"
@@ -132,6 +133,8 @@ type builder struct {
 	// withdrawn are the nodes that the quarantine hides, whole or in part, by slug (15.7).
 	withdrawn map[string]withdrawn
 	cite      *cite.Index
+	graph     *graph.Graph      // the edges of 03.4, for the reading paths
+	pathTo    map[string]string // the page of the path to each node that has one (16.12), by slug
 }
 
 // Build renders the corpus into opt.Out. It writes a new tree next to opt.Out and then puts it in place, so a server that reads opt.Out never sees a half-written site.
@@ -218,7 +221,8 @@ func build(c *node.Corpus, opt Options) (*Report, error) {
 	for _, n := range c.Nodes {
 		b.status[n.Slug] = status.Of(n, status.Env{Corpus: c, Results: b.results, VizChecked: b.vizChecked(), Decls: b.decls, Cite: ix})
 	}
-	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.resultTables, b.gallery, b.languages, b.matrix, b.pages, b.dashboards, b.spec, b.machine}
+	b.pathTargets()
+	steps := []func() error{b.nodes, b.home, b.areas, b.tasks, b.kinds, b.collections, b.resultTables, b.gallery, b.languages, b.matrix, b.pages, b.paths, b.dashboards, b.spec, b.machine}
 	for _, f := range steps {
 		if err := f(); err != nil {
 			return nil, err
@@ -291,6 +295,7 @@ var funcs = template.FuncMap{
 		return fmt.Sprintf("%s %s", comma(n), many)
 	},
 	"comma":    comma,
+	"hours":    hours,
 	"join":     strings.Join,
 	"title":    upperFirst,
 	"kindName": kindName,
