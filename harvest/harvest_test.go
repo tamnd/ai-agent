@@ -830,3 +830,35 @@ func TestBackoff(t *testing.T) {
 		}
 	}
 }
+
+func TestAwardRows(t *testing.T) {
+	rows, skipped, err := AwardRows(fixture(t, "wikidata-awards.json"), "b3:a", Awards)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || skipped != 1 {
+		t.Fatalf("got %d rows and %d skipped, want 2 and 1 (a recipient with no English label is skipped)", len(rows), skipped)
+	}
+	h := rows[0]
+	if h.ID != "Q92894" || h.Name != "Geoffrey Hinton" || h.Kind != "person" || h.SameAs["wikidata"] != "Q92894" {
+		t.Errorf("hinton: %+v", h)
+	}
+	want := []string{"Q185667", "Q18748042", "Q2175611", "Q5970364", "Q5971528"}
+	if !reflect.DeepEqual(h.Links["award"], want) || h.Signals["awards"] != 5 || len(h.Labels) != 5 {
+		t.Errorf("hinton awards %v, signals %v, labels %v", h.Links["award"], h.Signals, h.Labels)
+	}
+	if f := h.Facts["award.Q185667"]; !reflect.DeepEqual(f.V, []string{"2018"}) || f.Loc != "P166 Q185667 P585" {
+		t.Errorf("hinton turing fact %+v", f)
+	}
+	b := rows[1]
+	if b.Name != "Margaret Boden" || b.Signals["awards"] != 1 || b.Facts != nil {
+		t.Errorf("boden (an award with no year has no fact): %+v", b)
+	}
+	if _, _, err := AwardRows([]byte(`{"results":{"bindings":[{"item":{"value":"http://www.wikidata.org/entity/Q1"},"award":{"value":"http://www.wikidata.org/entity/Q2"}}]}}`), "", Awards); err == nil {
+		t.Error("an award not in the list is not a schema error")
+	}
+	q := AwardsQuery(Awards, 7)
+	if !strings.Contains(q, "VALUES ?award { wd:Q185667 wd:Q5971529") || !strings.HasSuffix(q, "LIMIT 7") {
+		t.Errorf("query:\n%s", q)
+	}
+}
