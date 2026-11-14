@@ -135,6 +135,8 @@ lean:
   steps: derivations/proof.md        # the page proof whose steps are linked (11.6)
 ```
 
+`expected` and `steps` are not declarations: rule F01 checks the names of `statement` and the other keys, which must be theorems in the module. A node whose `lean` names a `statement` and no `model` or `spec` (a theorem, or a concept or metric with a Lean part) is on the F ladder of 04.10: F1 when the statement builds, passes F01 and F07 and, on a core node, has the review `reviews/<tag>/lean-statement.yaml` (11.7); F2 when it uses only the allowed axioms (11.5). Its H ladder reads the derivations of kind `proof` (06.5): a sketch is H1, a full proof H2, and a full proof with the review `reviews/<tag>/proof-<id>.yaml` H3.
+
 ## 11.5 The axiom policy
 
 As in algorithm 07.5: a theorem that a node cites as proved may depend only on `propext`, `Classical.choice` and `Quot.sound`. No `sorry`, `admit`, `native_decide` (which adds `Lean.ofReduceBool`), `implemented_by` in a cited declaration, or axiom of our own (rule F03). `aik lean axioms` prints the axioms of each cited declaration from the build, and the page shows them under "Axioms used".

@@ -127,3 +127,42 @@ func TestImplSkipsCaches(t *testing.T) {
 		t.Errorf("the python files are %v, want binary_search.py and test_binary_search.py", names)
 	}
 }
+
+// A theorem's lean field holds expected: true, a YAML bool, beside the names, and its derivations are read with their
+// front matter; a file without one is skipped.
+func TestTheoremDerivations(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "nodes", "t", "pac-bound")
+	if err := os.MkdirAll(filepath.Join(dir, "derivations"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]string{
+		"node.md": "---\nkind: theorem\nslug: pac-bound\nname: A bound\nlean:\n  module: AI.T.PacBound\n  statement: AI.T.PacBound.bound\n" +
+			"  expected: true\n  steps: derivations/proof.md\n---\n\nThe body.\n",
+		"derivations/proof.md":    "---\nid: proof\nkind: proof\nstatus: full\nderives: [c-bound]\nlean: AI.T.PacBound.bound\n---\n\n### Statement\n",
+		"derivations/agnostic.md": "---\nid: agnostic\nkind: bound\nstatus: sketch\nlean: null\n---\n",
+		"derivations/notes.md":    "Notes without front matter.\n",
+	}
+	for name, body := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	n, err := Read(root, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n.Lean["expected"] != "true" || n.Lean["steps"] != "derivations/proof.md" {
+		t.Errorf("lean = %v", n.Lean)
+	}
+	if len(n.Derivations) != 2 {
+		t.Fatalf("derivations = %+v", n.Derivations)
+	}
+	a, p := n.Derivations[0], n.Derivations[1]
+	if a.ID != "agnostic" || a.Front.Kind != "bound" || a.Front.Lean != "" {
+		t.Errorf("agnostic = %+v", a)
+	}
+	if p.ID != "proof" || p.Front.Kind != "proof" || p.Front.Status != "full" || p.Path != "nodes/t/pac-bound/derivations/proof.md" || p.Front.Derives[0] != "c-bound" {
+		t.Errorf("proof = %+v", p)
+	}
+}

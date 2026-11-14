@@ -29,8 +29,13 @@ func (r *run) leanNode(n *node.Node) {
 		return
 	}
 	if n.Level == "core" {
-		if ok, why := status.Reviewed(r.root, n.Tag, "lean-spec", filepath.Join(r.root, filepath.FromSlash(file))); !ok {
-			r.add("F02", Level, p, 0, "the Lean spec of a core node needs a fidelity review by a person: %s", why)
+		// The review of a theorem's statement is lean-statement (11.7), and the review of an algorithm's spec is lean-spec.
+		part, what := "lean-spec", "spec"
+		if status.Formal(n) {
+			part, what = "lean-statement", "statement"
+		}
+		if ok, why := status.Reviewed(r.root, n.Tag, part, filepath.Join(r.root, filepath.FromSlash(file))); !ok {
+			r.add("F02", Level, p, 0, "the Lean %s of a core node needs a fidelity review by a person: %s", what, why)
 		}
 	}
 	if r.opt.Decls == nil {

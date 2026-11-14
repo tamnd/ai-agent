@@ -189,7 +189,9 @@ var Kinds = map[string][]string{
 	"spec":    {"def", "inductive", "structure"},
 	"correct": {"theorem"},
 	"cost":    {"theorem"},
-	"space":   {"theorem"},
+	// statement is the main theorem of a theorem node (11.4).
+	"statement": {"theorem"},
+	"space":     {"theorem"},
 }
 
 // Check reports each declaration that uses an axiom outside the policy (rule F03), and each name of a lean field that is not in ds or has the wrong kind (rule F01). The findings are in a stable order.
@@ -226,7 +228,9 @@ func CheckNode(n *node.Node, ds Decls) []Finding {
 	mod := n.Lean["module"]
 	for _, k := range slices.Sorted(maps.Keys(n.Lean)) {
 		v := n.Lean[k]
-		if k == "module" || k == "cslib" || v == "" {
+		// expected marks a theorem to formalize, and steps names the page proof that F3 links (11.3, 11.4): neither is
+		// a declaration.
+		if k == "module" || k == "cslib" || k == "expected" || k == "steps" || v == "" {
 			continue
 		}
 		where := n.Slug + " lean." + k

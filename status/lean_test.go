@@ -74,3 +74,81 @@ func TestLeanLadder(t *testing.T) {
 		}
 	}
 }
+
+// A theorem is on the F ladder: its statement, then its proof with the allowed axioms. The keys expected and steps are
+// not declarations (11.4). Its human proof is the derivation of kind proof.
+func TestTheoremLadders(t *testing.T) {
+	root := t.TempDir()
+	const m = "AI.LearningTheory.PacBoundFiniteHypothesisClass"
+	mod := filepath.Join(root, "lean", "AI", "LearningTheory", "PacBoundFiniteHypothesisClass.lean")
+	if err := os.MkdirAll(filepath.Dir(mod), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(mod, []byte("module\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	std := []string{"Classical.choice", "Quot.sound", "propext"}
+	stmt := m + ".pac_bound_realizable"
+	proved := formal.Decls{stmt: {Decl: stmt, Kind: "theorem", Module: m, Axioms: std}}
+	sorry := formal.Decls{stmt: {Decl: stmt, Kind: "theorem", Module: m, Axioms: append(std, "sorryAx"), Sorry: true}}
+	notThm := formal.Decls{stmt: {Decl: stmt, Kind: "def", Module: m, Computable: true}}
+	field := map[string]string{"module": m, "statement": stmt, "expected": "true", "steps": "derivations/proof.md"}
+	tests := []struct {
+		name  string
+		lean  map[string]string
+		decls formal.Decls
+		level int
+	}{
+		{"no lean part", nil, proved, 0},
+		{"not built", field, nil, 0},
+		{"proved", field, proved, 2},
+		{"sorry", field, sorry, 1},
+		{"not a theorem", field, notThm, 0},
+		{"no statement", map[string]string{"module": m, "expected": "true"}, proved, 0},
+	}
+	for _, tc := range tests {
+		n := &node.Node{Front: node.Front{Kind: "theorem", Slug: "pac-bound-finite-hypothesis-class", Level: "intro", Lean: tc.lean}, Rel: "nodes/learning-theory/pac-learning/pac-bound-finite-hypothesis-class"}
+		r := lean(n, Env{Corpus: &node.Corpus{Root: root}, Decls: tc.decls})
+		if r.Level != tc.level || r.Label != "F"+string(rune('0'+tc.level)) {
+			t.Errorf("%s: %s, want F%d (next %v)", tc.name, r.Label, tc.level, r.Next)
+		}
+	}
+
+	n := &node.Node{Front: node.Front{Kind: "theorem", Tag: "XSZ95D"}}
+	env := Env{Corpus: &node.Corpus{Root: root}}
+	if r := human(n, env); r.Level != 0 || r.Label != "H0" {
+		t.Errorf("no derivation: %s", r.Label)
+	}
+	path := "nodes/t/derivations/proof.md"
+	if err := os.MkdirAll(filepath.Join(root, "nodes/t/derivations"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, path), []byte("---\nkind: proof\n---\nthe proof\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	n.Derivations = []node.Derivation{{ID: "bound", Path: "nodes/t/derivations/bound.md", Front: node.DerivationFront{Kind: "bound", Status: "full"}}}
+	if r := human(n, env); r.Level != 0 {
+		t.Errorf("a bound is not a proof: %s", r.Label)
+	}
+	n.Derivations = append(n.Derivations, node.Derivation{ID: "proof", Path: path, Front: node.DerivationFront{Kind: "proof", Status: "sketch"}})
+	if r := human(n, env); r.Level != 1 {
+		t.Errorf("a sketch: %s, want H1", r.Label)
+	}
+	n.Derivations[1].Front.Status = "full"
+	if r := human(n, env); r.Level != 2 {
+		t.Errorf("a full proof: %s, want H2 (next %v)", r.Label, r.Next)
+	}
+	h, err := Hash(filepath.Join(root, path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "reviews", "XSZ95D"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "reviews", "XSZ95D", "proof-proof.yaml"), []byte("hash: "+h+"\nverdict: approve\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if r := human(n, env); r.Level != 3 {
+		t.Errorf("a reviewed proof: %s, want H3 (next %v)", r.Label, r.Next)
+	}
+}
