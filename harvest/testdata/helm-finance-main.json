@@ -1,0 +1,194 @@
+[
+ {
+  "title": "Accuracy",
+  "header": [
+   {
+    "value": "Model",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "Mean win rate",
+    "description": "How many models this model outperforms on average (over columns).",
+    "markdown": false,
+    "lower_is_better": false,
+    "metadata": {}
+   },
+   {
+    "value": "FinQA - Program Accuracy",
+    "description": "The FinQA benchmark for numeric reasoning over financial data, with question answering pairs written by financial experts over financial reports [(Chen et al., 2021)](https://arxiv.org/abs/2109.00122/).\n\nProgram Accuracy: Accuracy of the generated programs",
+    "markdown": false,
+    "lower_is_better": false,
+    "metadata": {
+     "metric": "Program Accuracy",
+     "run_group": "FinQA"
+    }
+   },
+   {
+    "value": "FinanceBench - Correct Answer",
+    "description": "FinanceBench is a benchmark for open book financial question answering. It comprises 10,231 questions about publicly traded companies, with corresponding answers and evidence strings\n\nCorrect Answer: Whether the final result was correct, as judged by a GPT-4o",
+    "markdown": false,
+    "lower_is_better": false,
+    "metadata": {
+     "metric": "Correct Answer",
+     "run_group": "FinanceBench"
+    }
+   },
+   {
+    "value": "BANKING77 - EM",
+    "description": "BANKING77 is a benchmark for intent classification of customer service queries in the banking domain [(Casanueva et al., 2020)](https://aclanthology.org/2020.nlp4convai-1.5/)).\n\nQuasi-exact match: Fraction of instances that the predicted output matches a correct reference up to light processing.",
+    "markdown": false,
+    "lower_is_better": false,
+    "metadata": {
+     "metric": "EM",
+     "run_group": "BANKING77"
+    }
+   }
+  ],
+  "rows": [
+   [
+    {
+     "value": "Llama 3 Instruct (70B)",
+     "description": "",
+     "markdown": false
+    },
+    {
+     "value": 0.6031746031746031,
+     "markdown": false
+    },
+    {
+     "value": 0.418,
+     "description": "min=0.418, mean=0.418, max=0.418, sum=0.418 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "fin_qa:model=meta_llama-3-70b-chat"
+     ]
+    },
+    {
+     "value": 0.6071428571428571,
+     "description": "min=0.607, mean=0.607, max=0.607, sum=0.607 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "financebench:model=meta_llama-3-70b-chat"
+     ]
+    },
+    {
+     "value": 0.722,
+     "description": "min=0.722, mean=0.722, max=0.722, sum=0.722 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "banking77:model=meta_llama-3-70b-chat"
+     ]
+    }
+   ],
+   [
+    {
+     "value": "Llama 3 Instruct (8B)",
+     "description": "",
+     "markdown": false
+    },
+    {
+     "value": 0.031746031746031744,
+     "markdown": false
+    },
+    {
+     "value": 0.215,
+     "description": "min=0.215, mean=0.215, max=0.215, sum=0.215 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "fin_qa:model=meta_llama-3-8b-chat"
+     ]
+    },
+    {
+     "value": 0.19285714285714287,
+     "description": "min=0.193, mean=0.193, max=0.193, sum=0.193 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "financebench:model=meta_llama-3-8b-chat"
+     ]
+    },
+    {
+     "value": 0.327,
+     "description": "min=0.327, mean=0.327, max=0.327, sum=0.327 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "banking77:model=meta_llama-3-8b-chat"
+     ]
+    }
+   ],
+   [
+    {
+     "value": "Llama 3.1 Instruct Turbo (405B)",
+     "description": "",
+     "markdown": false
+    },
+    {
+     "value": 0.8412698412698413,
+     "markdown": false
+    },
+    {
+     "value": 0.54,
+     "description": "min=0.54, mean=0.54, max=0.54, sum=0.54 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "fin_qa:model=meta_llama-3.1-405b-instruct-turbo"
+     ]
+    },
+    {
+     "value": 0.6285714285714286,
+     "description": "min=0.629, mean=0.629, max=0.629, sum=0.629 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "financebench:model=meta_llama-3.1-405b-instruct-turbo"
+     ]
+    },
+    {
+     "value": 0.769,
+     "description": "min=0.769, mean=0.769, max=0.769, sum=0.769 (1)",
+     "style": {},
+     "markdown": false,
+     "run_spec_names": [
+      "banking77:model=meta_llama-3.1-405b-instruct-turbo"
+     ]
+    }
+   ]
+  ],
+  "links": [
+   {
+    "text": "LaTeX",
+    "href": "benchmark_output/releases/v1.0.0/groups/latex/financial_scenarios_accuracy.tex"
+   },
+   {
+    "text": "JSON",
+    "href": "benchmark_output/releases/v1.0.0/groups/json/financial_scenarios_accuracy.json"
+   }
+  ],
+  "name": "accuracy"
+ },
+ {
+  "title": "Efficiency",
+  "header": [
+   {
+    "value": "Model",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "Mean win rate",
+    "description": "How many models this model outperforms on average (over columns).",
+    "markdown": false,
+    "lower_is_better": false,
+    "metadata": {}
+   }
+  ],
+  "rows": []
+ }
+]

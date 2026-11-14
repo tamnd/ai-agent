@@ -1,0 +1,95 @@
+[
+ {
+  "title": "All scenarios",
+  "header": [
+   {
+    "value": "Group",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "Description",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "Adaptation method",
+    "description": "Adaptation strategy (e.g., generation)",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "# instances",
+    "description": "Number of instances evaluated on",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "# references",
+    "description": "Number of references provided per instance",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "# prompt tokens",
+    "description": "Total number of prompt tokens",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "# completion tokens",
+    "description": "Total number of completion tokens",
+    "markdown": false,
+    "metadata": {}
+   },
+   {
+    "value": "# models",
+    "description": "Number of models we're evaluating",
+    "markdown": false,
+    "metadata": {}
+   }
+  ],
+  "rows": [
+   [
+    {
+     "value": "Financial Scenarios",
+     "href": "?group=financial_scenarios",
+     "markdown": false
+    },
+    {
+     "value": "Scenarios for the financial domain",
+     "markdown": true
+    },
+    {
+     "value": "generation",
+     "markdown": false
+    },
+    {
+     "value": 713.3333333333334,
+     "description": "min=140, mean=713.333, max=1000, sum=47080 (66)",
+     "markdown": false
+    },
+    {
+     "value": 1.6666666666666667,
+     "description": "min=1, mean=1.667, max=3, sum=330 (198)",
+     "markdown": false
+    },
+    {
+     "value": 898359.0557142842,
+     "description": "min=683.857, mean=4537.167, max=8038.551, sum=898359.056 (198)",
+     "markdown": false
+    },
+    {
+     "value": 4683.173571428579,
+     "description": "min=0, mean=23.652, max=117.621, sum=4683.174 (198)",
+     "markdown": false
+    },
+    {
+     "value": 22,
+     "markdown": false
+    }
+   ]
+  ],
+  "links": []
+ }
+]

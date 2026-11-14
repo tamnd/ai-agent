@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -268,5 +269,22 @@ func TestCiterZip(t *testing.T) {
 	}
 	if zipRecords([]byte("not a zip")) != nil {
 		t.Error("a document that is not a zip has records")
+	}
+}
+
+// A table of HELM is a list of rows of cells: the model's name in the first cell maps to the scores of its row only.
+func TestJSONRecordsCells(t *testing.T) {
+	b := []byte(`[{"title":"Accuracy","header":[{"value":"Model"},{"value":"FinQA - Program Accuracy"}],"rows":[
+		[{"value":"Llama 3 Instruct (70B)","description":""},{"value":0.418,"description":"min=0.418","run_spec_names":["fin_qa:model=x"]},{"description":"No matching runs"}],
+		[{"value":"Llama 3 Instruct (8B)"},{"value":0.25}]]}]`)
+	idx := jsonRecords(b)
+	if got := idx["Llama 3 Instruct (70B)"]; !reflect.DeepEqual(got, []float64{0.418}) {
+		t.Errorf("the 70B row has %v, want [0.418]", got)
+	}
+	if got := idx["Llama 3 Instruct (8B)"]; !reflect.DeepEqual(got, []float64{0.25}) {
+		t.Errorf("the 8B row has %v, want [0.25]", got)
+	}
+	if got := idx["Model"]; len(got) != 0 {
+		t.Errorf("the header has the numbers %v", got)
 	}
 }
