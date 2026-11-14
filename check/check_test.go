@@ -154,3 +154,23 @@ func TestSlugOfAnArea(t *testing.T) {
 		}
 	}
 }
+
+// A {fact:} reference names a fact that its item holds (D01); a computed fact needs aik facts compute (D08).
+func TestFactRefs(t *testing.T) {
+	c, err := node.Load("../testdata/corpus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := c.BySlug["binary-search"]
+	n.Body += "\nIt has {fact:no-such-item/params.total} and is {fact:computed/largest-open-weights-dense-by-params}.\n"
+	r := &run{c: c, root: c.Root}
+	r.factRefs(n)
+	var rules []string
+	for _, f := range r.out {
+		rules = append(rules, f.Rule+" "+f.Msg)
+	}
+	got := strings.Join(rules, "\n")
+	if !strings.Contains(got, "D01 {fact:no-such-item/params.total}: no node or card is no-such-item") || !strings.Contains(got, "D08 {fact:computed/") {
+		t.Errorf("findings:\n%s", got)
+	}
+}

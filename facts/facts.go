@@ -152,6 +152,9 @@ func Compute(f *Fact) {
 	}
 }
 
+// CardUnits are the units of the card fact fields that hold a number (spec 04.9).
+var CardUnits = map[string]string{"params.total": "parameters", "params.active": "parameters", "training.compute_flop": "FLOP", "training.tokens": "tokens"}
+
 // Best returns the source that wins (spec 04.9): the first primary source, else the first estimate, else the first source.
 func Best(f *Fact) *Source {
 	for _, k := range []string{Primary, Estimate, Secondary} {

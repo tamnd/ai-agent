@@ -25,9 +25,6 @@ var collections = map[string]string{
 // ownRoute are the kinds whose cards have a URL under the catalogue route, such as /works/<slug>/. The cards of the other kinds have a global slug, such as /<slug>/ (spec 16.2).
 var ownRoute = map[string]bool{"model": true, "benchmark": true, "dataset": true, "work": true, "incident": true, "exercise": true}
 
-// cardUnits are the units of the card fact fields that hold a number (spec 04.9).
-var cardUnits = map[string]string{"params.total": "parameters", "params.active": "parameters", "training.compute_flop": "FLOP", "training.tokens": "tokens"}
-
 // PageSize is the number of rows of one page of a catalogue (spec 16.6).
 const PageSize = 200
 
@@ -117,7 +114,7 @@ func cardRow(c *card.Card) CardRow {
 	r := CardRow{Anchor: cardAnchor(c), Name: c.Name, Tag: c.Tag, Summary: c.Summary, Owner: c.Owner}
 	seen := map[string]bool{}
 	for _, f := range c.Facts {
-		r.Facts = append(r.Facts, CardFact{Label: facts.Label(f.ID), Value: facts.Format(f.V, cardUnits[f.ID]), Src: f.Src, Loc: f.Loc})
+		r.Facts = append(r.Facts, CardFact{Label: facts.Label(f.ID), Value: facts.Format(f.V, facts.CardUnits[f.ID]), Src: f.Src, Loc: f.Loc})
 		if f.Src != "" && !seen[f.Src] {
 			seen[f.Src] = true
 			r.Sources = append(r.Sources, f.Src)

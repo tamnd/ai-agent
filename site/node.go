@@ -305,7 +305,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	}
 	p.Related = b.links(rel)
 
-	r := b.render(shapeRefs(n.Shapes, n.Body))
+	r := b.render(factRefs(b.c, shapeRefs(n.Shapes, n.Body)))
 	html := b.claimMarks(n, r.HTML)
 	p.Impls = b.implViews(n)
 	p.Proofs = b.proofViews(n)

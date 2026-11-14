@@ -69,6 +69,7 @@ var Rules = map[string]string{
 	"D05": "sources that differ beyond the tolerance make the fact disputed, and the page shows both values",
 	"D06": "an estimated fact names its estimator and method",
 	"D07": "a time-bound fact has as_of",
+	"D08": "computed facts (ranks, \"first\", \"largest\") are produced by aik facts compute, with population and date",
 	"D09": "units are in the unit list of 04.9",
 	"G01": "every source of a claim names a work",
 	"G02": "every claim has at least one source, unless it is a mathematical claim with a derivation or a Lean proof",
