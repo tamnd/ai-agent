@@ -51,3 +51,34 @@ currently = 1
 		t.Errorf("K04 reports %d findings, want 6: %q", len(got), got)
 	}
 }
+
+func TestK05(t *testing.T) {
+	body := `
+It is well established that small models fit.
+Smith et al. show that the loss falls. {#c-emp}
+The table shows that the loss falls.
+The model reached 90% on the test. {#c-self}
+Meta reports 90% on the test. {#c-self}
+> It is well established, the authors write.
+`
+	cl := "- id: c-emp\n  type: empirical\n  text: The loss falls.\n- id: c-self\n  type: empirical\n  text: The model reached 90%.\n  self_reported: true\n"
+	c := fixture(t, map[string]string{
+		modelDir + "node.md":     strings.Replace(modelNode, "\nA small model for the tests of the fact rules.\n", body, 1),
+		modelDir + "claims.yaml": cl,
+	})
+	lines := map[int]bool{}
+	var got []string
+	for _, f := range Run(c, Options{}) {
+		if f.Rule != "K05" {
+			continue
+		}
+		got = append(got, f.String())
+		if f.Severity != Level {
+			t.Errorf("K05 is not a level rule: %s", f)
+		}
+		lines[f.Line] = true
+	}
+	if len(got) != 3 || !lines[11] || !lines[12] || !lines[14] {
+		t.Errorf("K05 reports %q, want lines 11, 12 and 14", got)
+	}
+}

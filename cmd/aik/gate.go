@@ -136,10 +136,21 @@ func cmdGate(args []string) error {
 		r.Steps = append(r.Steps, "stubs", "plain words", "characters")
 		r.Problems = append(r.Problems, textProblems(*root, n)...)
 
-		// 6. claims: the node has claims.yaml; the G rules of step 2 check the type and the sources of each claim.
+		// 6. claims: the node has claims.yaml, and the G rules of step 2 check the type and the sources of each claim. The
+		// cheap part of the extraction pass (07.6) writes the sentences for the model part, and its phrases of K04 and
+		// K05 fail the gate; the K01 findings that block are in step 2.
 		r.Steps = append(r.Steps, "claims")
 		if !exists(filepath.Join(n.Dir, "claims.yaml")) {
 			add("claims", rel(*root, n.Dir), "", "claims.yaml is missing (07.3)")
+		}
+		ex, err := extract(c, n, under(*root, "build/claims"))
+		if err != nil {
+			return err
+		}
+		for _, x := range ex.Findings {
+			if x.Severity != check.Block {
+				add("claims", fmt.Sprintf("%s:%d", x.Path, x.Line), x.Rule, x.Msg)
+			}
 		}
 
 		// 7. the tests of each framework present.

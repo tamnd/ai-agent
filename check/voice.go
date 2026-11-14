@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/tamnd/ai-agent/claims"
 	"github.com/tamnd/ai-agent/node"
 )
 
@@ -57,6 +58,14 @@ func (r *run) voice(n *node.Node) {
 				break
 			}
 		}
+	}
+	// K05: the strength of the evidence is the label's to say, "shows" is for a proof, and a self-report names its source.
+	byID := map[string]*claims.Claim{}
+	for i := range n.Claims {
+		byID[n.Claims[i].ID] = &n.Claims[i]
+	}
+	for _, ph := range claims.Phrases(claims.Extract(n.Body, n.BodyLine), byID) {
+		r.add("K05", Level, p, ph.Line, "%s", ph.Msg)
 	}
 }
 

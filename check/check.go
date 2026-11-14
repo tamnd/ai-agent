@@ -77,6 +77,7 @@ var Rules = map[string]string{
 	"K01": "every {#c-...} anchor names a claim of claims.yaml once, a sentence has at most two anchors, and every ::claim reference names a claim that exists",
 	"K03": "the evidence of each claim has a role that its type allows (07.2)",
 	"K04": "no \"state of the art\", \"SOTA\", \"currently\", \"leading\", \"frontier\" as a rank, or superlative about a model, a lab, a score or a dataset in the site voice",
+	"K05": "the prose does not state the strength of the evidence (\"well established\", \"proven\", \"it is known that\"), says \"shows\" or \"proves\" only of a proved claim or a proof, and names the source of a self-report",
 	"K07": "a forecast claim has the date of the forecast in as_of",
 	"K09": "a superseded claim is not anchored in the main text",
 	"K13": "no claim is past its review_after date",
