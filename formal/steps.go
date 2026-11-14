@@ -5,6 +5,7 @@ package formal
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -229,13 +230,11 @@ func WriteSteps(path string, steps []Step) error {
 	enc := json.NewEncoder(w)
 	for _, s := range steps {
 		if err := enc.Encode(s); err != nil {
-			f.Close()
-			return err
+			return errors.Join(err, f.Close())
 		}
 	}
 	if err := w.Flush(); err != nil {
-		f.Close()
-		return err
+		return errors.Join(err, f.Close())
 	}
 	return f.Close()
 }
