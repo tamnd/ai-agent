@@ -125,7 +125,7 @@ var Sources = []Source{
 		Credit: "ACL Anthology (CC BY 4.0), https://aclanthology.org",
 		Note:   "The metadata and the papers since 2016 are CC BY 4.0, the papers before 2016 CC BY-NC-SA 3.0; the code of the repository is Apache 2.0. The site lists awards only for some years.",
 	},
-	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+	{
 		ID: "federal-register", Name: "Federal Register",
 		URL: "https://www.federalregister.gov/", Owner: "the Office of the Federal Register, US National Archives",
 		Licence: "public domain (a work of the US federal government)", Checked: "2026-11-14", Class: "A",
