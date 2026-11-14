@@ -430,7 +430,7 @@ func parse(text string) *Doc {
 		if s == "" {
 			continue
 		}
-		if m := captionRE.FindStringSubmatch(s); m != nil && !(i > 0 && mention(s, lines[i-1].s)) {
+		if m := captionRE.FindStringSubmatch(s); m != nil && (i == 0 || !mention(s, lines[i-1].s)) {
 			k := captionKind(m[1])
 			d.Marks = append(d.Marks, Mark{Kind: k, Num: strings.ReplaceAll(m[2], ".", ""), Start: l.off})
 			continue
