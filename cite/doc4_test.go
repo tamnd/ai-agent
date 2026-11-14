@@ -246,6 +246,30 @@ func TestPrintedNumbersScan(t *testing.T) {
 	}
 }
 
+// Understanding Machine Learning: the contents ends with a lone 50, and page 50, the first of a section, prints no
+// number; p. 50 is the page after 49, not the contents.
+func TestPrintedNumbersContents(t *testing.T) {
+	pages := []string{"Contents\nPreface\n3.4 Bibliographic Remarks\n50\n", "Preface\nthe preface prints no number\n"}
+	for n := 2; n <= 6; n++ {
+		pages = append(pages, fmt.Sprintf("the text of page %d\nmore text\n%d\n", n, n))
+	}
+	pages = append(pages, "3.4 Bibliographic Remarks\nthe text of page 7\n")
+	for n := 8; n <= 9; n++ {
+		pages = append(pages, fmt.Sprintf("%d\nthe text of page %d\n", n, n))
+	}
+	d := Parse(strings.Join(pages, "\f"))
+	for n, want := range map[int]int{2: 2, 6: 6, 7: 7, 8: 8} {
+		if got := d.printed(n); got != want {
+			t.Errorf("p. %d is the page %d, want %d", n, got, want)
+		}
+	}
+	pages[0] = "Contents\nPreface\n7\n"
+	d = Parse(strings.Join(pages, "\f"))
+	if got := d.printed(7); got != 7 {
+		t.Errorf("p. 7 is the page %d, want 7: the contents took it", got)
+	}
+}
+
 // A verdict outlives a new extractor when the claim, the work, the locator, the snapshot and the passage that the
 // verifier read are the same, and only then.
 func TestCarry(t *testing.T) {
