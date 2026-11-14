@@ -1,0 +1,247 @@
+{
+  "$defs": {
+    "fact": {
+      "additionalProperties": false,
+      "properties": {
+        "loc": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "src": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "v": {}
+      },
+      "required": [
+        "v",
+        "src"
+      ],
+      "type": "object"
+    },
+    "field": {
+      "anyOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "null"
+          ]
+        },
+        {
+          "$ref": "#/$defs/fact"
+        },
+        {
+          "$ref": "#/$defs/group"
+        }
+      ]
+    },
+    "group": {
+      "additionalProperties": {
+        "$ref": "#/$defs/field"
+      },
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "v"
+                ]
+              },
+              {
+                "required": [
+                  "src"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "type": "object"
+    },
+    "harvest": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$",
+          "type": "string"
+        },
+        "row": {
+          "type": "string"
+        },
+        "snapshot": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://ai.tamnd.com/data/schema/card.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "else": {
+        "required": [
+          "slug",
+          "name"
+        ]
+      },
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "result"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "checks": {},
+          "original": {},
+          "score": {},
+          "setting": {},
+          "source": {},
+          "versions": {}
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "model"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "role": {
+            "enum": [
+              "family",
+              "release",
+              "checkpoint"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "description": "One line of cards/<kind>/<shard>.jsonl (spec 04.6): the fields of the kind, its facts with their sources, a summary, and the harvest records. aik check applies the rules of 15.3 beyond this schema.",
+  "properties": {
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "harvest": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/harvest"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/harvest"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      ]
+    },
+    "kind": {
+      "enum": [
+        "area",
+        "concept",
+        "definition",
+        "method",
+        "architecture",
+        "model",
+        "task",
+        "benchmark",
+        "dataset",
+        "metric",
+        "theorem",
+        "finding",
+        "argument",
+        "open-problem",
+        "system",
+        "software",
+        "hardware",
+        "risk",
+        "incident",
+        "policy",
+        "provision",
+        "standard",
+        "result",
+        "work",
+        "person",
+        "organization",
+        "event",
+        "exercise"
+      ]
+    },
+    "name": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "owner": {
+      "pattern": "^[a-z0-9][a-z0-9-]*(/[a-z0-9][a-z0-9.-]*)?$",
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "rules": {
+      "type": "object"
+    },
+    "same_as": {
+      "additionalProperties": {
+        "type": [
+          "string",
+          "integer",
+          "null"
+        ]
+      },
+      "type": "object"
+    },
+    "slug": {
+      "maxLength": 60,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "type": "string"
+    },
+    "summary": {
+      "description": "at most 30 words (rule S10)",
+      "type": "string"
+    },
+    "tag": {
+      "pattern": "^([0-9ABCDEFGHJKMNPQRSTVWXYZ]{6}|NEW-[a-z0-9-]+)$",
+      "type": "string"
+    },
+    "versions": {}
+  },
+  "required": [
+    "tag",
+    "kind"
+  ],
+  "title": "A card",
+  "type": "object",
+  "unevaluatedProperties": {
+    "$ref": "#/$defs/field"
+  }
+}

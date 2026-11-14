@@ -1,0 +1,116 @@
+# Generated from package facts by go test ./schema -update. Do not edit; change the code.
+version: 1
+spec: 04.9, 10.11
+tolerance:
+  number: 0.01
+  date: the precision of the less precise date
+  text: case and surrounding space
+  list: order
+units:
+  - parameters
+  - tokens
+  - FLOP
+  - FLOP/s
+  - bytes
+  - bytes/s
+  - items
+  - W
+  - USD
+  - seconds
+  - votes
+card_units:
+  params.active: parameters
+  params.total: parameters
+  training.compute_flop: FLOP
+  training.tokens: tokens
+time_bound:
+  - access
+  - licence
+  - status
+  - price
+  - users
+  - downloads
+  - likes
+  - stars
+  - rank
+required:
+  benchmark:
+    - released
+    - size.items
+    - splits
+    - metric
+    - protocol
+    - licence
+    - data_hash
+  dataset:
+    - size.items
+    - modality
+    - source_type
+    - collected
+    - licence
+    - access
+    - docs
+  hardware:
+    - vendor
+    - released
+    - type
+    - peak_flops
+    - memory.bytes
+    - memory.bandwidth
+    - power
+  model:
+    - developer
+    - released
+    - architecture
+    - params.total
+    - access
+    - licence
+    - modalities
+  policy:
+    - jurisdiction
+    - type
+    - adopted
+    - in_force
+    - text
+  system:
+    - developer
+    - years
+    - domain
+    - status
+labels:
+  access: Access
+  adopted: Adopted
+  architecture: Architecture
+  collected: Collection dates
+  context_length: Context length
+  data_hash: Data hash
+  developer: Developer
+  docs: Documentation
+  domain: Domain
+  in_force: In force
+  jurisdiction: Jurisdiction
+  licence: Licence
+  memory.bandwidth: Memory bandwidth
+  memory.bytes: Memory
+  metric: Metric
+  modalities: Modalities
+  modality: Modality
+  params.active: Parameters (active)
+  params.total: Parameters (total)
+  peak_flops: Peak FLOP/s
+  power: Power
+  protocol: Protocol
+  released: Release date
+  size.bytes: Size (bytes)
+  size.items: Size (items)
+  size.tokens: Size (tokens)
+  source_type: Source type
+  splits: Splits
+  status: Status
+  text: Official text
+  training.compute_flop: Training compute
+  training.data: Training data
+  training.tokens: Training tokens
+  type: Type
+  vendor: Vendor
+  years: Years

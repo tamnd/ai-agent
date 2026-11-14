@@ -34,9 +34,35 @@ func Golden(t *testing.T, file string, s map[string]any, upd bool) {
 	}
 }
 
+// GoldenBytes compares a generated file with its copy, or writes the copy with -update.
+func GoldenBytes(t *testing.T, file string, b []byte, upd bool) {
+	t.Helper()
+	if upd {
+		if err := os.WriteFile(file, b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return
+	}
+	old, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(old, b) {
+		t.Errorf("%s is not what the generator makes; run go test ./schema ./site -update", file)
+	}
+}
+
 func TestFiles(t *testing.T) {
+	fy, err := FactsYAML()
+	if err != nil {
+		t.Fatal(err)
+	}
+	GoldenBytes(t, "facts.v1.yaml", fy, *update)
 	Golden(t, "node.v1.json", Node(), *update)
 	Golden(t, "claims.v1.json", Claims(), *update)
+	Golden(t, "card.v1.json", Card(), *update)
+	Golden(t, "experiment.v1.json", Experiment(), *update)
+	Golden(t, "expect.v1.json", Expect(), *update)
 }
 
 func TestNode(t *testing.T) {
@@ -76,6 +102,15 @@ func TestClaims(t *testing.T) {
 	for _, want := range []string{`"normative-reported"`, `"meta-analysis"`, `"against"`} {
 		if !bytes.Contains(b, []byte(want)) {
 			t.Errorf("claims.v1 lacks %s", want)
+		}
+	}
+}
+
+func TestCard(t *testing.T) {
+	b, _ := json.Marshal(Card())
+	for _, want := range []string{`"required":["v","src"]`, `"const":"result"`, `"checkpoint"`, `"provision"`, `"unevaluatedProperties":{"$ref":"#/$defs/field"}`} {
+		if !bytes.Contains(b, []byte(want)) {
+			t.Errorf("card.v1 lacks %s", want)
 		}
 	}
 }

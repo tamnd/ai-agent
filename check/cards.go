@@ -122,7 +122,7 @@ func (r *run) card(c *card.Card, reg map[string]string) {
 			r.add("T01", Block, p, l, "the harvest record %d of the card %s has the date %q; write a date such as 2026-11-13", i+1, c.Slug, h.Date)
 		}
 	}
-	if c.Kind == "model" && c.Role != "" && !slices.Contains([]string{"family", "release", "checkpoint"}, c.Role) {
+	if c.Kind == "model" && c.Role != "" && !slices.Contains(card.ModelRoles, c.Role) {
 		r.add("T01", Block, p, l, "the model card %s has the role %q; write family, release or checkpoint", c.Slug, c.Role)
 	}
 }

@@ -108,7 +108,10 @@
             "type": "string"
           }
         },
-        "type": "object"
+        "type": [
+          "object",
+          "null"
+        ]
       },
       "self_reported": {
         "type": "boolean"
