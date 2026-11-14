@@ -336,7 +336,7 @@ func zipRecords(b []byte) map[string][]float64 {
 		r := csv.NewReader(io.LimitReader(rc, 64<<20))
 		r.FieldsPerRecord = -1
 		recs, err := r.ReadAll()
-		rc.Close()
+		_ = rc.Close() // a read-only file of the zip; the records are read already
 		if err != nil {
 			continue
 		}
