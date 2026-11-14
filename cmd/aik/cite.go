@@ -29,9 +29,11 @@ func cmdCite(args []string) error {
 			return citePassages(args[1:])
 		case "verdict":
 			return citeVerdict(args[1:])
+		case "results":
+			return citeResults(args[1:])
 		}
 	}
-	f := newFlags("cite", "[flags] <slug>... | -all | show <work> [<locator>] | passages <slug>... | verdict -file F")
+	f := newFlags("cite", "[flags] <slug>... | -all | show <work> [<locator>] | passages <slug>... | verdict -file F | results")
 	root := f.String("root", ".", "the root of the content repository")
 	all := f.Bool("all", false, "check every node that has claims")
 	offline := f.Bool("offline", false, "do not fetch; use only the snapshots in the store")
