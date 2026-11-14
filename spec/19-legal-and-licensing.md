@@ -76,12 +76,12 @@ Each row was checked on the date in `registers/sources.yaml`; "checked at M1" ma
 | Epoch AI data | CC BY 4.0 | C | facts with the per-field credit of 19.2 |
 | Hugging Face Hub metadata | facts | facts | ids, downloads, likes, tags, licence ids, base models, commit hashes |
 | model cards and dataset cards | per repository; most have no stated licence for the card text | D by default | facts, locators, short quotes |
-| AI Incident Database | per the AIID's terms for its snapshots (checked at M1, Q-23) | C or D | incident ids, dates, titles of reports as citations, classifications as facts; links to the reports; never the text of news reports |
+| AI Incident Database | CC BY-SA 4.0 unless noted, by the license.txt of its snapshots (checked 2026-11-14); the contents of the reports keep their own rights | B | incident ids, dates, titles of reports as citations, classifications as facts; links to the reports; never the text of news reports |
 | MIT AI Risk Repository | CC BY 4.0 (checked 2026-11-15; each sheet says "This work is licensed under CC BY 4.0") | C | risk names, taxonomy ids, causal codes, source documents as citations |
 | MITRE ATLAS | Apache-2.0 (checked 2026-11-15) | C | ids, names, technique structure, maturity, dates; never the actor of a case study |
 | OWASP Top 10 for LLM Applications | CC BY-SA 4.0 | B | ids and names |
 | Stanford AI Index | report CC BY-ND 4.0; data per download | D for text and figures; facts free | numbers with locators |
-| OECD.AI | per dataset (checked at M1) | C or D | facts and ids |
+| OECD.AI | no licence stated for the policy database (checked 2026-11-14) | D | names, ids, years and types; never the descriptions or the editors' names and emails |
 | EUR-Lex | EU reuse policy, Decision 2011/833/EU, with attribution; only the Official Journal text is authentic | C | the text of articles may be quoted for exact wording under 19.5, with the CELEX number; provisions are summarized fresh |
 | US federal works (Federal Register, Congress.gov, NIST) | public domain in the US | A | anything |
 | UK legislation | Open Government Licence v3.0 | C | quotes and facts with attribution |
