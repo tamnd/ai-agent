@@ -24,9 +24,11 @@ func cmdLean(args []string) error {
 			return cmdLeanBuild(args[1:])
 		case "steps":
 			return cmdLeanSteps(args[1:])
+		case "bump":
+			return cmdLeanBump(args[1:])
 		}
 	}
-	return usageError{"use aik lean build, or aik lean steps [slug]"}
+	return usageError{"use aik lean build, aik lean steps [slug], or aik lean bump"}
 }
 
 // leanSteps checks rule F08 for each node with lean.steps, or only for slug, and writes the marked steps to

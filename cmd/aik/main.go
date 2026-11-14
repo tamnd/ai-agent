@@ -38,7 +38,6 @@ type command struct {
 var planned = map[string]string{
 	"bench": "M2",
 	"agent": "M1",
-	"bump":  "M1",
 	"mcp":   "M3",
 }
 
