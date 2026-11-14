@@ -38,6 +38,7 @@ var Adapters = map[string]Adapter{
 	"oecd-ai":              {Source: "oecd-ai", Gap: time.Second, Run: harvestOECD},
 	"swe-bench":            {Source: "swe-bench", Gap: time.Second, Run: harvestSWEBench},
 	"open-llm-leaderboard": {Source: "open-llm-leaderboard", Gap: time.Second, Run: harvestOpenLLM},
+	"lmarena":              {Source: "lmarena", Gap: time.Second, Run: harvestLMArena},
 }
 
 // Names are the source ids of the adapters, sorted.

@@ -206,7 +206,7 @@ func (r *Result) value(k string) (string, bool) {
 	return string(b), true
 }
 
-// GroupOf gives the comparable group of a result: the benchmark version, the metric, and the value of each hard key that the setting has. A result with an unknown hard key is in a group of its own (spec 10.6.3).
+// GroupOf gives the comparable group of a result: the benchmark version, the metric, and the value of each hard key that the setting has, and for a rating the arena and the snapshot. A result with an unknown hard key is in a group of its own (spec 10.6.3).
 func GroupOf(r *Result) (string, []string) {
 	var parts, unknown []string
 	for _, k := range HardKeys {
@@ -218,6 +218,10 @@ func GroupOf(r *Result) (string, []string) {
 			unknown = append(unknown, k)
 		}
 		parts = append(parts, k+"="+v)
+	}
+	if r.Metric == "rating" {
+		// A rating is comparable only inside one snapshot of one arena (10.10).
+		parts = append(parts, "arena="+r.Arena, "snapshot="+r.Snapshot)
 	}
 	g := r.Benchmark + "@" + r.Version + "/" + r.Metric + "/" + strings.Join(parts, ",")
 	if len(unknown) > 0 {
