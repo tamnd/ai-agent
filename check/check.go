@@ -273,7 +273,8 @@ func (r *run) front(n *node.Node) {
 			r.add("T08", Block, p, 0, "the secondary area %q is not in topics/areas.yaml", a)
 		}
 	}
-	if r.c.Reserved[n.Slug] || r.c.LangByID[n.Slug] != nil {
+	// A language's page is at /languages/<id>/, so the software page of a framework may take its id: /pytorch/ (16.2).
+	if r.c.Reserved[n.Slug] || (r.c.LangByID[n.Slug] != nil && n.Kind != "software") {
 		r.add("T04", Block, p, 0, "the slug %q is a reserved word or a language id (14.2)", n.Slug)
 	}
 	// A top area is at /<top>/, the URL of a global slug; a sub-area is at /<top>/<sub>/, so its id is free (16.2).

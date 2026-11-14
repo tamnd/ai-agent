@@ -155,6 +155,30 @@ func TestSlugOfAnArea(t *testing.T) {
 	}
 }
 
+// A language id is not a slug, except for the software page of that language or framework (16.2).
+func TestSlugOfALanguage(t *testing.T) {
+	for _, tc := range []struct {
+		kind string
+		want bool
+	}{{"method", true}, {"software", false}} {
+		c, err := node.Load("../testdata/corpus")
+		if err != nil {
+			t.Fatal(err)
+		}
+		n := c.BySlug["binary-search"]
+		n.Slug, n.Kind = "python", tc.kind
+		r := &run{c: c, root: c.Root}
+		r.front(n)
+		var got bool
+		for _, f := range r.out {
+			got = got || (f.Rule == "T04" && strings.Contains(f.Msg, "language id"))
+		}
+		if got != tc.want {
+			t.Errorf("a %s at /python/: T04 %v, want %v", tc.kind, got, tc.want)
+		}
+	}
+}
+
 // A {fact:} reference names a fact that its item holds (D01); a computed fact needs aik facts compute (D08).
 func TestFactRefs(t *testing.T) {
 	c, err := node.Load("../testdata/corpus")
