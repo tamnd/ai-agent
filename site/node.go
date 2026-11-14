@@ -29,6 +29,7 @@ type NodePage struct {
 	Rungs    []RungView
 	Card     *Card
 	Prereqs  []Link
+	PathURL  string // the page of the reading path to this node, when it has one (16.12)
 	Leads    []Link
 	Related  []Link
 	Solvers  []SolverRow
@@ -307,6 +308,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	p.History = fmt.Sprintf("%s/commits/main/%s", b.opt.Repo, filepath.ToSlash(n.Rel))
 	p.Report = b.opt.Repo + "/issues/new?" + url.Values{"template": {"error.yml"}, "title": {"Error on " + n.Name}, "url": {b.opt.BaseURL + "/" + n.Slug + "/"}}.Encode()
 	p.Prereqs = b.links(n.Prereqs)
+	p.PathURL = b.pathTo[n.Slug]
 	for _, l := range b.c.Leads(n.Slug) {
 		p.Leads = append(p.Leads, b.link(l.Slug))
 	}

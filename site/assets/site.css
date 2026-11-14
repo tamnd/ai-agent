@@ -188,6 +188,20 @@ main a.hero-search { text-decoration: none; }
 .withdrawn { max-width: var(--measure); margin: 0 0 1.6rem; padding: 0.8rem 1rem; border-left: 3px solid currentColor; font-weight: 500; }
 .read-first { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; align-items: baseline; margin: 0 0 1.6rem; font-size: 0.95rem; max-width: var(--measure); }
 .read-first span:first-child { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 650; }
+.read-first a.all { margin-left: auto; font-size: 0.88rem; }
+.path-strip { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; align-items: baseline; margin: 0 0 1.2rem; padding: 0.5rem 0.8rem; border: 1px solid var(--surface-2); border-radius: 8px; font-size: 0.92rem; max-width: var(--measure); }
+.path-strip span:first-child { color: var(--muted); }
+.path-strip a[rel="next"] { margin-left: auto; font-weight: 620; }
+ol.steps li { position: relative; }
+ol.steps li.target > a { font-size: 1.08rem; }
+ol.steps li.is-known { opacity: 0.55; }
+ol.steps li.is-next::marker { color: var(--accent); font-weight: 700; }
+.hide-known ol.steps li.is-known { display: none; }
+ol.steps label.known { margin-right: 0.4rem; }
+ol.steps .digits { font-family: var(--mono, monospace); font-size: 0.82rem; }
+.path-tools button { font: inherit; font-size: 0.9rem; padding: 0.25rem 0.7rem; border: 1px solid var(--surface-2); border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.path-tools button[aria-pressed="true"] { background: var(--surface-2); }
+.path-page .basis { color: var(--soft); max-width: var(--measure); }
 
 /* Prose */
 .prose { max-width: var(--measure); font-size: 1.065rem; line-height: 1.75; }
