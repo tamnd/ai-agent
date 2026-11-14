@@ -1,0 +1,90 @@
+{
+ "leaderboards": [
+  {
+   "name": "Verified",
+   "results": [
+    {
+     "agent": "TRAE",
+     "agent_org": "ByteDance",
+     "checked": false,
+     "date": "2025-09-28",
+     "folder": "20250928_trae_doubao_seed_code",
+     "model_display": "Doubao-Seed-Code",
+     "model_org": "ByteDance",
+     "name": "TRAE + Doubao-Seed-Code",
+     "os_model": false,
+     "reasoning_effort": null,
+     "resolved": 78.8,
+     "tags": [
+      "Model: Doubao-Seed-Code",
+      "Model: Doubao-Seed-1.6",
+      "Org: ByteDance",
+      "System: Attempts - 2+"
+     ],
+     "warning": null,
+     "logs": "s3://not-read"
+    },
+    {
+     "agent": "mini-SWE-agent",
+     "agent_org": "SWE-agent",
+     "checked": true,
+     "date": "2025-11-24",
+     "folder": "20251124_mini-v1.16.0_claude-opus-4-5-20251101",
+     "model_display": "Claude 4.5 Opus",
+     "model_org": "Anthropic",
+     "name": "Claude 4.5 Opus (20251101) (medium)",
+     "os_model": false,
+     "reasoning_effort": "medium",
+     "resolved": 74.4,
+     "tags": [
+      "Model: claude-opus-4-5-20251101",
+      "Org: Anthropic",
+      "System: Attempts - 1",
+      "Mini: 1.16.0"
+     ],
+     "warning": null,
+     "mini-swe-agent_version": "1.16.0",
+     "logs": "s3://not-read"
+    },
+    {
+     "agent": "Sonar Foundation Agent",
+     "agent_org": "Sonar",
+     "checked": false,
+     "date": "2025-12-05",
+     "folder": "20251205_sonar-foundation-agent_claude-opus-4-5",
+     "model_display": "Claude 4.5 Opus",
+     "model_org": "Anthropic",
+     "name": "Sonar Foundation Agent + Claude 4.5 Opus",
+     "os_model": false,
+     "reasoning_effort": null,
+     "resolved": 79.2,
+     "tags": [
+      "Model: claude-opus-4-5",
+      "Org: Sonar",
+      "System: Attempts - 1"
+     ],
+     "warning": null,
+     "logs": "s3://not-read"
+    },
+    {
+     "agent": "TRAE",
+     "agent_org": null,
+     "checked": false,
+     "date": "2025-05-19",
+     "folder": "20250519_trae",
+     "model_display": "Undisclosed",
+     "model_org": null,
+     "name": "TRAE",
+     "os_model": false,
+     "reasoning_effort": null,
+     "resolved": 70.6,
+     "tags": [
+      "System: Attempts - 2+"
+     ],
+     "warning": null,
+     "logs": "s3://not-read"
+    }
+   ]
+  }
+ ]
+}

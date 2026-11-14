@@ -18,7 +18,7 @@ import (
 )
 
 // Priority orders the sources when two rows of one item disagree on a name or a kind: the first source wins.
-var Priority = []string{"federal-register", "oecd-ai", "epoch-ai", "aiid", "pwc-dump", "acl", "arxiv", "openalex", "wikidata", "huggingface", "github"}
+var Priority = []string{"federal-register", "oecd-ai", "epoch-ai", "aiid", "swe-bench", "pwc-dump", "acl", "arxiv", "openalex", "wikidata", "huggingface", "github"}
 
 func priority(source string) int {
 	for i, s := range Priority {
@@ -339,6 +339,11 @@ func (g *merger) keys(m member, pass int) []string {
 		}
 		sort.Strings(out)
 	case 2:
+		if m.kind() == "result" {
+			// Two results are never the same by name: a result is a model, a version, a metric, a setting and a
+			// source, which aik ingest compares (10.6.2).
+			break
+		}
 		name := ""
 		if m.item != nil {
 			name = m.item.Name
@@ -355,7 +360,7 @@ func (g *merger) keys(m member, pass int) []string {
 // idOrder is the order of the ids that name a new item: "u:arxiv:1207.0580" for a work, "u:epoch:GPT-4" for a model.
 var idOrder = map[bool][]string{
 	true:  {"arxiv", "doi", "wikidata", "openalex", "acl", "pwc"},
-	false: {"epoch", "aiid", "federal_register", "oecd_ai", "wikidata", "pwc", "hub", "hub_dataset", "github", "arxiv", "doi"},
+	false: {"epoch", "aiid", "federal_register", "oecd_ai", "swe_bench", "wikidata", "pwc", "hub", "hub_dataset", "github", "arxiv", "doi"},
 }
 
 func build(ms []member, rules []Rule, date string, taken map[string]bool) (*Item, string) {

@@ -374,3 +374,29 @@ func TestThresholds(t *testing.T) {
 		t.Error("Meets compares numbers wrongly")
 	}
 }
+
+// Two results of one name are two items: a result is never joined by its name (10.6.2).
+func TestResultsByName(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "registers"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ScopeFile), []byte(scope), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rows := []harvest.Row{
+		row("swe-bench", "verified/a", "GPT-4o on SWE-bench Verified", "result", map[string]string{"swe_bench": "verified/a"}, nil),
+		row("swe-bench", "verified/b", "GPT-4o on SWE-bench Verified", "result", map[string]string{"swe_bench": "verified/b"}, nil),
+	}
+	if err := harvest.WriteInventory(root, "swe-bench", rows); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Merge(root, "2026-11-14")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := byID(t, root)
+	if rep.Items != 2 || m["u:swe_bench:verified/a"] == nil || m["u:swe_bench:verified/b"] == nil {
+		t.Errorf("two results of one name: %d items, %v", rep.Items, m)
+	}
+}
