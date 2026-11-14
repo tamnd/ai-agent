@@ -346,7 +346,7 @@ func Check(ls []Line) []Problem {
 		if l.Hash != "" && !hashRE.MatchString(l.Hash) {
 			add(l, "the hash %q is not sha256:<64 hex digits>", l.Hash)
 		}
-		if l.Hash == "" && (l.Op == Edit || l.Op == Confirm) {
+		if l.Hash == "" && l.File != Whole && (l.Op == Edit || l.Op == Confirm) {
 			add(l, "an %s line has no hash", l.Op)
 		}
 		switch {
@@ -362,6 +362,21 @@ func Check(ls []Line) []Problem {
 		}
 		if (l.Op == Confirm || l.Op == Quarantine) && l.Author.Agent != "" {
 			add(l, "only a person can %s a file", l.Op)
+		}
+	}
+	return out
+}
+
+// Quarantined are the files that a person hid (15.7, 19.11), with the line that hid each: a quarantine line that no
+// later line of the same file clears. A later edit, create, remove or confirm of the file clears it; "*" is the whole
+// node, which a later line "*" clears.
+func Quarantined(ls []Line) map[string]Line {
+	out := map[string]Line{}
+	for _, l := range ls {
+		if l.Op == Quarantine {
+			out[l.File] = l
+		} else {
+			delete(out, l.File)
 		}
 	}
 	return out

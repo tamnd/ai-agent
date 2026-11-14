@@ -44,9 +44,11 @@ type NodePage struct {
 	Share    string // the claim share line of "About this page"
 	Edit     string
 	Copies   bool // the page has the Markdown and JSON copies; a stub has none
-	History  string
-	Report   string
-	Tests    string // the summary line of the native tests
+	// Withdrawn is the notice of a page that the quarantine hides, whole or in part (15.7).
+	Withdrawn string
+	History   string
+	Report    string
+	Tests     string // the summary line of the native tests
 }
 
 // RungView is one row of the ladder table of "About this page".
@@ -265,7 +267,9 @@ func (b *builder) nodes() error {
 				}
 			}
 		}
-		b.addSearch(n)
+		if w, ok := b.withdrawn[n.Slug]; !ok || !w.Whole {
+			b.addSearch(n)
+		}
 	}
 	return nil
 }
@@ -278,6 +282,10 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	p.Status = b.status[n.Slug]
 	p.Edit = fmt.Sprintf("%s/edit/main/%s/node.md", b.opt.Repo, filepath.ToSlash(n.Rel))
 	p.Copies = !isStub(n)
+	if w, ok := b.withdrawn[n.Slug]; ok {
+		p.Withdrawn = w.Notice()
+		p.NoIndex = p.NoIndex || w.Whole
+	}
 	p.History = fmt.Sprintf("%s/commits/main/%s", b.opt.Repo, filepath.ToSlash(n.Rel))
 	p.Report = b.opt.Repo + "/issues/new?" + url.Values{"template": {"error.yml"}, "title": {"Error on " + n.Name}, "url": {b.opt.BaseURL + "/" + n.Slug + "/"}}.Encode()
 	p.Prereqs = b.links(n.Prereqs)
