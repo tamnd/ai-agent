@@ -660,3 +660,68 @@ func TestOpenAlexParts(t *testing.T) {
 		t.Errorf("the URL sends an address or a key: %s", u)
 	}
 }
+
+func TestHubCursor(t *testing.T) {
+	// The cursor of the Link header of the live API, after jinaai/jina-embeddings-v2-base-en.
+	want := "eyIkb3IiOlt7ImRvd25sb2FkcyI6MzU2MDQxLCJfaWQiOnsiJGd0IjoiNjUxNDYwODA2YTM4ZmI2NGQ1OTlhM2M2In19LHsiZG93bmxvYWRzIjp7IiRsdCI6MzU2MDQxfX0seyJkb3dubG9hZHMiOm51bGx9XX0="
+	if got := HubCursor("downloads", 356041, "651460806a38fb64d599a3c6"); got != want {
+		t.Errorf("cursor %s", got)
+	}
+	u := HubURL(HubParts[1], "likes", "abc=")
+	for _, s := range []string{"https://huggingface.co/api/datasets?", "sort=likes", "direction=-1", "limit=1000", "cursor=abc%3D", "expand%5B%5D=paperswithcode_id"} {
+		if !strings.Contains(u, s) {
+			t.Errorf("URL %s lacks %s", u, s)
+		}
+	}
+	if strings.Contains(HubURL(HubParts[0], "downloads", ""), "cursor") {
+		t.Error("the first page has a cursor")
+	}
+}
+
+func TestHubSelect(t *testing.T) {
+	page, err := HubPage(fixture(t, "hub-models.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := HubPage([]byte(`{"error":"x"}`)); err == nil {
+		t.Error("an error answer gives no error")
+	}
+	repos := map[string]HubRepo{}
+	for _, r := range page[:6] {
+		repos[r.ID] = r
+	}
+	cards, derived := HubSelect(repos)
+	var ids []string
+	for _, c := range cards {
+		ids = append(ids, c.ID)
+	}
+	// the developer's fine-tune stays; a fine-tune with more downloads than its base stays; a quantization of a
+	// base that is not over the thresholds stays.
+	if want := []string{"acme/base", "acme/base-instruct", "other/base-ft", "x/orphan-q"}; !reflect.DeepEqual(ids, want) {
+		t.Errorf("cards %v, want %v", ids, want)
+	}
+	want := map[string]map[string]int{"acme/base": {"quantized": 1}, "other/base-ft": {"quantized": 1}}
+	if !reflect.DeepEqual(derived, want) {
+		t.Errorf("derived %v", derived)
+	}
+	if b := repos["other/base-gguf"].Bases(); !reflect.DeepEqual(b, []HubBase{{Relation: "quantized", ID: "acme/base"}}) {
+		t.Errorf("bases %v", b)
+	}
+	row := HubRow(HubParts[0], repos["acme/base"], "b3:h")
+	if row.ID != "acme/base" || row.Kind != "model" || row.URL != "https://huggingface.co/acme/base" || row.SameAs["hf"] != "acme/base" {
+		t.Errorf("row %+v", row)
+	}
+	if row.Fields["licence"] != "apache-2.0" || row.Fields["gated"] != "auto" || row.Fields["commit"] != "aaa" || row.Fields["library"] != "transformers" {
+		t.Errorf("fields %v", row.Fields)
+	}
+	if !reflect.DeepEqual(row.Links, map[string][]string{"author": {"acme"}, "dataset": {"acme/corpus"}, "paper": {"arxiv:2401.00001", "doi:10.57967/hf/1"}}) {
+		t.Errorf("links %v", row.Links)
+	}
+	if row.Facts["created"].V != "2024-01-15" || row.Signals["downloads_30d"] != 100000 || row.Signals["likes"] != 900 || !reflect.DeepEqual(row.Labels, []string{"text-generation"}) {
+		t.Errorf("row %+v", row)
+	}
+	ds := HubRow(HubParts[1], HubRepo{OID: "1", ID: "HuggingFaceFW/fineweb", PwC: "fineweb"}, "")
+	if ds.ID != "datasets/HuggingFaceFW/fineweb" || ds.URL != "https://huggingface.co/datasets/HuggingFaceFW/fineweb" || ds.SameAs["hf_dataset"] != "HuggingFaceFW/fineweb" || ds.SameAs["pwc"] != "dataset/fineweb" {
+		t.Errorf("dataset row %+v", ds)
+	}
+}

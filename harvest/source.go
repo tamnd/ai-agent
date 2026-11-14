@@ -95,6 +95,16 @@ var Sources = []Source{
 		Credit: "OpenAlex (CC0), https://openalex.org",
 		Note:   "Without a key the API gives a small daily budget, and cursor paging past the first page needs a key, so basic paging reads at most 10,000 works of a year. The API documentation asks agents to send a person's email address for a key; aik does not.",
 	},
+	{ //nolint:gosec // G101: the licence and the URL of a public source, not a credential
+		ID: "huggingface", Name: "Hugging Face Hub",
+		URL: "https://huggingface.co/", Owner: "Hugging Face",
+		Licence: "facts only", Checked: "2026-11-14", Class: "D",
+		Access: "the public API (huggingface.co/api/models and /api/datasets) with no token, sorted by downloads and by likes down to the thresholds of S-M2 and S-D1, 1,000 repositories a page; robots.txt allows all", Rate: "1 request per 1 s (the API allows 500 per 5 minutes)",
+		Schedule: "weekly", Standing: "secondary-reference",
+		Facts:  "repository ids, owners, downloads in the last 30 days, likes, tags, licence ids, base models, arXiv ids, commit hashes and dates; never the card text",
+		Credit: "Hugging Face Hub, https://huggingface.co",
+		Note:   "The metadata is facts (19.3); each repository's card and files keep their own licence, D by default.",
+	},
 }
 
 // SourceByID gives the source of an id, or nil.

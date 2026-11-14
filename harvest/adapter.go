@@ -23,12 +23,13 @@ type Adapter struct {
 
 // Adapters are the adapters by source id.
 var Adapters = map[string]Adapter{
-	"epoch-ai": {Source: "epoch-ai", Gap: 2 * time.Second, Run: harvestEpoch},
-	"pwc-dump": {Source: "pwc-dump", Gap: 2 * time.Second, Run: harvestPwC},
-	"aiid":     {Source: "aiid", Gap: 2 * time.Second, Run: harvestAIID},
-	"arxiv":    {Source: "arxiv", Gap: 3 * time.Second, Run: harvestArxiv},
-	"wikidata": {Source: "wikidata", Gap: 2 * time.Second, Run: harvestWikidata},
-	"openalex": {Source: "openalex", Gap: time.Second, Run: harvestOpenAlex},
+	"epoch-ai":    {Source: "epoch-ai", Gap: 2 * time.Second, Run: harvestEpoch},
+	"pwc-dump":    {Source: "pwc-dump", Gap: 2 * time.Second, Run: harvestPwC},
+	"aiid":        {Source: "aiid", Gap: 2 * time.Second, Run: harvestAIID},
+	"arxiv":       {Source: "arxiv", Gap: 3 * time.Second, Run: harvestArxiv},
+	"wikidata":    {Source: "wikidata", Gap: 2 * time.Second, Run: harvestWikidata},
+	"openalex":    {Source: "openalex", Gap: time.Second, Run: harvestOpenAlex},
+	"huggingface": {Source: "huggingface", Gap: time.Second, Run: harvestHub},
 }
 
 // Names are the source ids of the adapters, sorted.

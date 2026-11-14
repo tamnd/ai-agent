@@ -120,7 +120,7 @@ A curator or a person can override a rule for one item with a reason.
 **Models.**
 
 - S-M1: every model in Epoch AI's database is a card (more than 3,700).
-- S-M2: a Hub repository is a card when it is a base or instruction model (not a quantization, merge or fine-tune of a carded model) and has at least 10,000 downloads in the last 30 days or 100 likes (Default, Q-06). This selects at most about 20,000 repositories (Estimate). Quantizations and fine-tunes are listed on the card of their base model as counts, not as cards.
+- S-M2: a Hub repository is a card when it is a base or instruction model (not a quantization, merge or fine-tune of a carded model) and has at least 10,000 downloads in the last 30 days or 100 likes (Default, Q-06). This selects at most about 20,000 repositories (Estimate); the first harvest (2026-11-14) found about 11,000 models over the thresholds, of which 8,047 are cards. Quantizations, merges, adapters and fine-tunes of a carded model are listed on the card of their base model as counts, not as cards; a fine-tune by the owner of its base (the developer's instruction model) and a derivative with more downloads than its base stay cards (`aik harvest huggingface`).
 - S-M3: every model that a developer in `registers/watch.yaml` announces on its own pages is a card, even when the weights are closed.
 - S-M4: a model is a **node** when it is notable: Epoch marks it notable or frontier (top 5 by training compute at release), or it introduced a method or architecture that has a node, or a canon or frontier source names it, or a family node needs it (Default, Q-04). About 2,000 model nodes at M5, most of them family nodes (04.2) with members as cards.
 - Total at M5: about 25,000 model cards.
@@ -135,7 +135,7 @@ A curator or a person can override a rule for one item with a reason.
 
 **Datasets and benchmarks.**
 
-- S-D1: every dataset of the Papers with Code dump with at least one result, every dataset that a carded model card names as training data, and every Hub dataset with 1,000 downloads in the last 30 days or 50 likes is a card. About 15,000.
+- S-D1: every dataset of the Papers with Code dump with at least one result, every dataset that a carded model card names as training data, and every Hub dataset with 1,000 downloads in the last 30 days or 50 likes is a card. About 15,000 (Estimate); the first harvest (2026-11-14) found 27,626 Hub datasets over the thresholds alone, so Q-06 should raise them if the cards are too many.
 - S-D2: a dataset is a node when it is a benchmark's base, or a pretraining corpus of a notable model, or canon. About 800.
 - S-B1: every benchmark with at least one result card is a card, about 8,000; a benchmark is a node when it has 20 or more results from 5 or more developers, or is used in a notable model's card, or is canon. About 1,500.
 
