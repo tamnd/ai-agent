@@ -25,6 +25,7 @@ func TestNameKey(t *testing.T) {
 		{"Qwen2.5-72B", "qwen 2.5 72b"},
 		{"Vicuna v1.3 (7B)", "Vicuna-7B-v1.3"},
 		{"Qwen3-30B-A3B", "qwen3 30b a3b"},
+		{"Command A+", "command-a-plus"},
 	} {
 		if NameKey(c[0]) != NameKey(c[1]) {
 			t.Errorf("NameKey(%q) = %q, NameKey(%q) = %q; want one key", c[0], NameKey(c[0]), c[1], NameKey(c[1]))
@@ -34,6 +35,8 @@ func TestNameKey(t *testing.T) {
 		{"GPT-4o", "GPT-4"},
 		{"GPT-4.5", "GPT-5.4"},
 		{"Qwen1.5-32B", "Qwen5.1-32B"},
+		{"Command A", "Command A+"},
+		{"Flow", "Flow++"},
 	} {
 		if NameKey(c[0]) == NameKey(c[1]) {
 			t.Errorf("%q and %q have one key, %q", c[0], c[1], NameKey(c[0]))

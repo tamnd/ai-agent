@@ -171,9 +171,10 @@ var (
 
 // NameKey is the key that two names of one model share: the words and the sizes ("7b", "1.5b", "350m") of the name in
 // lowercase in any order, then its other numbers in their order. So "Claude 4.5 Opus" and "claude-opus-4.5" have one
-// key, as do "Vicuna v1.3 (7B)" and "Vicuna-7B-v1.3", and "GPT-4.5" and "GPT-5.4" do not.
+// key, as do "Vicuna v1.3 (7B)" and "Vicuna-7B-v1.3", and "GPT-4.5" and "GPT-5.4" do not. A "+" is the word plus, so
+// "Command A+" and "Command A Plus" have one key and "Command A" another.
 func NameKey(name string) string {
-	s := strings.ToLower(name)
+	s := strings.ReplaceAll(strings.ToLower(name), "+", " plus ")
 	sizes := sizeRE.FindAllString(s, -1)
 	s = sizeRE.ReplaceAllString(s, " ")
 	s = caseRE.ReplaceAllString(caseRE.ReplaceAllString(s, "$1$3 $2$4"), "$1$3 $2$4")
