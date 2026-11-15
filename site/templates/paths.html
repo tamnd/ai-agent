@@ -2,7 +2,7 @@
 {{template "crumbs" .Crumbs}}
 <header class="page-head"><h1>{{.Heading}}</h1>{{with .Lead}}<p class="lead">{{.}}</p>{{end}}</header>
 <dl class="facts"><div><dt>Steps</dt><dd>{{comma .Steps}}{{if lt .Written .Steps}} ({{comma .Written}} written){{end}}</dd></div>{{if .Minutes}}<div><dt>Time</dt><dd>about {{hours .Minutes}}</dd></div>{{end}}<div><dt>Progress</dt><dd data-path-progress>Stored in this browser only.</dd></div></dl>
-{{with .Basis}}<p class="basis">{{.}}</p>{{end}}
+{{with .Basis}}<p class="basis">{{.}}{{with $.BasisURL}} <a href="{{.}}" rel="external">The source</a>.{{end}}</p>{{end}}
 <p class="path-tools" data-path-tools hidden><button type="button" data-path-follow>Follow this path</button> <button type="button" data-path-hide-known aria-pressed="false">Hide what I know</button></p>
 <p class="muted">The time of a step comes from the length of its page and its level. The digits are the levels of the ladders of the page: H the human proof, L the Lean proof, V the visual, W the writing and G the grounding. <a href="/badges/">Read what the levels mean</a>.</p>
 {{range .Sections}}<section class="group">{{with .Heading}}<h2>{{.}}</h2>{{end}}<ol class="path steps">{{range .Steps}}<li style="--hue: {{.Hue}}" data-step="{{.Key}}"{{if .URL}} data-url="{{.URL}}"{{end}} data-name="{{.Name}}"{{if .Target}} class="target"{{end}}><label class="known" hidden><input type="checkbox" aria-label="I know {{.Name}}"></label>{{template "link" .Link}}<span class="kind">{{with .Kind}} · {{kindName .}}{{end}}{{with .Digits}} · <span class="digits">{{.}}</span>{{end}}{{if .Minutes}} · {{.Minutes}} min{{end}}</span>{{with .Summary}}<p>{{.}}</p>{{end}}</li>{{end}}</ol></section>

@@ -87,3 +87,103 @@ func TestPaths(t *testing.T) {
 		t.Error("the page of toy-search has no link to its reading path or no strip")
 	}
 }
+
+func TestCurriculumAndCodePaths(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "corpus")
+	if err := os.CopyFS(root, os.DirFS("../testdata/corpus")); err != nil {
+		t.Fatal(err)
+	}
+	toy := func(slug, extra string) string {
+		kind := "method"
+		if strings.Contains(extra, "components") {
+			kind = "architecture"
+		}
+		return "---\nkind: " + kind + "\nslug: " + slug + "\nname: " + humanize(slug) + "\narea: searching/sequential-and-binary-search\nlevel: core\nsummary: A toy.\n" +
+			extra + "---\n\n## Overview\n\nA toy.\n"
+	}
+	dir := "nodes/searching/sequential-and-binary-search/"
+	files := map[string]string{
+		dir + "toy-a/node.md":               toy("toy-a", ""),
+		dir + "toy-a/impl/numpy/toy_a.py":   strings.Repeat("x = 1\n", 100),
+		dir + "toy-b/node.md":               toy("toy-b", "components: [toy-a]\n"),
+		dir + "toy-b/impl/numpy/toy_b.py":   "x = 1\n",
+		dir + "toy-c/node.md":               toy("toy-c", "uses: [toy-b]\nprereqs: [binary-search]\n"),
+		dir + "toy-c/impl/numpy/toy_c.py":   "x = 1\n",
+		dir + "toy-d/node.md":               toy("toy-d", "prereqs: [toy-a]\n"),
+		dir + "toy-d/impl/pytorch/toy_d.py": "x = 1\n",
+		"crosswalk/cs2023-ai.yaml": `system: CS2023 Artificial Intelligence
+version: "2023"
+source: https://csed.acm.org/
+checked: 2026-11-15
+paths: [{id: cs2023-ai, title: CS2023 AI}]
+rows:
+  - {id: AI-Search, name: Search, maps: [{to: toy-c, match: narrower}, {to: binary-search, match: narrower}]}
+  - {id: AI-ML, name: Machine Learning, maps: [{to: area:searching, match: related}]}
+  - {id: AI-Robo, name: Robotics}
+`,
+		"topics/courses/cs2023-ai.yaml": "id: cs2023-ai\ntitle: A course with the id of a curriculum\nsections: []\n",
+	}
+	for p, s := range files {
+		full := filepath.Join(root, filepath.FromSlash(p))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	c, err := node.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "site")
+	if _, err := Build(c, Options{Out: out, Version: "test", Now: time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC)}); err != nil {
+		t.Fatal(err)
+	}
+	read := func(p string) string {
+		b, err := os.ReadFile(filepath.Join(out, p))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+	cu := read("paths/cs2023-ai/index.html")
+	for _, want := range []string{"<h2>Search (AI-Search)</h2>", "<h2>Machine Learning (AI-ML)</h2>", "<h2>Robotics (AI-Robo)</h2>",
+		`title="No page covers this unit yet."`, `data-step="toy-c"`, "2 of the units have a page", "checked 2026-11-15", `href="https://csed.acm.org/"`} {
+		if !strings.Contains(cu, want) {
+			t.Errorf("/paths/cs2023-ai/ does not contain %q", want)
+		}
+	}
+	if strings.Count(cu, `data-step="binary-search"`) != 1 {
+		t.Error("a step that two units map is not shown once")
+	}
+	code := read("paths/from-scratch/toy-c/index.html")
+	order := []string{`data-step="toy-a"`, `data-step="toy-b"`, `data-step="toy-c"`}
+	at := -1
+	for _, s := range order {
+		i := strings.Index(code, s)
+		if i <= at {
+			t.Fatalf("the code path of toy-c does not have %s after the step before", s)
+		}
+		at = i
+	}
+	for _, want := range []string{`href="/toy-a/#code"`, "· 5 min", "Toy c from scratch"} {
+		if !strings.Contains(code, want) {
+			t.Errorf("/paths/from-scratch/toy-c/ does not contain %q", want)
+		}
+	}
+	if strings.Contains(code, `data-step="binary-search"`) {
+		t.Error("a step with no NumPy reference is on a code path")
+	}
+	for _, p := range []string{"paths/from-scratch/toy-b/index.html", "paths/from-scratch/toy-d/index.html"} {
+		if _, err := os.Stat(filepath.Join(out, p)); err == nil {
+			t.Errorf("%s exists: a code path needs a NumPy reference and two steps before it", p)
+		}
+	}
+	idx := read("paths/index.html")
+	for _, want := range []string{`href="/paths/cs2023-ai/"`, `href="/paths/from-scratch/toy-c/"`, "From scratch in code", "Curricula"} {
+		if !strings.Contains(idx, want) {
+			t.Errorf("/paths/ does not contain %q", want)
+		}
+	}
+}
