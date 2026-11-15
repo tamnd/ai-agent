@@ -10,11 +10,11 @@ import (
 	"github.com/tamnd/ai-agent/quality"
 )
 
-// cmdReport prints the reports of 20.4: the cost report of 14.8, the quality report of 15.9 and the gate and audit
-// pass rates by kind of 14.7 and 21.3.
+// cmdReport prints the reports of 20.4: the cost report of 14.8, the ladder levels, the test matrix, the experiment
+// matrix, the quality report of 15.9 and the gate and audit pass rates by kind of 14.7 and 21.3.
 func cmdReport(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik report cost, aik report quality or aik report rates"}
+		return usageError{"use aik report cost, levels, tests, experiments, quality or rates"}
 	}
 	switch args[0] {
 	case "cost":
@@ -23,10 +23,14 @@ func cmdReport(args []string) error {
 		return reportQuality(args[1:])
 	case "rates":
 		return reportRates(args[1:])
-	case "levels", "tests", "experiments":
-		return fmt.Errorf("aik report %s is not built yet; aik coverage and aik status give the levels", args[0])
+	case "levels":
+		return reportLevels(args[1:])
+	case "tests":
+		return reportTests(args[1:])
+	case "experiments":
+		return reportExperiments(args[1:])
 	}
-	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost, aik report quality or aik report rates", args[0])}
+	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost, levels, tests, experiments, quality or rates", args[0])}
 }
 
 // reportRates prints the gate pass rate on the first try, the audit pass rate on the first try and the done rate of
