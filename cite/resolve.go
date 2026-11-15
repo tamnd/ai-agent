@@ -222,10 +222,24 @@ func (d *Doc) printedNumbers() []int {
 	cands := make([][]int, len(d.Pages))
 	nums := make([]int, len(d.Pages))
 	votes := map[int]int{}
+	notes := map[int]bool{}
+	for _, m := range d.Marks {
+		if m.Kind == "footnote" {
+			notes[m.Start] = true
+		}
+	}
 	for i := range d.Pages {
 		span := d.PageSpan(i)
 		var lines []string
+		off := span.Start
 		for _, l := range strings.Split(d.Text[span.Start:span.End], "\n") {
+			// A footnote mark alone on its line, as Guo et al.'s 2 and 3 at the feet of their fifth and sixth pages,
+			// steps by one with the pages as a page number does, but it is not one.
+			at := off + len(l) - len(strings.TrimLeft(l, "\f"))
+			off += len(l) + 1
+			if notes[at] {
+				continue
+			}
 			if l = strings.TrimSpace(strings.Trim(l, "\f")); l != "" {
 				lines = append(lines, l)
 			}
