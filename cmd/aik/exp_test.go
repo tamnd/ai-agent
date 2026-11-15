@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/tamnd/ai-agent/exp"
@@ -165,5 +166,97 @@ func TestExpRunData(t *testing.T) {
 	}
 	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "comparison-model/toy-dropout"}); got == 0 {
 		t.Fatal("aik exp run with a changed pinned file exits with 0")
+	}
+}
+
+func TestExpPlan(t *testing.T) {
+	root := copyCorpus(t)
+	base := filepath.Join(root, "nodes/foundations/models-of-computation/comparison-model/exp")
+	for name, budget := range map[string]string{"toy-dropout": "cpu-small", "toy-gpu": "gpu-small", "toy-big": "gpu-medium"} {
+		dir := filepath.Join(base, name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		design := strings.Replace(strings.Replace(toyDesign, "cpu-small", budget, 1), "toy-dropout", name, 1)
+		for file, s := range map[string]string{exp.DesignFile: design, exp.ExpectFile: toyExpect, exp.Script: toyRun} {
+			if err := os.WriteFile(filepath.Join(dir, file), []byte(s), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if got := run([]string{"exp", "plan", "-root", root}); got != 1 {
+		t.Errorf("a plan with GPU experiments and no %s exits with %d, not 1", exp.ComputeFile, got)
+	}
+	if got := run([]string{"exp", "plan", "-root", root, "-class", "cpu-small"}); got != 0 {
+		t.Errorf("a plan of cpu-small exits with %d", got)
+	}
+	compute := "caps: [{from: 2026-01, usd: 10}]\nclasses:\n  gpu-small: {instance: s, gpu: L4, usd_per_hour: 1}\n  gpu-medium: {instance: m, gpu: H100, usd_per_hour: 4}\n"
+	if err := os.WriteFile(filepath.Join(root, exp.ComputeFile), []byte(compute), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(t.TempDir(), "batches.json")
+	if got := run([]string{"exp", "plan", "-root", root, "-month", "2026-11", "-o", out}); got != 0 {
+		t.Fatalf("aik exp plan exits with %d", got)
+	}
+	b, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The cap of $10 takes the gpu-small experiment at its cap of 2 hours, and the gpu-medium one at 8 hours waits.
+	var batches []exp.Batch
+	if err := json.Unmarshal(b, &batches); err != nil || len(batches) != 1 || batches[0].Class != "gpu-small" || batches[0].USD != 2 {
+		t.Errorf("%v: %s", err, b)
+	}
+	if got := run([]string{"exp", "plan", "-root", root, "-class", "gpu-tiny"}); got != 2 {
+		t.Errorf("an unknown class exits with %d, not 2", got)
+	}
+}
+
+func TestExpVerify(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the test runs python3")
+	}
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("no python3")
+	}
+	root := copyCorpus(t)
+	dir := filepath.Join(root, "nodes/foundations/models-of-computation/comparison-model/exp/toy-dropout")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, s := range map[string]string{exp.DesignFile: toyDesign, exp.ExpectFile: toyExpect, exp.Script: toyRun} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := run([]string{"exp", "verify", "-root", root}); got != 0 {
+		t.Errorf("no results to verify exits with %d", got)
+	}
+	if got := run([]string{"exp", "verify", "-root", root, "comparison-model"}); got != 1 {
+		t.Errorf("an experiment named with no results exits with %d, not 1", got)
+	}
+	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "-update", "comparison-model"}); got != 0 {
+		t.Fatalf("aik exp run -update exits with %d", got)
+	}
+	if got := run([]string{"exp", "verify", "-root", root, "-strict"}); got != 0 {
+		t.Errorf("a fresh run exits with %d", got)
+	}
+	// Changed inputs: stale, which only -strict fails.
+	if err := os.WriteFile(filepath.Join(dir, exp.Script), []byte(toyRun+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := run([]string{"exp", "verify", "-root", root, "comparison-model/toy-dropout"}); got != 0 {
+		t.Errorf("stale results exit with %d without -strict", got)
+	}
+	if got := run([]string{"exp", "verify", "-root", root, "-strict"}); got != 1 {
+		t.Errorf("stale results exit with %d with -strict, not 1", got)
+	}
+	// run.py wrote another value than results.json records.
+	metrics := filepath.Join(root, "build/exp/comparison-model/toy-dropout/dropout/101", exp.MetricsFile)
+	if err := os.WriteFile(metrics, []byte(`{"final": {"test_loss": 1}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got := run([]string{"exp", "verify", "-root", root, "-json"}); got != 1 {
+		t.Errorf("an output that differs exits with %d, not 1", got)
 	}
 }
