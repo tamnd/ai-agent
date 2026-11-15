@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,7 +28,7 @@ import (
 // cmdExp runs the experiments of spec 09.
 func cmdExp(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik exp list, aik exp run or aik exp power"}
+		return usageError{"use aik exp list, plan, run or power"}
 	}
 	switch args[0] {
 	case "list":
@@ -36,8 +37,10 @@ func cmdExp(args []string) error {
 		return cmdExpRun(args[1:])
 	case "power":
 		return cmdExpPower(args[1:])
+	case "plan":
+		return cmdExpPlan(args[1:])
 	}
-	return usageError{"use aik exp list, aik exp run or aik exp power, not aik exp " + args[0]}
+	return usageError{"use aik exp list, plan, run or power, not aik exp " + args[0]}
 }
 
 type expRef struct {
@@ -472,4 +475,111 @@ func parseEffect(name, s string) (*exp.Effect, error) {
 	}
 	e.Value = v
 	return e, nil
+}
+
+func cmdExpPlan(args []string) error {
+	f := newFlags("exp plan", "[flags] [slug | slug/experiment ...]")
+	root := f.String("root", ".", "the root of the content repository")
+	class := f.String("class", "", "plan only the experiments of this budget class")
+	compute := f.String("compute", exp.ComputeFile, "the register of the GPU pool and the monthly cap")
+	ledger := f.String("ledger", exp.LedgerFile, "the ledger of the batches that ran")
+	month := f.String("month", "", "the month YYYY-MM of the cap; without it, this month")
+	outFile := f.String("o", "", "write the batches to this file as JSON, for aik exp pool")
+	asJSON := f.Bool("json", false, "print the plan as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if _, ok := exp.Budgets[*class]; *class != "" && !ok {
+		return usageError{fmt.Sprintf("-class is cpu-small, gpu-small or gpu-medium, not %q", *class)}
+	}
+	now := time.Now().UTC()
+	if *month != "" {
+		t, err := time.Parse("2006-01", *month)
+		if err != nil {
+			return usageError{fmt.Sprintf("-month is a month YYYY-MM, not %q", *month)}
+		}
+		now = t
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	refs, err := selectExps(c, f.Args())
+	if err != nil {
+		return err
+	}
+	var items []exp.PlanItem
+	var broken []string
+	for _, r := range refs {
+		ref := r.n.Slug + "/" + r.e.Slug
+		if err := r.e.Ready(); err != nil {
+			broken = append(broken, fmt.Sprintf("%s: %v", ref, err))
+			continue
+		}
+		if it, ok := exp.Needs(ref, r.e); ok && (*class == "" || it.Class == *class) {
+			items = append(items, it)
+		}
+	}
+	var comp *exp.Compute
+	if cf := under(c.Root, *compute); exists(cf) {
+		if comp, err = exp.ReadCompute(cf); err != nil {
+			return err
+		}
+	}
+	led, err := exp.ReadLedger(under(c.Root, *ledger))
+	if err != nil {
+		return err
+	}
+	p, err := exp.MakePlan(items, comp, led, now)
+	if err != nil {
+		return err
+	}
+	if *outFile != "" {
+		b, err := json.MarshalIndent(p.Batches, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(*outFile, append(b, '\n'), 0o644); err != nil {
+			return err
+		}
+	}
+	if *asJSON {
+		return printJSON(p)
+	}
+	for _, b := range broken {
+		fmt.Printf("cannot run %s\n", b)
+	}
+	if len(p.CPU) > 0 {
+		fmt.Printf("cpu-small, in CI: %d %s\n", len(p.CPU), plural(len(p.CPU), "experiment", "experiments"))
+		for _, it := range p.CPU {
+			fmt.Printf("  %s (%s)\n", it.Experiment, it.Why)
+		}
+	}
+	if len(p.Batches)+len(p.Waiting) > 0 {
+		fmt.Printf("%s: cap $%.2f, spent $%.2f, remaining $%.2f\n", p.Month, p.Cap, p.Spent, p.Remaining)
+	}
+	for _, b := range p.Batches {
+		fmt.Printf("batch %s: %d %s, %.1f GPU-hours, $%.2f\n", b.ID, len(b.Items), plural(len(b.Items), "experiment", "experiments"), b.GPUHours, b.USD)
+		for _, it := range b.Items {
+			printPlanItem(it)
+		}
+	}
+	if len(p.Waiting) > 0 {
+		fmt.Printf("waiting for the next month, past the cap: %d\n", len(p.Waiting))
+		for _, it := range p.Waiting {
+			printPlanItem(it)
+		}
+	}
+	if len(items)+len(broken) == 0 {
+		fmt.Println("every experiment has current results")
+	}
+	return nil
+}
+
+func printPlanItem(it exp.PlanItem) {
+	approval := ""
+	if it.Approval {
+		approval = "; a person approves it first"
+	}
+	fmt.Printf("  %s %s: %.1f GPU-hours (%s), $%.2f; %s%s\n", it.Class, it.Experiment, it.Hours, it.Estimate, it.USD, it.Why, approval)
 }
