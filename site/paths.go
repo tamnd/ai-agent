@@ -39,6 +39,7 @@ type PathPage struct {
 	Lead     string
 	ID       string // the id of the path in the reader's browser, such as to/transformer
 	Basis    string
+	BasisURL string // the source of the outside system of a curriculum path
 	Sections []PathSection
 	Steps    int
 	Written  int
@@ -77,6 +78,7 @@ func (b *builder) paths() error {
 	}
 	var index []Group
 	find := b.byName()
+	written := map[string]bool{} // the ids of the courses with a page
 	cg := Group{ID: "courses", Title: "Courses", Intro: "Curated courses with section headings, each cross-checked against the public syllabi it names."}
 	for _, c := range courses {
 		if slices.Contains(reservedPaths, c.ID) {
@@ -84,6 +86,7 @@ func (b *builder) paths() error {
 			continue
 		}
 		p := b.coursePage(c, find)
+		written[c.ID] = true
 		if err := b.page("paths", p.Path, p); err != nil {
 			return err
 		}
@@ -91,6 +94,24 @@ func (b *builder) paths() error {
 	}
 	if len(cg.Items) > 0 {
 		index = append(index, cg)
+	}
+	curricula, err := b.curriculumPaths()
+	if err != nil {
+		return err
+	}
+	ug := Group{ID: "curricula", Title: "Curricula", Intro: "The units of outside curricula and classifications in their own order, with the pages that the crosswalks map to each."}
+	for _, p := range curricula {
+		if written[p.ID] {
+			b.opt.Log("crosswalk path %s: a course has the id", p.ID)
+			continue
+		}
+		if err := b.page("paths", p.Path, p); err != nil {
+			return err
+		}
+		ug.Items = append(ug.Items, Item{Link: Link{Name: p.Heading, URL: p.Path, Hue: 200}, Meta: pathMeta(p), Summary: p.Lead})
+	}
+	if len(ug.Items) > 0 {
+		index = append(index, ug)
 	}
 	ag := Group{ID: "areas", Title: "Areas", Intro: "The first and the core pages of each area, each after its prerequisites."}
 	for _, a := range b.c.Areas {
@@ -123,7 +144,21 @@ func (b *builder) paths() error {
 	if len(tg.Items) > 0 {
 		index = append(index, tg)
 	}
-	desc := "Reading paths through the site: courses, areas in reading order, and the way from zero to any page."
+	code := b.codeTargets()
+	fg := Group{ID: "from-scratch", Title: "From scratch in code", Intro: "The NumPy references that build up to one, each after the code it builds on."}
+	for _, n := range b.sortedTargets(code) {
+		p := b.codePage(n, code[n.Slug])
+		if err := b.page("paths", p.Path, p); err != nil {
+			return err
+		}
+		it := Item{Link: b.link(n.Slug), Meta: pathMeta(p), Level: n.Level}
+		it.URL = p.Path
+		fg.Items = append(fg.Items, it)
+	}
+	if len(fg.Items) > 0 {
+		index = append(index, fg)
+	}
+	desc := "Reading paths through the site: courses, curricula, areas in reading order, the way from zero to any page, and code built from scratch."
 	lp := ListPage{Base: b.base("Paths", desc, "/paths/")}
 	lp.Section = "paths"
 	lp.Heading, lp.Lead, lp.Groups = "Paths", desc, index

@@ -62,6 +62,7 @@ func init() {
 		{"fixtures", "run fixtures/make.py of the shared fixtures twice and write the files whose arrays changed: fixtures make [-check]", cmdFixtures},
 		{"flopcount", "count the multiply-adds of the NumPy forward of each architecture and check them against the FLOP formula of shapes.yaml (08.6)", cmdFlopcount},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
+		{"crosswalk", "the crosswalks of 5.8 to outside classifications: crosswalk check finds rows whose items do not exist; crosswalk gaps lists the outside ids with no item (18.4)", cmdCrosswalk},
 		{"universe", "join the inventories into the universe register: universe merge", cmdUniverse},
 		{"ingest", "make the result cards of 10.6 from the result rows of the inventories: ingest results", cmdIngest},
 		{"card", "write the cards of the card outcomes and update their facts: card sync [<catalog.jsonl>...]; card drift -base <dir>", cmdCard},

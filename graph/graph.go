@@ -352,7 +352,11 @@ func (g *Graph) Closure(key string, up bool, types ...string) []string {
 // Path is the reading path to a target (05.7, 16.12): the topological order of its prerequisites, each after its own,
 // in the order the front matter lists them, and then the target. A neighbour is a step with no prerequisites here; a
 // slug that names nothing is left out. A cycle, which rule E03 blocks, is cut where the walk meets it again.
-func (g *Graph) Path(target string) []string {
+func (g *Graph) Path(target string) []string { return g.Walk(target, "prereqs") }
+
+// Walk is the order of the items that the target reaches by the known edges of the given types, each after the items
+// it reaches, ending at the target. The code paths of 16.12 walk prereqs, components and uses.
+func (g *Graph) Walk(target string, types ...string) []string {
 	seen := map[string]bool{}
 	var out []string
 	var visit func(k string)
@@ -365,7 +369,7 @@ func (g *Graph) Path(target string) []string {
 		}
 		seen[k] = true
 		for _, e := range g.out[k] {
-			if e.Type == "prereqs" && e.Known {
+			if e.Known && slices.Contains(types, e.Type) {
 				visit(e.To)
 			}
 		}
