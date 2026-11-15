@@ -225,7 +225,7 @@ func (fr *FixtureRun) Write(n *node.Node) ([]string, error) {
 // Close removes the work tree of the run.
 func (fr *FixtureRun) Close(keep bool) {
 	if fr.made != "" && !keep {
-		os.RemoveAll(filepath.Dir(filepath.Dir(fr.made)))
+		_ = os.RemoveAll(filepath.Dir(filepath.Dir(fr.made)))
 	}
 }
 
