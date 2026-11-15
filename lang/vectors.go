@@ -376,6 +376,6 @@ func (vr *VectorRun) Write(n *node.Node) ([]string, error) {
 // Close removes the work tree of the run.
 func (vr *VectorRun) Close(keep bool) {
 	if vr.made != "" && !keep {
-		os.RemoveAll(filepath.Dir(filepath.Dir(vr.made)))
+		_ = os.RemoveAll(filepath.Dir(filepath.Dir(vr.made)))
 	}
 }
