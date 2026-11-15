@@ -232,13 +232,19 @@ func cmdCheck(args []string) error {
 	if *withViz {
 		findings = append(findings, vizFindings(c, opt.Only)...)
 	}
+	return reportFindings(findings, *asJSON, fmt.Sprintf("%d nodes", countOnly(c, opt.Only)))
+}
+
+// reportFindings prints the findings, as JSON or as lines with the annotations of GitHub Actions, and the count after
+// what on standard error. It gives errFindings when a finding blocks.
+func reportFindings(findings []check.Finding, asJSON bool, what string) error {
 	blocks := 0
 	for _, x := range findings {
 		if x.Severity == check.Block {
 			blocks++
 		}
 	}
-	if *asJSON {
+	if asJSON {
 		if findings == nil {
 			findings = []check.Finding{}
 		}
@@ -261,7 +267,7 @@ func cmdCheck(args []string) error {
 				fmt.Printf("::%s %s,title=%s::%s\n", level, loc, x.Rule, x.Msg)
 			}
 		}
-		fmt.Fprintf(os.Stderr, "%d nodes, %d findings, %d block\n", countOnly(c, opt.Only), len(findings), blocks)
+		fmt.Fprintf(os.Stderr, "%s, %d findings, %d block\n", what, len(findings), blocks)
 	}
 	if blocks > 0 {
 		return errFindings

@@ -115,6 +115,12 @@
           "subset": {
             "type": "string"
           },
+          "train": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "version": {
             "type": "string"
           }

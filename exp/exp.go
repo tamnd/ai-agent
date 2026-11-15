@@ -15,6 +15,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -76,6 +77,22 @@ type Data struct {
 	Pin       string `yaml:"pin,omitempty"`
 	Hash      string `yaml:"hash,omitempty"`
 	Generator string `yaml:"generator,omitempty"`
+	// Train names the splits of the subset that the experiment trains or tunes on; the others it only evaluates on. An
+	// experiment that reads a test split names them, and none of them is a test split (rule M07).
+	Train []string `yaml:"train,omitempty"`
+}
+
+// Splits gives the names of the splits that the subset reads, in its order: "train[:6000], test" reads train and test.
+// A subset that names no split reads the whole dataset, and Splits gives nil.
+func (d Data) Splits() []string {
+	var out []string
+	for _, part := range strings.Split(d.Subset, ",") {
+		name, _, _ := strings.Cut(part, "[")
+		if name = strings.TrimSpace(name); name != "" && !slices.Contains(out, name) {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // Seeds gives the seeds of every arm: base, base+1, and so on.
