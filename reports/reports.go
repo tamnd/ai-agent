@@ -7,6 +7,7 @@ package reports
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/tamnd/ai-agent/exp"
@@ -259,7 +260,7 @@ func MakeExperiments(c *node.Corpus) Experiments {
 	return out
 }
 
-func levelLabel(l int) string { return "R" + string(rune('0'+l)) }
+func levelLabel(l int) string { return "R" + strconv.Itoa(l) }
 
 // Verdicts are the verdicts of results.json, for the order of a printed report.
 var Verdicts = []string{exp.Holds, exp.DidNotHold, exp.Inconclusive, "not run"}
