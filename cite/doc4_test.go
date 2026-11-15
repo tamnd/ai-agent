@@ -418,7 +418,7 @@ func TestNature(t *testing.T) {
 func TestPrintedNumbersFootnotes(t *testing.T) {
 	pages := []string{
 		"On Calibration of Modern Neural Networks\n1. Introduction\nRecent advances in deep learning.\n",
-		"guage model in speech recognition\nExpected Calibration Error approximates the expectation.\n",
+		"the text of the second page\nExpected Calibration Error approximates the expectation.\n",
 		"Varying Depth\nResNet - CIFAR-100\nthe text of the third page\n",
 		"NLL Overfitting on CIFAR-100\nthe text of the fourth page\nY = {0, 1}. For simplicity, throughout this subsection,\n",
 		"we assume the model outputs only the confidence for the\npositive class.\nthe text of the fifth page\nmore of it\n2\nBecause the validation dataset is finite, S is as well, and so on.\n",
