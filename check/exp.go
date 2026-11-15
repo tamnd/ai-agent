@@ -17,16 +17,38 @@ import (
 // reproduceRE matches the words that present a small experiment as a reproduction of the result of a paper (rule R04).
 var reproduceRE = regexp.MustCompile(`(?i)\b(?:we\s+)?reproduc(?:e|es|ed|ing)\s+(?:the|this|its|their)\s+(?:paper|result|results|finding|findings)\b|\bwe\s+reproduced\b`)
 
+// Exps runs the rules of the experiments (R01 to R09 and M07) on the experiments that keep selects, or on all of them
+// when keep is nil, and returns the findings sorted by path and line. aik exp check runs it.
+func Exps(c *node.Corpus, opt Options, keep func(n *node.Node, e *exp.Experiment) bool) []Finding {
+	r := &run{c: c, opt: opt, root: c.Root}
+	for _, n := range c.Nodes {
+		if !r.want(n) {
+			continue
+		}
+		var es []*exp.Experiment
+		for _, e := range n.Exps {
+			if keep == nil || keep(n, e) {
+				es = append(es, e)
+			}
+		}
+		r.expsOf(n, es)
+	}
+	r.sort()
+	return r.out
+}
+
 // exps checks the experiments of a node (spec 9.13).
-func (r *run) exps(n *node.Node) {
+func (r *run) exps(n *node.Node) { r.expsOf(n, n.Exps) }
+
+func (r *run) expsOf(n *node.Node, es []*exp.Experiment) {
 	byID := map[string]bool{}
 	for _, c := range n.Claims {
 		byID[c.ID] = true
 	}
-	for _, e := range n.Exps {
+	for _, e := range es {
 		r.exp(n, e, byID)
 	}
-	if len(n.Exps) > 0 {
+	if len(es) > 0 {
 		for i, line := range strings.Split(n.Body, "\n") {
 			if m := reproduceRE.FindString(line); m != "" {
 				r.add("R04", Level, n.Rel+"/node.md", n.BodyLine+i, "%q presents a small-scale experiment as a reproduction; write \"The claim holds at this scale\" (9.2)", m)
@@ -131,7 +153,54 @@ func (r *run) pins(e *exp.Experiment) {
 			case len(pin.Files) == 0:
 				r.add("R02", Block, p, 0, "data %d: the pin %s lists no files with their hashes", i+1, pin.ID)
 			}
+			if pin != nil {
+				r.contamination(p, i+1, d, pin)
+			}
 		}
+	}
+}
+
+// contamination checks that the experiment does not train or tune on a split that the pin marks as a test split (rule
+// M07, spec 10): each split of the subset is a split of the pin, and an experiment that can read a test split names the
+// splits it trains on, none of them a test split.
+func (r *run) contamination(p string, i int, d exp.Data, pin *exp.Pin) {
+	splits := pin.Splits()
+	reads := d.Splits()
+	if len(splits) == 0 {
+		if len(reads) > 0 || len(d.Train) > 0 {
+			r.add("M07", Block, p, 0, "data %d: the subset names splits, but the pin %s marks none; give each file of %s its split, and test: true to the files of a test split", i, pin.ID, exp.PinsFile)
+		}
+		return
+	}
+	for name, test := range splits {
+		if !test && (name == "test" || strings.HasPrefix(name, "test-") || strings.HasPrefix(name, "test_")) {
+			r.add("M07", Block, p, 0, "data %d: the split %s of the pin %s is not marked test; mark its files test: true in %s, or rename the split", i, name, pin.ID, exp.PinsFile)
+		}
+	}
+	for _, name := range reads {
+		if _, ok := splits[name]; !ok {
+			r.add("M07", Block, p, 0, "data %d: the subset reads the split %s, but the pin %s has the splits %s", i, name, pin.ID, strings.Join(sortedKeys(splits), ", "))
+		}
+	}
+	tests := []string{}
+	if len(reads) == 0 {
+		reads = sortedKeys(splits)
+	}
+	for _, name := range reads {
+		if splits[name] {
+			tests = append(tests, name)
+		}
+	}
+	for _, name := range d.Train {
+		switch {
+		case splits[name]:
+			r.add("M07", Block, p, 0, "data %d: the experiment trains on %s, which the pin %s marks as a test split; test data never enters a training run", i, name, pin.ID)
+		case !slices.Contains(reads, name):
+			r.add("M07", Block, p, 0, "data %d: train names the split %s, which the subset does not read", i, name)
+		}
+	}
+	if len(tests) > 0 && len(d.Train) == 0 {
+		r.add("M07", Block, p, 0, "data %d: the experiment reads the test split %s of the pin %s; name the splits that it trains and tunes on with train", i, strings.Join(tests, ", "), pin.ID)
 	}
 }
 

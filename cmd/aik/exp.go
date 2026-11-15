@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tamnd/ai-agent/check"
 	"github.com/tamnd/ai-agent/exp"
 	"github.com/tamnd/ai-agent/lang"
 	"github.com/tamnd/ai-agent/node"
@@ -28,11 +29,13 @@ import (
 // cmdExp runs the experiments of spec 09.
 func cmdExp(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik exp list, plan, run, power or verify"}
+		return usageError{"use aik exp list, check, plan, run, power or verify"}
 	}
 	switch args[0] {
 	case "list":
 		return cmdExpList(args[1:])
+	case "check":
+		return cmdExpCheck(args[1:])
 	case "run":
 		return cmdExpRun(args[1:])
 	case "power":
@@ -42,7 +45,37 @@ func cmdExp(args []string) error {
 	case "verify":
 		return cmdExpVerify(args[1:])
 	}
-	return usageError{"use aik exp list, plan, run, power or verify, not aik exp " + args[0]}
+	return usageError{"use aik exp list, check, plan, run, power or verify, not aik exp " + args[0]}
+}
+
+// cmdExpCheck runs the rules of the experiments on the experiments, before a run: the design, the data pins and the
+// contamination guard (M07), the seeds, the tuning budgets, expect.yaml and results.json. It exits with 1 when a rule
+// blocks.
+func cmdExpCheck(args []string) error {
+	f := newFlags("exp check", "[flags] [slug | slug/experiment ...]")
+	root := f.String("root", ".", "the root of the content repository")
+	rule := f.String("rule", "", "run only this rule, for example M07")
+	asJSON := f.Bool("json", false, "print the findings as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if _, ok := check.Rules[*rule]; *rule != "" && (!ok || !strings.HasPrefix(*rule, "R") && *rule != "M07") {
+		return usageError{fmt.Sprintf("the rule %s is not a rule of the experiments, R01 to R09 or M07", *rule)}
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	refs, err := selectExps(c, f.Args())
+	if err != nil {
+		return err
+	}
+	keep := map[*exp.Experiment]bool{}
+	for _, r := range refs {
+		keep[r.e] = true
+	}
+	findings := check.Exps(c, check.Options{Rule: *rule}, func(_ *node.Node, e *exp.Experiment) bool { return keep[e] })
+	return reportFindings(findings, *asJSON, fmt.Sprintf("%d %s", len(refs), plural(len(refs), "experiment", "experiments")))
 }
 
 type expRef struct {

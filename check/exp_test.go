@@ -3,9 +3,13 @@
 package check
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/tamnd/ai-agent/exp"
+	"github.com/tamnd/ai-agent/node"
 )
 
 const expDesign = `id: fit-toy
@@ -136,5 +140,87 @@ func TestExperimentClean(t *testing.T) {
 		if f.Rule[0] == 'R' {
 			t.Errorf("a good experiment gives %s %s: %s", f.Rule, f.Path, f.Msg)
 		}
+	}
+}
+
+const splitPins = expPins + `- id: split-data
+  dataset: split
+  version: "1"
+  licence: {spdx: CC0-1.0}
+  mirror: allowed
+  files:
+    - {name: train.gz, sha256: abc, split: train}
+    - {name: test.gz, sha256: def, split: test, test: true}
+- id: test-unmarked
+  dataset: unmarked
+  version: "1"
+  licence: {spdx: CC0-1.0}
+  mirror: allowed
+  files: [{name: train.gz, sha256: abc, split: train}, {name: test.gz, sha256: def, split: test}]
+`
+
+func TestContamination(t *testing.T) {
+	ed := modelDir + "exp/fit-toy/"
+	data := `data:
+  - {pin: "S:split-data", subset: "train[:100], test", train: [train]}
+  - {pin: "S:split-data", subset: "train, test"}
+  - {pin: "S:split-data", subset: "train, test", train: [test]}
+  - {pin: "S:split-data", subset: "train, dev", train: [train]}
+  - {pin: "S:split-data", subset: "train", train: [validation]}
+  - {pin: "S:mnist-ai-data", subset: "train"}
+  - {pin: "S:split-data"}
+  - {pin: "S:test-unmarked", subset: "train", train: [train]}
+  - {pin: "S:mnist-ai-data"}
+  - {generator: points.py, subset: test}
+seeds:`
+	design := regexp.MustCompile(`(?s)data:\n.*?\nseeds:`).ReplaceAllString(expDesign, data)
+	c := fixture(t, map[string]string{
+		modelDir + "node.md":                   modelNode,
+		modelDir + "claims.yaml":               claimFile,
+		ed + "experiment.yaml":                 design,
+		ed + "points.py":                       "\n",
+		modelDir + "exp/other/experiment.yaml": strings.Replace(design, "id: fit-toy", "id: other", 1),
+		"registers/data-pins.yaml":             splitPins,
+	})
+	want := []string{
+		"data 2: the experiment reads the test split test of the pin split-data; name the splits that it trains and tunes on with train",
+		"data 3: the experiment trains on test, which the pin split-data marks as a test split",
+		"data 4: the subset reads the split dev, but the pin split-data has the splits test, train",
+		"data 5: train names the split validation, which the subset does not read",
+		"data 6: the subset names splits, but the pin mnist-ai-data marks none",
+		"data 7: the experiment reads the test split test of the pin split-data",
+		"data 8: the split test of the pin test-unmarked is not marked test",
+	}
+	check := func(fs []Finding, exps int) {
+		t.Helper()
+		var got []string
+		for _, f := range fs {
+			if f.Rule == "M07" {
+				if f.Severity != Block {
+					t.Errorf("M07 does not block: %s", f.Msg)
+				}
+				got = append(got, f.Msg)
+			}
+		}
+		if len(got) != len(want)*exps {
+			t.Errorf("M07 gives %d findings, not %d:\n%s", len(got), len(want)*exps, strings.Join(got, "\n"))
+		}
+		for _, w := range want {
+			if !slices.ContainsFunc(got, func(s string) bool { return strings.HasPrefix(s, w) }) {
+				t.Errorf("M07 does not report %q; it reports:\n%s", w, strings.Join(got, "\n"))
+			}
+		}
+	}
+	check(Run(c, Options{}), 2)
+	// aik exp check: the rules of the experiments on the chosen ones, and no other rule.
+	fs := Exps(c, Options{}, func(_ *node.Node, e *exp.Experiment) bool { return e.Slug == "fit-toy" })
+	check(fs, 1)
+	for _, f := range fs {
+		if f.Rule[0] != 'R' && f.Rule != "M07" || !strings.Contains(f.Path, "exp/fit-toy/") {
+			t.Errorf("aik exp check gives %s %s: %s", f.Rule, f.Path, f.Msg)
+		}
+	}
+	if fs := Exps(c, Options{Rule: "M07"}, nil); len(fs) != 2*len(want) {
+		t.Errorf("only M07 on every experiment: %d findings", len(fs))
 	}
 }

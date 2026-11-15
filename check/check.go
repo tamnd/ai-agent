@@ -122,6 +122,7 @@ var Rules = map[string]string{
 	"M01": "a result card has a model, a benchmark version, a metric node, a score with unit, a setting, and a source with a locator and a date",
 	"M02": "a result attaches to a version of a benchmark, never to a task or a benchmark with no version",
 	"M03": "the setting uses the keys of 10.5, and a key that the source does not state is unknown",
+	"M07": "no experiment trains or tunes on a split that registers/data-pins.yaml marks as test: an experiment that reads a test split names the splits it trains on with train",
 	"M08": "a result whose number the citation check did not find is not shown in any table",
 	"M14": "a rating names its arena, its snapshot date, its votes and its interval",
 }
@@ -207,13 +208,18 @@ func Run(c *node.Corpus, opt Options) []Finding {
 	}
 	r.leanDecls()
 	r.graphRules()
+	r.sort()
+	return r.out
+}
+
+// sort sorts the findings by path and line.
+func (r *run) sort() {
 	sort.SliceStable(r.out, func(i, j int) bool {
 		if r.out[i].Path != r.out[j].Path {
 			return r.out[i].Path < r.out[j].Path
 		}
 		return r.out[i].Line < r.out[j].Line
 	})
-	return r.out
 }
 
 func rel(root, s string) string {

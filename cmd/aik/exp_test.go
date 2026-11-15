@@ -260,3 +260,47 @@ func TestExpVerify(t *testing.T) {
 		t.Errorf("an output that differs exits with %d, not 1", got)
 	}
 }
+
+func TestExpCheck(t *testing.T) {
+	root := copyCorpus(t)
+	dir := filepath.Join(root, "nodes/foundations/models-of-computation/comparison-model/exp/toy-dropout")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	pins := `- id: toy-data
+  dataset: toy
+  version: "1"
+  licence: {spdx: CC0-1.0}
+  mirror: allowed
+  files:
+    - {name: train.txt, sha256: "00", split: train}
+    - {name: test.txt, sha256: "01", split: test, test: true}
+`
+	write := func(data string) {
+		t.Helper()
+		for path, s := range map[string]string{
+			filepath.Join(dir, exp.DesignFile): toyDesign + "data:\n  - " + data + "\n",
+			filepath.Join(dir, exp.ExpectFile): toyExpect,
+			filepath.Join(dir, exp.Script):     toyRun,
+			filepath.Join(root, exp.PinsFile):  pins,
+		} {
+			if err := os.WriteFile(path, []byte(s), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	write(`{dataset: toy, pin: "S:toy-data", subset: "train, test", train: [train]}`)
+	if got := run([]string{"exp", "check", "-root", root}); got != 0 {
+		t.Errorf("an experiment that trains on the train split exits with %d", got)
+	}
+	write(`{dataset: toy, pin: "S:toy-data", subset: "train, test", train: [test]}`)
+	if got := run([]string{"exp", "check", "-root", root, "comparison-model/toy-dropout"}); got != 1 {
+		t.Errorf("an experiment that trains on the test split exits with %d, not 1", got)
+	}
+	if got := run([]string{"exp", "check", "-root", root, "-rule", "R03", "comparison-model"}); got != 0 {
+		t.Errorf("only R03 exits with %d", got)
+	}
+	if got := run([]string{"exp", "check", "-root", root, "-rule", "T01"}); got != 2 {
+		t.Errorf("a rule of the nodes exits with %d, not 2", got)
+	}
+}

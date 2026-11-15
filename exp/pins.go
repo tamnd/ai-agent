@@ -21,6 +21,11 @@ type PinFile struct {
 	Bytes  int64  `yaml:"bytes,omitempty"`
 	// URL is where aik exp run fetches the file when the data cache does not have it. It is https.
 	URL string `yaml:"url,omitempty"`
+	// Split is the split of the dataset that the file holds, by the name that the subset of an experiment uses, such as
+	// train or test.
+	Split string `yaml:"split,omitempty"`
+	// Test marks the file as a part of a test split: no experiment trains or tunes on it (rule M07).
+	Test bool `yaml:"test,omitempty"`
 }
 
 // Licence is the licence of a pinned dataset.
@@ -62,6 +67,18 @@ func LoadPins(path string) (map[string]*Pin, error) {
 		out[p.ID] = p
 	}
 	return out, nil
+}
+
+// Splits gives the splits of the files of a pin, and tells for each one if it is a test split: a split is a test split
+// when one of its files has test: true.
+func (p *Pin) Splits() map[string]bool {
+	out := map[string]bool{}
+	for _, f := range p.Files {
+		if f.Split != "" {
+			out[f.Split] = out[f.Split] || f.Test
+		}
+	}
+	return out
 }
 
 // PinID gives the id of the pin of a data entry: the pin without the prefix S:.
