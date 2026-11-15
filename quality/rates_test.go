@@ -38,8 +38,8 @@ func TestRates(t *testing.T) {
 		t.Fatalf("items = %d, want 4", len(items))
 	}
 	for _, it := range items {
-		if it.Slug == "q" && (len(it.Gates) != 2 || it.Gates[0].Pass || !it.Gates[1].Pass) {
-			t.Errorf("q gates = %+v, want fail then pass", it.Gates)
+		if it.Slug == "q" && (len(it.Gates) != 3 || it.Gates[0].Pass || !it.Gates[1].Pass || it.Gates[2].Run != "r2") {
+			t.Errorf("q gates = %+v, want fail, pass, pass in r2", it.Gates)
 		}
 		if it.Slug == "x" && it.Status != "done" {
 			t.Errorf("x: the slug comes from the file name; got %+v", it)
