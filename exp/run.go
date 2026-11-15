@@ -212,11 +212,29 @@ func readMetrics(path string) (*Metrics, error) {
 
 // Write writes results.json into the experiment directory. Only aik exp run -update calls it (rule R05).
 func Write(e *Experiment, r *Results) error {
+	return WriteTo(filepath.Join(e.Dir, ResultsFile), r)
+}
+
+// WriteTo writes the results to a file, such as the copy of a run under build/ that aik exp power reads.
+func WriteTo(file string, r *Results) error {
 	b, err := json.MarshalIndent(r, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(e.Dir, ResultsFile), append(b, '\n'), 0o644)
+	return os.WriteFile(file, append(b, '\n'), 0o644)
+}
+
+// ReadResults reads a results.json, such as the pilot of aik exp power.
+func ReadResults(file string) (*Results, error) {
+	b, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	var r Results
+	if err := json.Unmarshal(b, &r); err != nil {
+		return nil, fmt.Errorf("%s: %w", file, err)
+	}
+	return &r, nil
 }
 
 // Stale tells why the results do not match the current files, or gives "".

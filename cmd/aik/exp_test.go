@@ -82,6 +82,27 @@ func TestExpRun(t *testing.T) {
 	if got := run([]string{"exp", "list", "-root", root}); got != 0 {
 		t.Errorf("aik exp list exits with %d", got)
 	}
+	// A pilot of two seeds: the effect of 0.05 is many times the noise, so the power is 1 at the 4 seeds of the design.
+	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "-seeds", "2", "-update", "comparison-model"}); got != 2 {
+		t.Errorf("a pilot with -update exits with %d, not 2", got)
+	}
+	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "-seeds", "2", "comparison-model"}); got != 0 {
+		t.Fatalf("the pilot exits with %d", got)
+	}
+	pilot, err := exp.ReadResults(filepath.Join(root, "build/exp/comparison-model/toy-dropout", exp.ResultsFile))
+	if err != nil || len(pilot.Seeds) != 2 {
+		t.Fatalf("the pilot: %v, %+v", err, pilot)
+	}
+	if got := run([]string{"exp", "power", "-root", root, "-sims", "400", "comparison-model"}); got != 0 {
+		t.Errorf("aik exp power exits with %d", got)
+	}
+	// The claimed effect is the least effect of expect.yaml, so the power is about one half: rule R07 fails.
+	if got := run([]string{"exp", "power", "-root", root, "-sims", "400", "-max", "8", "-effect", "10%", "-json", "comparison-model/toy-dropout"}); got != 1 {
+		t.Errorf("aik exp power at the least effect exits with %d, not 1", got)
+	}
+	if got := run([]string{"exp", "power", "-root", root, "-effect", "x", "comparison-model"}); got != 2 {
+		t.Errorf("a bad -effect exits with %d, not 2", got)
+	}
 	if got := run([]string{"exp", "run", "-root", root, "-unsafe-local", "comparison-model/none"}); got != 2 {
 		t.Errorf("an experiment that is not there exits with %d, not 2", got)
 	}

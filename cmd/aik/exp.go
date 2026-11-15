@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,15 +27,17 @@ import (
 // cmdExp runs the experiments of spec 09.
 func cmdExp(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik exp list or aik exp run"}
+		return usageError{"use aik exp list, aik exp run or aik exp power"}
 	}
 	switch args[0] {
 	case "list":
 		return cmdExpList(args[1:])
 	case "run":
 		return cmdExpRun(args[1:])
+	case "power":
+		return cmdExpPower(args[1:])
 	}
-	return usageError{"use aik exp list or aik exp run, not aik exp " + args[0]}
+	return usageError{"use aik exp list, aik exp run or aik exp power, not aik exp " + args[0]}
 }
 
 type expRef struct {
@@ -111,11 +115,15 @@ func cmdExpRun(args []string) error {
 	sandbox := f.String("sandbox", "auto", "the container engine of the sandbox: docker, podman, or none; auto uses docker when the image manifest is there (08.7)")
 	images := f.String("images", "manifests/images.yaml", "the manifest of the runner images, pinned by digest")
 	python := f.String("python", "python3", "the Python of a run with -unsafe-local or in CI")
+	seeds := f.Int("seeds", 0, "run a pilot with this many seeds instead of the design's, for aik exp power; not with -update")
 	if err := parse(f, args); err != nil {
 		return err
 	}
 	if f.NArg() == 0 {
 		return usageError{"name the experiments to run: slug or slug/experiment"}
+	}
+	if *seeds < 0 || *seeds > 0 && *update {
+		return usageError{"-seeds runs a pilot, whose results are not results.json: give it without -update, and more than 0"}
 	}
 	c, err := load(*root)
 	if err != nil {
@@ -134,6 +142,12 @@ func cmdExpRun(args []string) error {
 	}
 	failed := 0
 	for _, r := range refs {
+		if *seeds > 0 {
+			e, d := *r.e, *r.e.Design
+			d.Seeds.N = *seeds
+			e.Design = &d
+			r.e = &e
+		}
 		if err := runExp(c, r, box, *python, *update); err != nil {
 			fmt.Fprintf(os.Stderr, "%s/%s: %v\n", r.n.Slug, r.e.Slug, err)
 			failed++
@@ -157,7 +171,7 @@ func runExp(c *node.Corpus, r expRef, box *lang.Sandbox, python string, update b
 	if b.Name != "cpu-small" {
 		return fmt.Errorf("the class %s runs in the GPU pool, which aik does not have yet; aik exp run runs cpu-small only", b.Name)
 	}
-	work, err := filepath.Abs(filepath.Join(c.Root, "build", "exp", r.n.Slug, e.Slug))
+	work, err := filepath.Abs(expWork(c, r))
 	if err != nil {
 		return err
 	}
@@ -221,8 +235,12 @@ func runExp(c *node.Corpus, r expRef, box *lang.Sandbox, python string, update b
 		}
 		fmt.Printf("  %s %s: %s%s\n", v.Test, v.Metric, v.Verdict, p)
 	}
+	// The run's own copy, under build/, is the pilot that aik exp power reads.
+	if err := exp.WriteTo(filepath.Join(work, exp.ResultsFile), res); err != nil {
+		return err
+	}
 	if !update {
-		fmt.Println("  results.json is not written; give -update to write it")
+		fmt.Printf("  results.json is not written; give -update to write it. The run's results are in %s\n", filepath.Join(work, exp.ResultsFile))
 		return nil
 	}
 	return exp.Write(e, res)
@@ -290,4 +308,168 @@ func (b cancelBody) Close() error {
 	err := b.ReadCloser.Close()
 	b.cancel()
 	return err
+}
+
+// expWork is the work directory of a run of the experiment, under build/.
+func expWork(c *node.Corpus, r expRef) string {
+	return filepath.Join(c.Root, "build", "exp", r.n.Slug, r.e.Slug)
+}
+
+func cmdExpPower(args []string) error {
+	f := newFlags("exp power", "[flags] slug | slug/experiment ...")
+	root := f.String("root", ".", "the root of the content repository")
+	pilot := f.String("pilot", "", "the results.json of the pilot; without it, the last run under build/exp (aik exp run -seeds n), or the committed results.json")
+	effect := f.String("effect", "", "the claimed effect in the claimed direction, absolute (0.02) or relative to the control mean (5%); without it, the pilot's effect")
+	sd := f.String("sd", "", "the spread of one seed in each arm, absolute or relative to the control mean (2%); without it, the pilot's SD, which needs two seeds in an arm")
+	seeds := f.Int("seeds", 0, "the number of seeds to compute the power at; without it, the design's, or the default of its budget class")
+	target := f.Float64("target", exp.PowerTarget, "the least power (rule R07)")
+	sims := f.Int("sims", 2000, "the number of simulated runs for each number of seeds")
+	most := f.Int("max", 100, "the most seeds to try")
+	asJSON := f.Bool("json", false, "print the power of each test as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	o := exp.PowerOptions{Seeds: *seeds, Target: *target, Sims: *sims, Max: *most}
+	var err error
+	if o.Effect, err = parseEffect("effect", *effect); err != nil {
+		return err
+	}
+	if o.SD, err = parseEffect("sd", *sd); err != nil {
+		return err
+	}
+	if *seeds < 0 || *sims < 1 || *most < 2 || *target <= 0 || *target >= 1 {
+		return usageError{"-seeds is 0 or more, -sims 1 or more, -max 2 or more, and -target between 0 and 1"}
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	refs, err := selectExps(c, f.Args())
+	if err != nil {
+		return err
+	}
+	if *pilot != "" && len(refs) != 1 {
+		return usageError{"-pilot is the pilot of one experiment: name it as slug/experiment"}
+	}
+	type report struct {
+		Experiment string      `json:"experiment"`
+		Pilot      string      `json:"pilot,omitempty"`
+		Tests      []exp.Power `json:"tests,omitempty"`
+		Error      string      `json:"error,omitempty"`
+	}
+	var out []report
+	failed := false
+	for _, r := range refs {
+		rep := report{Experiment: r.n.Slug + "/" + r.e.Slug}
+		res, from, err := readPilot(c, r, *pilot)
+		if err != nil {
+			rep.Error = err.Error()
+		} else {
+			rep.Pilot = from
+			rep.Tests = exp.PowerOf(r.e, res, o)
+		}
+		for _, p := range rep.Tests {
+			failed = failed || !p.OK()
+		}
+		out = append(out, rep)
+	}
+	if *asJSON {
+		if err := printJSON(out); err != nil {
+			return err
+		}
+	} else {
+		for _, rep := range out {
+			if rep.Error != "" {
+				fmt.Printf("%s: %s\n", rep.Experiment, rep.Error)
+				continue
+			}
+			fmt.Printf("%s: the pilot is %s\n", rep.Experiment, rep.Pilot)
+			for _, p := range rep.Tests {
+				printPower(p)
+			}
+		}
+	}
+	if failed {
+		return errFindings
+	}
+	return nil
+}
+
+// readPilot reads the pilot of an experiment: the file given, the last run under build/exp, or the committed results.
+func readPilot(c *node.Corpus, r expRef, file string) (*exp.Results, string, error) {
+	if file != "" {
+		res, err := exp.ReadResults(file)
+		return res, file, err
+	}
+	last := filepath.Join(expWork(c, r), exp.ResultsFile)
+	if res, err := exp.ReadResults(last); err == nil {
+		if rel, err := filepath.Rel(c.Root, last); err == nil {
+			last = filepath.ToSlash(rel)
+		}
+		return res, last, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, "", err
+	}
+	if r.e.Results != nil {
+		return r.e.Results, filepath.Join(r.e.Rel, exp.ResultsFile), nil
+	}
+	return nil, "", errors.New("no pilot: run one with aik exp run -seeds 2, or give -pilot")
+}
+
+func printPower(p exp.Power) {
+	head := fmt.Sprintf("  %s of %s", p.Test, p.Metric)
+	if p.Direction != "" {
+		head += ", " + p.Direction
+	}
+	if p.Error != "" {
+		fmt.Printf("%s: %s\n", head, p.Error)
+		return
+	}
+	fmt.Printf("%s, alpha %.3g\n", head, p.Alpha)
+	from := "the pilot's"
+	if p.EffectFrom == "given" {
+		from = "given"
+	}
+	need := ""
+	if p.Need > 0 {
+		need = fmt.Sprintf(", min_effect %.4g", p.Need)
+		if p.Test == "tost" {
+			need = fmt.Sprintf(", margin %.4g", p.Need)
+		}
+	}
+	fmt.Printf("    one seed: %s %.4g ± %.3g, %s %.4g ± %.3g (pilot of %d and %d seeds); effect %.4g, %s%s\n",
+		p.Treatment, p.Means[0], p.SD[0], p.Control, p.Means[1], p.SD[1], p.Pilot[0], p.Pilot[1], p.Effect, from, need)
+	line := fmt.Sprintf("    power %.2f at %s", p.Power, fmt.Sprintf("%d %s", p.Seeds, plural(p.Seeds, "seed", "seeds")))
+	if !p.OK() {
+		line += fmt.Sprintf(", under %.2g (rule R07)", p.Target)
+	}
+	if p.Needed > 0 {
+		line += fmt.Sprintf("; %.2g needs %s", p.Target, fmt.Sprintf("%d %s", p.Needed, plural(p.Needed, "seed", "seeds")))
+	} else {
+		line += fmt.Sprintf("; no number of seeds up to the most tried reaches %.2g: claim a smaller effect", p.Target)
+	}
+	fmt.Println(line)
+	if p.Note != "" {
+		fmt.Printf("    note: %s\n", p.Note)
+	}
+}
+
+// parseEffect reads an effect or a spread: a number is absolute, and a number with % is relative to the control mean.
+func parseEffect(name, s string) (*exp.Effect, error) {
+	if s == "" {
+		return nil, nil
+	}
+	e := &exp.Effect{Kind: "absolute"}
+	if v, ok := strings.CutSuffix(s, "%"); ok {
+		e.Kind, s = "relative", v
+	}
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+		return nil, usageError{fmt.Sprintf("-%s is a number of 0 or more, or a percentage such as 5%%, not %q", name, s)}
+	}
+	if e.Kind == "relative" {
+		v /= 100
+	}
+	e.Value = v
+	return e, nil
 }
