@@ -1,0 +1,17 @@
+# sacreBLEU for BLEU, chrF and TER; scikit-learn for the classification metrics; jiwer for WER and CER (spec 08.7.5).
+numpy==2.5.4 --hash=sha256:d549420b8858885cea8838a727842249218b9c1da24dd517e25c9c7a948310a3
+scipy==1.18.1 --hash=sha256:ac0333bdf38309aa3dcbe7e3fa7ea29e7a2c37c6ea306a757b700ded8e4596ad
+sacrebleu==2.6.0 --hash=sha256:3edc1531575cfe4ad04ce53491a9307e234af1c3f805a1f491cbec844229a8a8
+portalocker==4.4.2 --hash=sha256:e661b91af34fc1806740f8e0e42990fe55cd85cbae55675ac48a400a9656a51b
+regex==2026.11.9 --hash=sha256:b8d6cc5be22e9c839547d6ffc88b515845cbf47604c74d293955eea96281adbc
+tabulate==0.10.0 --hash=sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3
+colorama==0.4.6 --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
+lxml==6.1.3 --hash=sha256:a7eb78ba28b187e1e9203a55c60fcf70df2d22cb205fe6d51b9383d6097419f0
+scikit-learn==1.9.1 --hash=sha256:993d332ff80e62efae9e39603b7e872297c418d780f01a01855269a3489c950f
+joblib==1.6.0 --hash=sha256:3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba
+cloudpickle==3.1.2 --hash=sha256:9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a
+threadpoolctl==3.8.0 --hash=sha256:f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da
+narwhals==2.28.0 --hash=sha256:1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f
+jiwer==4.0.0 --hash=sha256:7efaf0bd336b095d99ddef9dd67e1ee829d75d58aa2a81d9639870b01d6d95ea
+rapidfuzz==3.14.6 --hash=sha256:08bc63b88048376114d1e66cf8fa6926495d03bb873eb87854fa74cf6848a70b
+click==8.5.1 --hash=sha256:8bb5376d2006950386f8c6427613334a2acadc5f559cb80e638d00b4df957e37

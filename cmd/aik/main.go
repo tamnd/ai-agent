@@ -60,6 +60,7 @@ func init() {
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
 		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
 		{"fixtures", "run fixtures/make.py of the shared fixtures twice and write the files whose arrays changed: fixtures make [-check]", cmdFixtures},
+		{"vectors", "run vectors/make.py of each metric with the official implementation, check the rows against contract.yaml, and write the files whose rows changed: vectors make [-check]", cmdVectors},
 		{"flopcount", "count the multiply-adds of the NumPy forward of each architecture and check them against the FLOP formula of shapes.yaml (08.6)", cmdFlopcount},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
 		{"crosswalk", "the crosswalks of 5.8 to outside classifications: crosswalk check finds rows whose items do not exist; crosswalk gaps lists the outside ids with no item (18.4)", cmdCrosswalk},
