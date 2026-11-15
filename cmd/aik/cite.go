@@ -118,7 +118,8 @@ func (ck *citer) carry(o, r cite.Record, cl *claims.Claim) bool {
 }
 
 // node checks every source of every claim of n. It prints a line for each claim and returns the records and the
-// number of labelled claims with no source that passes (G05).
+// number of labelled claims with no source that passes (G05). A mathematical claim with no source and a derivation or
+// a Lean proof passes on its proof, as it does at G1 and G2 (status.Grounding).
 func (ck *citer) node(ctx context.Context, n *node.Node) ([]cite.Record, int) {
 	old := ck.ix.Records[n.Tag]
 	ck.carried = 0
@@ -153,12 +154,14 @@ func (ck *citer) node(ctx context.Context, n *node.Node) ([]cite.Record, int) {
 		}
 		state := "found"
 		switch {
+		case claims.ProvedWithoutSource(cl):
+			state = "proof"
 		case len(cl.Evidence) == 0:
 			state = "no source"
 		case !ok:
 			state = "NOT FOUND"
 		}
-		if ok || len(cl.Evidence) == 0 && !claims.Labelled(cl.Type) {
+		if ok || len(cl.Evidence) == 0 && (!claims.Labelled(cl.Type) || claims.ProvedWithoutSource(cl)) {
 			pass++
 		} else if claims.Labelled(cl.Type) {
 			ungrounded++

@@ -30,7 +30,7 @@ func Grounding(n *node.Node, env Env) (r Rung) {
 	for i := range n.Claims {
 		c := &n.Claims[i]
 		if len(c.Evidence) == 0 {
-			if c.Type != cl.Mathematical || (c.Derivation == "" && c.Lean == "") {
+			if !cl.ProvedWithoutSource(c) {
 				g1 = append(g1, c.ID+" has no source (G02)")
 			}
 			continue
