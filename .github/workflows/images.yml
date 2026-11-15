@@ -74,7 +74,20 @@ jobs:
           assert math.isclose(jiwer.wer("a b c", "a x c"), 1 / 3)
           print("sacrebleu", sacrebleu.__version__, "scikit-learn", sklearn.__version__, "jiwer ok")
           '
+      - name: Test that a socket fails with no network
+        if: matrix.image == 'vectors'
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp "$ID" python -c '
+          import socket
+          try:
+              socket.create_connection(("1.1.1.1", 53), timeout=5)
+          except OSError as e:
+              print("no network:", e)
+          else:
+              raise SystemExit("a socket opened with --network none")
+          '
       - name: Test that a socket fails in the sandbox
+        if: matrix.image != 'vectors'
         env:
           AIK_TEST_PYTHON_IMAGE: ${{ env.ID }}
         run: go test ./lang -run TestSandboxNoNetwork -v
