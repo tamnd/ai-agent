@@ -60,6 +60,7 @@ func init() {
 		{"lean", "build the Lean package and check its axioms and proof steps: lean build, lean steps", cmdLean},
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
 		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
+		{"fixtures", "run fixtures/make.py of the shared fixtures twice and write the files whose arrays changed: fixtures make [-check]", cmdFixtures},
 		{"flopcount", "count the multiply-adds of the NumPy forward of each architecture and check them against the FLOP formula of shapes.yaml (08.6)", cmdFlopcount},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
 		{"universe", "join the inventories into the universe register: universe merge", cmdUniverse},
@@ -103,6 +104,9 @@ func usage(w io.Writer) {
 	fmt.Fprintf(w, "\nPlanned, not built yet: %s.\n\nRun \"aik <command> -h\" for the flags of a command.\n", strings.Join(later, ", "))
 }
 
+// errPlanned means that a subcommand is planned and not built yet; main exits with 3.
+var errPlanned = errors.New("planned")
+
 // errFindings means that a check ran and found problems. main exits with 1 and prints nothing more.
 var errFindings = errors.New("findings")
 
@@ -138,6 +142,8 @@ func run(args []string) int {
 			return 0
 		case errors.Is(err, errFindings):
 			return 1
+		case errors.Is(err, errPlanned):
+			return 3
 		case errors.Is(err, flag.ErrHelp):
 			return 0
 		}

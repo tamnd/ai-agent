@@ -16,3 +16,16 @@ func TestFlopcountAndMutate(t *testing.T) {
 		t.Errorf("mutate with -kind exits %d", got)
 	}
 }
+
+func TestFixturesCommand(t *testing.T) {
+	// The runs of make.py are tested in lang; the test corpus has no fixtures/make.py.
+	if got := run([]string{"fixtures", "make", "-root", corpus, "-unsafe-local"}); got != 0 {
+		t.Errorf("fixtures make with no make.py exits %d", got)
+	}
+	if got := run([]string{"fixtures", "sample"}); got != 3 {
+		t.Errorf("fixtures sample, which is planned, exits %d", got)
+	}
+	if got := run([]string{"fixtures"}); got != 2 {
+		t.Errorf("fixtures with no subcommand exits %d", got)
+	}
+}
