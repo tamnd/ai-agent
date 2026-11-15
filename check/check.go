@@ -99,6 +99,7 @@ var Rules = map[string]string{
 	"X14": "a reference version has at most 200 lines",
 	"M04": "the task contract is sound: a custom checker has valid and invalid checker cases, edge.jsonl covers each edge class, each generator uses only its rng, a flaky case names its open issue, the oracles agree, and a person reviewed the contract of each core problem",
 	"X09": "an architecture has shapes.yaml; every name of its formulas is defined, the sizes are whole numbers, the parts of each block add up to it, each eq names an anchor, and fixtures/shapes.json is current",
+	"X15": "the fixtures of a node have at most 1 MB, and manifest.yaml has the sha256 of each .npz file; aik fixtures make -check runs make.py to see that they are deterministic and current",
 	"X20": "each {shape:...} of the prose names a formula of shapes.yaml and a config of it",
 	"X10": "mutants.ignore of an implementation lists at most 5% of its mutants, each with a reason, and each entry names a mutant of the sample",
 	"F01": "each Lean name in the front matter exists in decls.jsonl with the expected kind, and each time claim of a node with lean.cost has a class lemma of the same class",
@@ -198,6 +199,7 @@ func Run(c *node.Corpus, opt Options) []Finding {
 		r.pseudo(n)
 		r.impls(n)
 		r.shapes(n)
+		r.fixtures(n)
 		r.links(n)
 		r.neighbourLinks(n)
 		r.contracts(n)

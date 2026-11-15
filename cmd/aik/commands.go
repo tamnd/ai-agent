@@ -431,6 +431,32 @@ func cmdStatus(args []string) error {
 	return nil
 }
 
+// codeRunner is the runner of the code of the repository: in the sandbox of the runner images, or on this machine
+// with -unsafe-local or in CI.
+func codeRunner(root, sandbox, images string, unsafe, keep bool) (*lang.Runner, error) {
+	box, err := openSandbox(sandbox, under(root, images), unsafe)
+	if err != nil {
+		return nil, err
+	}
+	if box == nil && !unsafe && os.Getenv("CI") != "true" {
+		return nil, usageError{"the tests run code from the repository; use the sandbox or CI, or give -unsafe-local"}
+	}
+	r := &lang.Runner{Keep: keep, Box: box, Log: func(format string, a ...any) { fmt.Fprintf(os.Stderr, format+"\n", a...) }}
+	if box != nil {
+		// The engine mounts the build trees at their own paths, so they must be in a directory that it can see. The system temporary directory of macOS is not.
+		abs, err := filepath.Abs(filepath.Join(root, "build", "sandbox"))
+		if err != nil {
+			return nil, err
+		}
+		r.TempDir = abs
+		if err := os.MkdirAll(r.TempDir, 0o755); err != nil {
+			return nil, err
+		}
+		fmt.Fprintf(os.Stderr, "the code runs in %s containers with the images of %s\n", box.Engine, images)
+	}
+	return r, nil
+}
+
 // cmdTest runs the native tests of the implementations and writes build/results/<lang>.json.
 func cmdTest(args []string) error {
 	f := newFlags("test", "[flags] [slug ...]")
@@ -466,13 +492,11 @@ func cmdTest(args []string) error {
 	if err != nil {
 		return err
 	}
-	box, err := openSandbox(*sandbox, under(c.Root, *images), *unsafe)
+	r, err := codeRunner(c.Root, *sandbox, *images, *unsafe, *keep)
 	if err != nil {
 		return err
 	}
-	if box == nil && !*unsafe && os.Getenv("CI") != "true" {
-		return usageError{"the tests run code from the repository; use the sandbox or CI, or give -unsafe-local"}
-	}
+	box := r.Box
 	nodes, err := selectNodes(c, f.Args())
 	if err != nil {
 		return err
@@ -480,19 +504,6 @@ func cmdTest(args []string) error {
 	want, err := langSet(*only)
 	if err != nil {
 		return err
-	}
-	r := &lang.Runner{Keep: *keep, Box: box, Log: func(format string, a ...any) { fmt.Fprintf(os.Stderr, format+"\n", a...) }}
-	if box != nil {
-		// The engine mounts the build trees at their own paths, so they must be in a directory that it can see. The system temporary directory of macOS is not.
-		abs, err := filepath.Abs(filepath.Join(c.Root, "build", "sandbox"))
-		if err != nil {
-			return err
-		}
-		r.TempDir = abs
-		if err := os.MkdirAll(r.TempDir, 0o755); err != nil {
-			return err
-		}
-		fmt.Fprintf(os.Stderr, "the tests run in %s containers with the images of %s\n", box.Engine, *images)
 	}
 	problems := contractsOf(c)
 	var tc *testCache

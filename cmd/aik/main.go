@@ -56,9 +56,12 @@ func init() {
 		{"review", "write the template of a review record, or check one: review <slug> <part> -reviewer github:<login> | -check", cmdReview},
 		{"gen", "write the build tree of each language to build/lang", cmdGen},
 		{"test", "run the native tests and the shared cases", cmdTest},
+		{"mutate", "the mutation test of 08.8 on the tests of each implementation: aik test -kind mutate", cmdMutate},
 		{"lean", "build the Lean package and check its axioms and proof steps: lean build, lean steps", cmdLean},
 		{"exp", "list and run the experiments: exp list | run", cmdExp},
 		{"shapes", "write the shape fixtures of an architecture and show its counts: shapes sample | show", cmdShapes},
+		{"fixtures", "run fixtures/make.py of the shared fixtures twice and write the files whose arrays changed: fixtures make [-check]", cmdFixtures},
+		{"flopcount", "count the multiply-adds of the NumPy forward of each architecture and check them against the FLOP formula of shapes.yaml (08.6)", cmdFlopcount},
 		{"harvest", "fetch the sources of 13 into inventories: harvest <source>... | -all | sources", cmdHarvest},
 		{"universe", "join the inventories into the universe register: universe merge", cmdUniverse},
 		{"ingest", "make the result cards of 10.6 from the result rows of the inventories: ingest results", cmdIngest},
@@ -101,6 +104,9 @@ func usage(w io.Writer) {
 	fmt.Fprintf(w, "\nPlanned, not built yet: %s.\n\nRun \"aik <command> -h\" for the flags of a command.\n", strings.Join(later, ", "))
 }
 
+// errPlanned means that a subcommand is planned and not built yet; main exits with 3.
+var errPlanned = errors.New("planned")
+
 // errFindings means that a check ran and found problems. main exits with 1 and prints nothing more.
 var errFindings = errors.New("findings")
 
@@ -136,6 +142,8 @@ func run(args []string) int {
 			return 0
 		case errors.Is(err, errFindings):
 			return 1
+		case errors.Is(err, errPlanned):
+			return 3
 		case errors.Is(err, flag.ErrHelp):
 			return 0
 		}
