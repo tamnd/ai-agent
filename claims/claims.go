@@ -90,6 +90,12 @@ func Allows(typ, role string) bool {
 // Labelled tells if a claim of the type can have a label about its content. Definitional claims have none. Attributive, normative-reported and forecast claims are labelled only as statements.
 func Labelled(typ string) bool { return typ != Definitional }
 
+// ProvedWithoutSource tells if a claim with no source is grounded by its proof: a mathematical claim with a derivation
+// or a Lean proof, as rule G02 allows.
+func ProvedWithoutSource(c *Claim) bool {
+	return len(c.Evidence) == 0 && c.Type == Mathematical && (c.Derivation != "" || c.Lean != "")
+}
+
 // Evidence is one source of a claim.
 type Evidence struct {
 	Work    string `yaml:"work" json:"work"`

@@ -3,12 +3,14 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/tamnd/ai-agent/cite"
 	"github.com/tamnd/ai-agent/claims"
+	"github.com/tamnd/ai-agent/node"
 )
 
 func TestCiteVerdict(t *testing.T) {
@@ -73,5 +75,21 @@ func TestCiteCarry(t *testing.T) {
 	ck.docs["h"] = d
 	if !ck.carry(old, r, cl) {
 		t.Errorf("the verdict of the same passage is not carried")
+	}
+}
+
+// A mathematical claim with no source passes the citation check on its derivation or Lean proof, as at G1 (rule G02);
+// a mathematical claim with neither, and an empirical claim with no source, do not.
+func TestCiteProvedWithoutSource(t *testing.T) {
+	n := &node.Node{Slug: "s", Tag: "T", Claims: []claims.Claim{
+		{ID: "c-derived", Type: claims.Mathematical, Derivation: "derivations/d.md"},
+		{ID: "c-lean", Type: claims.Mathematical, Lean: "AI.S.thm"},
+		{ID: "c-bare", Type: claims.Mathematical},
+		{ID: "c-emp", Type: claims.Empirical, Derivation: "derivations/d.md"},
+		{ID: "c-def", Type: claims.Definitional},
+	}}
+	ck := &citer{ix: &cite.Index{}, docs: map[string]*cite.Doc{}}
+	if _, ungrounded := ck.node(context.Background(), n); ungrounded != 2 {
+		t.Errorf("%d claims are ungrounded, want 2 (c-bare and c-emp)", ungrounded)
 	}
 }
