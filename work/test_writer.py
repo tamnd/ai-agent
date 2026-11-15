@@ -103,5 +103,47 @@ class RunRecordTest(unittest.TestCase):
         self.assertIn("-run", calls[0])
 
 
+
+class BudgetTest(unittest.TestCase):
+    """The caps of 14.8: by kind, the override, the batch, and the estimate of a call with tokens and no cost."""
+
+    def test_caps(self):
+        b = writer.Budget()
+        self.assertEqual(b.cap({"kind": "method"}), 3.0)
+        self.assertEqual(b.cap({"kind": "theorem"}), 8.0)
+        self.assertEqual(b.cap({"kind": "model", "promoted": True}), 1.0)
+        self.assertEqual(writer.Budget(item=5).cap({"kind": "theorem"}), 5)
+
+    def test_estimate(self):
+        b = writer.Budget(prices={"gpt-6-luna": {"in": 2.0, "out": 8.0}})
+        self.assertAlmostEqual(b.cost({"model": "gpt-6-luna", "cost": None, "tokens_in": 1_000_000, "tokens_out": 500_000}), 6.0)
+        self.assertEqual(b.cost({"model": "m", "cost": 0.5}), 0.5)
+        self.assertIsNone(b.cost({"model": "other", "cost": None, "tokens_in": 10}))
+        b.add({"model": "other", "cost": None})
+        b.add({"model": "m", "cost": 0.25})
+        self.assertEqual((b.spent, b.unpriced), (0.25, 1))
+
+    def test_item_over(self):
+        b = writer.Budget()
+        st = {"history": [{"model": "m", "cost": 2.0}, {"model": "m", "cost": 1.5}]}
+        with self.assertRaises(writer.OverBudget):
+            b.check({"kind": "method"}, st)
+        b.check({"kind": "theorem"}, st)
+
+    def test_batch_over(self):
+        b = writer.Budget(batch=1.0)
+        b.add({"model": "m", "cost": 1.2})
+        self.assertTrue(b.over())
+        with self.assertRaises(writer.OverBudget):
+            b.check({"kind": "theorem"}, {"history": []})
+
+    def test_over_budget_blocks(self):
+        st, saved = {"slug": "q", "status": "todo", "history": [{"model": "m", "cost": 9.0}]}, []
+        with mock.patch.object(writer, "state", lambda slug: st), mock.patch.object(writer, "save", saved.append), \
+                mock.patch.object(writer, "log", lambda ev: None), mock.patch.object(writer, "BUDGET", writer.Budget()):
+            self.assertEqual(writer.process({"slug": "q", "kind": "method"}, []), "blocked")
+        self.assertTrue(st["blocked"].startswith("budget:"))
+
+
 if __name__ == "__main__":
     unittest.main()
