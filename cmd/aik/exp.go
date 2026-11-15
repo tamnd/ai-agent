@@ -28,7 +28,7 @@ import (
 // cmdExp runs the experiments of spec 09.
 func cmdExp(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik exp list, plan, run or power"}
+		return usageError{"use aik exp list, plan, run, power or verify"}
 	}
 	switch args[0] {
 	case "list":
@@ -39,8 +39,10 @@ func cmdExp(args []string) error {
 		return cmdExpPower(args[1:])
 	case "plan":
 		return cmdExpPlan(args[1:])
+	case "verify":
+		return cmdExpVerify(args[1:])
 	}
-	return usageError{"use aik exp list, plan, run or power, not aik exp " + args[0]}
+	return usageError{"use aik exp list, plan, run, power or verify, not aik exp " + args[0]}
 }
 
 type expRef struct {
@@ -582,4 +584,70 @@ func printPlanItem(it exp.PlanItem) {
 		approval = "; a person approves it first"
 	}
 	fmt.Printf("  %s %s: %.1f GPU-hours (%s), $%.2f; %s%s\n", it.Class, it.Experiment, it.Hours, it.Estimate, it.USD, it.Why, approval)
+}
+
+func cmdExpVerify(args []string) error {
+	f := newFlags("exp verify", "[flags] [slug | slug/experiment ...]")
+	root := f.String("root", ".", "the root of the content repository")
+	outputs := f.String("outputs", "", "the directory of the recorded run of one experiment (arm/seed/metrics.json), such as a copy from ai-runs; without it, the run under build/exp when its run id is the recorded one")
+	strict := f.Bool("strict", false, "fail also on results.json whose inputs changed since the run")
+	asJSON := f.Bool("json", false, "print the verification of each experiment as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	refs, err := selectExps(c, f.Args())
+	if err != nil {
+		return err
+	}
+	if *outputs != "" && len(refs) != 1 {
+		return usageError{"-outputs is the run of one experiment: name it as slug/experiment"}
+	}
+	var out []exp.Verification
+	failed := false
+	for _, r := range refs {
+		if r.e.Results == nil && len(f.Args()) == 0 {
+			continue // an experiment that never ran has nothing to verify; aik exp list shows it
+		}
+		dir := *outputs
+		if dir == "" && r.e.Results != nil {
+			work := expWork(c, r)
+			if last, err := exp.ReadResults(filepath.Join(work, exp.ResultsFile)); err == nil && last.Run == r.e.Results.Run {
+				dir = work
+			}
+		}
+		v := exp.Verify(r.n.Slug+"/"+r.e.Slug, r.e, dir)
+		failed = failed || !v.OK(*strict)
+		out = append(out, v)
+	}
+	if *asJSON {
+		if err := printJSON(out); err != nil {
+			return err
+		}
+	} else {
+		for _, v := range out {
+			state := "ok"
+			switch {
+			case len(v.Problems) > 0:
+				state = fmt.Sprintf("%d %s", len(v.Problems), plural(len(v.Problems), "problem", "problems"))
+			case v.Stale != "":
+				state = "stale: " + v.Stale + "; the experiment is at R1 until it runs again"
+			}
+			where := "the outputs of the run are not here, so its values are checked against themselves"
+			if v.Outputs != "" {
+				where = "checked against the outputs in " + v.Outputs
+			}
+			fmt.Printf("%s %s: %s (%s)\n", v.Experiment, v.Run, state, where)
+			for _, p := range v.Problems {
+				fmt.Printf("  %s\n", p)
+			}
+		}
+	}
+	if failed {
+		return errFindings
+	}
+	return nil
 }
