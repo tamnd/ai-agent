@@ -8,6 +8,11 @@ Usage:
 Options:
   --writers codex:gpt-6-luna,claude:claude-haiku-5-5      # override the ladder of registers/models.yaml
 State: state/<slug>.json. Logs: logs/events.jsonl, logs/runs/<slug>/*.txt. Provenance: prov/<tag>.jsonl in the content checkout.
+Budgets (spec 14.8): an item stops with the status blocked and the reason budget when its cost passes the cap of its
+kind ($3, $8 for theorems, arguments, open problems and policies, $1 for a promoted card; --item-cap overrides it), and
+--budget USD stops the batch when the cost of its calls passes it. A call that reports no cost (codex gives only its
+tokens) counts by the prices of --prices, a YAML file of models: {<id>: {in, out}} in USD per million tokens, as aik
+report cost reads it; with no price it counts as 0, and the run record says how many calls were unpriced.
 Each batch writes its run record prov/runs/<run-id>.yaml in the content checkout (spec 14.7): the items with their final
 status, the tokens and cost by model, and the gate and audit pass rates by kind of `aik report rates`.
 
@@ -41,6 +46,8 @@ VERSION = os.environ.get("AI_PROMPT_VERSION", "v1")
 RUN_ID = os.environ.get("AI_RUN_ID") or time.strftime("w-%Y%m%d-%H%M%S-") + str(os.getpid())
 STUB_MARKERS = ["Write one sentence that says what this is"]
 WRITE_ROLES = ("write", "fix-gate", "fix-audit", "fix-minor")
+CAP_HIGH = ("theorem", "argument", "open-problem", "policy")
+CAPS = {"default": 3.0, "high": 8.0, "promoted": 1.0}
 _gate_lock = threading.Semaphore(3)  # aik gate runs the framework tests and the cpu-small experiments
 
 
@@ -320,17 +327,80 @@ def record(item, role, i, prompt, r):
         f"PROMPT\n{prompt}\n\nREPLY\n{r.get('text', '')}\n\nERR\n{r.get('err', '')}", encoding="utf-8")
 
 
+class OverBudget(Exception):
+    """The item or the batch passed its budget (spec 14.8)."""
+
+
+class Budget:
+    """The caps of 14.8 and the cost of this batch, shared by the threads."""
+
+    def __init__(self, batch=0.0, item=0.0, prices=None):
+        self.batch, self.item, self.prices = batch, item, prices or {}
+        self.spent, self.unpriced = 0.0, 0
+        self.lock = threading.Lock()
+
+    def cap(self, item):
+        if self.item > 0:
+            return self.item
+        if item.get("promoted"):
+            return CAPS["promoted"]
+        return CAPS["high"] if item["kind"] in CAP_HIGH else CAPS["default"]
+
+    def cost(self, h):
+        """The cost of one call of the history: its cost, or the estimate of its tokens; None when it has neither."""
+        if h.get("cost") is not None:
+            return h["cost"]
+        pr = self.prices.get(h.get("model") or "")
+        if pr and (h.get("tokens_in") is not None or h.get("tokens_out") is not None):
+            return ((h.get("tokens_in") or 0) * pr.get("in", 0) + (h.get("tokens_out") or 0) * pr.get("out", 0)) / 1e6
+        return None
+
+    def item_cost(self, st):
+        return sum(self.cost(h) or 0 for h in st.get("history", []))
+
+    def check(self, item, st):
+        """Raise OverBudget when the item or the batch passed its cap."""
+        c, cap = self.item_cost(st), self.cap(item)
+        if c > cap:
+            raise OverBudget(f"budget: the item cost ${c:.2f}, past the cap of ${cap:.2f} of its kind (14.8)")
+        if self.batch > 0 and self.spent > self.batch:
+            raise OverBudget(f"budget: the batch spent ${self.spent:.2f}, past --budget ${self.batch:.2f} (14.8)")
+
+    def add(self, h):
+        c = self.cost(h)
+        with self.lock:
+            self.spent += c or 0
+            if c is None:
+                self.unpriced += 1
+
+    def over(self):
+        return self.batch > 0 and self.spent > self.batch
+
+
+BUDGET = Budget()
+
+
+def load_prices(path):
+    """The prices file of aik report cost: models: {<id>: {in, out}} in USD per million tokens."""
+    if not path:
+        return {}
+    data = need_yaml().safe_load(open(path, encoding="utf-8")) or {}
+    return {k: v for k, v in (data.get("models") or {}).items() if isinstance(v, dict)}
+
+
 def call(item, st, role, backend, model, prompt, write=True):
     r = run_model(prompt, backend, model, job="write", slug=item["slug"], role=role, write=write, timeout=2400, effort="medium")
     record(item, role, len(st["history"]), prompt, r)
     st["history"].append({"role": role, "backend": backend, "model": model, "ok": r["ok"], "secs": r.get("secs"),
                           "tokens_in": r.get("tokens_in"), "tokens_out": r.get("tokens_out"), "cost": r.get("cost"),
                           "limited": r.get("limited", False), "run": RUN_ID})
+    BUDGET.add(st["history"][-1])
     if role in WRITE_ROLES:
         notes = [ln.split(":", 1)[1].strip() for ln in r.get("text", "").splitlines() if ln.strip().lower().startswith("needs-source:")]
         if notes:
             st["needs_source"] = sorted(set(st.get("needs_source", [])) | set(notes))
     save(st)
+    BUDGET.check(item, st)
     return r
 
 
@@ -356,6 +426,8 @@ def process(item, ladder, max_rounds=6):
         return _process(item, ladder, max_rounds)
     except Wait as w:
         return block(state(item["slug"]), str(w))
+    except OverBudget as b:
+        return block(state(item["slug"]), str(b))
 
 
 def _process(item, ladder, max_rounds=6):
@@ -365,6 +437,7 @@ def _process(item, ladder, max_rounds=6):
     st = state(slug)
     if st["status"] == "done" or (st["status"] == "failed" and st.get("prompt") == VERSION):
         return st["status"]
+    BUDGET.check(item, st)  # an item blocked for its budget stays blocked until a person raises the cap
     st.update(status="writing", kind=item["kind"], prompt=VERSION, models_version=models().version)
     st.pop("blocked", None)
     save(st)
@@ -503,7 +576,11 @@ def write_run(items, results):
            "models_version": models().version, "harness": "ai-agent/work/writer.py",
            "items": [{"slug": it["slug"], "kind": it["kind"], "status": results.get(it["slug"], st.get("status"))}
                      for it, st in zip(items, sts)],
-           "models": run_totals(sts)}
+           "models": run_totals(sts), "spent": round(BUDGET.spent, 4)}
+    if BUDGET.unpriced:
+        rec["unpriced_calls"] = BUDGET.unpriced
+    if BUDGET.batch > 0:
+        rec["budget"] = BUDGET.batch
     rates = run_rates()
     if rates is not None:
         rec["rates"] = rates
@@ -535,7 +612,12 @@ def main():
     ap.add_argument("--limit", type=int, default=20)
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--writers", default="", help="a comma list of backend:model; the default is the ladder of models.yaml")
+    ap.add_argument("--budget", type=float, default=0, help="stop the batch when its calls cost more than this, in USD (14.8)")
+    ap.add_argument("--item-cap", type=float, default=0, help="the cap of each item in USD; the default is the cap of its kind (14.8)")
+    ap.add_argument("--prices", default=os.environ.get("AI_PRICES", ""), help="a YAML file of prices, models: {<id>: {in, out}}, for the calls that report no cost")
     args = ap.parse_args()
+    global BUDGET
+    BUDGET = Budget(args.budget, args.item_cap, load_prices(args.prices))
     if not args.slugs and not args.queue:
         ap.error("give --slugs or --queue")
     need_aik("gate", "14.6")
@@ -549,6 +631,10 @@ def main():
     results = {}
 
     def one(it):
+        if BUDGET.over():
+            print(f"{it['slug']}: not started, the batch passed --budget", flush=True)
+            results[it["slug"]] = "not started"
+            return "not started"
         ladder = override or models().ladder(hard=it["kind"] in HARD)
         try:
             res = process(it, ladder)
