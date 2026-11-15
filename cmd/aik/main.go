@@ -37,7 +37,6 @@ type command struct {
 // planned are the commands of spec 18.3 that are not built yet, with the milestone that builds them.
 var planned = map[string]string{
 	"bench": "M2",
-	"agent": "M1",
 }
 
 var commands []command
@@ -83,6 +82,7 @@ func init() {
 		{"quarantine", "hide a node or some of its files from the site at the next build, or clear it: quarantine -by <login> -why <reason> [-file <path>] <slug> | -clear | -list", cmdQuarantine},
 		{"mcp", "serve the content tree to agents over MCP (16.10), on stdio or with -http on an address", cmdMCP},
 		{"search", "run the evaluation set of 17.10 on the built index with the ranking of the browser: search eval", cmdSearch},
+		{"agent", "what the agents of 14 run on: agent models checks the register of models and the auditor of each rung; agent prompts | runs", cmdAgent},
 		{"report", "report cost sums the metered model calls of the agent runs; report quality computes the metrics of 15.9; report levels, tests and experiments give the ladder counts and the test and experiment matrices; report rates gives the gate and audit pass rates by kind", cmdReport},
 		{"sample", "draw the weekly sample of 15.6 from the pages that changed in an ISO week: sample -week 2027-W14", cmdSample},
 		{"release", "freeze a monthly release: release cut <YYYY.MM>", cmdRelease},
