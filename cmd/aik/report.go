@@ -7,22 +7,87 @@ import (
 	"os"
 
 	"github.com/tamnd/ai-agent/cost"
+	"github.com/tamnd/ai-agent/quality"
 )
 
-// cmdReport prints the reports of 20.4: the cost report of 14.8 and the quality report of 15.9.
+// cmdReport prints the reports of 20.4: the cost report of 14.8, the quality report of 15.9 and the gate and audit
+// pass rates by kind of 14.7 and 21.3.
 func cmdReport(args []string) error {
 	if len(args) == 0 {
-		return usageError{"use aik report cost or aik report quality"}
+		return usageError{"use aik report cost, aik report quality or aik report rates"}
 	}
 	switch args[0] {
 	case "cost":
 		return reportCost(args[1:])
 	case "quality":
 		return reportQuality(args[1:])
+	case "rates":
+		return reportRates(args[1:])
 	case "levels", "tests", "experiments":
 		return fmt.Errorf("aik report %s is not built yet; aik coverage and aik status give the levels", args[0])
 	}
-	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost or aik report quality", args[0])}
+	return usageError{fmt.Sprintf("aik report has no report %q; use aik report cost, aik report quality or aik report rates", args[0])}
+}
+
+// reportRates prints the gate pass rate on the first try, the audit pass rate on the first try and the done rate of
+// the items of the writer by kind (21.3, M1), from its state files. With -run, the rates of one batch, which the
+// writer puts in its run record (14.7).
+func reportRates(args []string) error {
+	f := newFlags("report rates", "[flags]")
+	root := f.String("root", ".", "the root of the content repository, for the kinds of the items")
+	state := f.String("state", "work/state", "the state files of the writer (14.7); a relative path is under -root")
+	run := f.String("run", "", "count only the gates and audits of this run of the writer")
+	asJSON := f.Bool("json", false, "print the rates as JSON")
+	if err := parse(f, args); err != nil {
+		return err
+	}
+	if f.NArg() > 0 {
+		return usageError{"aik report rates takes no arguments"}
+	}
+	c, err := load(*root)
+	if err != nil {
+		return err
+	}
+	kinds := map[string]string{}
+	for _, n := range c.Nodes {
+		if n.Slug != "" && kinds[n.Slug] == "" {
+			kinds[n.Slug] = n.Kind
+		}
+	}
+	items, err := quality.LoadItems(under(*root, *state))
+	if err != nil {
+		return err
+	}
+	r := quality.ComputeRates(items, kinds, *run)
+	if *asJSON {
+		return printJSON(r)
+	}
+	printRates(r)
+	return nil
+}
+
+func printRates(r quality.Rates) {
+	if r.Total.Items == 0 {
+		if r.Run != "" {
+			fmt.Printf("no item was gated or audited in run %s\n", r.Run)
+		} else {
+			fmt.Println("no item of the writer yet")
+		}
+		return
+	}
+	pct := func(x quality.Rate) string {
+		if x.Of == 0 {
+			return "-"
+		}
+		return fmt.Sprintf("%.0f%% (%d/%d)", 100*x.Share(), x.Pass, x.Of)
+	}
+	if r.Run != "" {
+		fmt.Printf("run %s\n", r.Run)
+	}
+	fmt.Printf("%-14s %6s  %-16s %-16s %-16s\n", "kind", "items", "gate first try", "audit first try", "done")
+	for _, k := range append(r.Kinds, r.Total) {
+		fmt.Printf("%-14s %6d  %-16s %-16s %-16s\n", k.Kind, k.Items, pct(k.GateFirst), pct(k.AuditPass), pct(k.Done))
+	}
 }
 
 // reportCost sums the model calls of the agent runs by milestone, role, model and item (14.8).

@@ -8,6 +8,8 @@ Usage:
 Options:
   --writers codex:gpt-6-luna,claude:claude-haiku-5-5      # override the ladder of registers/models.yaml
 State: state/<slug>.json. Logs: logs/events.jsonl, logs/runs/<slug>/*.txt. Provenance: prov/<tag>.jsonl in the content checkout.
+Each batch writes its run record prov/runs/<run-id>.yaml in the content checkout (spec 14.7): the items with their final
+status, the tokens and cost by model, and the gate and audit pass rates by kind of `aik report rates`.
 
 The ladder is writer_ladder of models.yaml, or writer_ladder_hard for the hard kinds of kinds.py.
 The auditor is never of the family of a writer of the node. When no such auditor is available, the item waits with the status blocked (spec 14.4, Q-08).
@@ -25,8 +27,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from kinds import CARD_ONLY, HARD, gold_paths, sections_for
-from lib import (LOG, REPO, SPEC, WORK, Wait, aik, available, extract_json, front_matter, log, models, need_aik,
-                 need_yaml, run_model, split_ref)
+from lib import (LOG, REPO, SPEC, WORK, Wait, aik, aik_has, available, extract_json, front_matter, log, models,
+                 need_aik, need_yaml, run_model, split_ref)
 
 STATE = WORK / "state"
 RUNS = LOG / "runs"
@@ -332,6 +334,14 @@ def call(item, st, role, backend, model, prompt, write=True):
     return r
 
 
+def gated(item, st, final=False):
+    """The gate, with its outcome kept in the state, for the first-try gate pass rate of 21.3 (aik report rates)."""
+    probs = gate(item, final)
+    st.setdefault("gates", []).append({"ok": not probs, "n": len(probs), "run": RUN_ID, **({"final": True} if final else {})})
+    save(st)
+    return probs
+
+
 def block(st, why):
     st["status"] = "blocked"
     st["blocked"] = why
@@ -355,7 +365,7 @@ def _process(item, ladder, max_rounds=6):
     st = state(slug)
     if st["status"] == "done" or (st["status"] == "failed" and st.get("prompt") == VERSION):
         return st["status"]
-    st.update(status="writing", prompt=VERSION, models_version=models().version)
+    st.update(status="writing", kind=item["kind"], prompt=VERSION, models_version=models().version)
     st.pop("blocked", None)
     save(st)
     wfile = RUNS / slug / "writer-prompt.md"
@@ -376,7 +386,7 @@ def _process(item, ladder, max_rounds=6):
             call(item, st, "write", backend, model, wprompt)
     audits, gate_fails = 0, 0
     for _ in range(max_rounds + 4):
-        probs = gate(item)
+        probs = gated(item, st)
         if probs:
             st["last_gate"] = probs
             save(st)
@@ -410,9 +420,9 @@ def _process(item, ladder, max_rounds=6):
             minor = v.get("issues", [])
             if minor:  # one cheap round for minor issues, then the gate again
                 call(item, st, "fix-minor", backend, model, fix_prompt(item, fmt_issues(minor), wfile))
-                if gate(item):
+                if gated(item, st):
                     continue
-            cite = [p for p in gate(item, final=True) if "aik cite" in p]
+            cite = [p for p in gated(item, st, final=True) if "aik cite" in p]
             if cite:
                 st["last_gate"] = cite
                 save(st)
@@ -454,6 +464,55 @@ def write_prov(item, st):
         fh.write("\n".join(lines) + "\n")
 
 
+def run_totals(sts):
+    """The calls of this run in the states, summed by model: calls, tokens in and out, and cost in USD."""
+    by = {}
+    for st in sts:
+        for h in st.get("history", []):
+            if h.get("run") != RUN_ID:
+                continue
+            m = by.setdefault(f"{h.get('backend')}:{h.get('model')}", {"calls": 0, "tokens_in": 0, "tokens_out": 0, "cost": 0.0})
+            m["calls"] += 1
+            m["tokens_in"] += h.get("tokens_in") or 0
+            m["tokens_out"] += h.get("tokens_out") or 0
+            m["cost"] += h.get("cost") or 0.0
+    for m in by.values():
+        m["cost"] = round(m["cost"], 4)
+    return dict(sorted(by.items()))
+
+
+def run_rates():
+    """The gate and audit pass rates of this run by kind, from aik report rates; None when aik lacks the command."""
+    if not aik_has("report rates"):
+        return None
+    rc, out = aik("report", "rates", "-root", str(REPO), "-state", str(STATE), "-run", RUN_ID, "-json")
+    if rc != 0:
+        log({"job": "write", "run": RUN_ID, "error": f"aik report rates: {out.strip()[:300]}"})
+        return None
+    try:
+        return json.loads(out)
+    except ValueError:
+        return None
+
+
+def write_run(items, results):
+    """The run record of 14.7 for one batch of the writer."""
+    yaml = need_yaml()
+    sts = [state(it["slug"]) for it in items]
+    rec = {"run": RUN_ID, "date": time.strftime("%Y-%m-%d"), "role": "writer", "prompt": f"writer/{VERSION}",
+           "models_version": models().version, "harness": "ai-agent/work/writer.py",
+           "items": [{"slug": it["slug"], "kind": it["kind"], "status": results.get(it["slug"], st.get("status"))}
+                     for it, st in zip(items, sts)],
+           "models": run_totals(sts)}
+    rates = run_rates()
+    if rates is not None:
+        rec["rates"] = rates
+    d = REPO / "prov" / "runs"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{RUN_ID}.yaml").write_text(yaml.safe_dump(rec, sort_keys=False, allow_unicode=True, width=120), encoding="utf-8")
+    print(f"run record prov/runs/{RUN_ID}.yaml")
+
+
 def queue(all_items, limit):
     """Core first, then by level, then the kinds that others link to first (spec 14.5). aik queue replaces this in M1."""
     order = {"intro": 0, "core": 1, "advanced": 2, "research": 3}
@@ -487,6 +546,7 @@ def main():
         raise SystemExit(f"not in the catalog or the content checkout: {', '.join(missing)}")
     items = [all_items[s] for s in args.slugs] if args.slugs else queue(all_items, args.limit)
     override = [x for x in args.writers.split(",") if x]
+    results = {}
 
     def one(it):
         ladder = override or models().ladder(hard=it["kind"] in HARD)
@@ -498,10 +558,14 @@ def main():
             res = f"error: {e}"
             log({"job": "write", "slug": it["slug"], "error": str(e)})
         print(f"{it['slug']}: {res}", flush=True)
+        results[it["slug"]] = res
         return res
 
     with ThreadPoolExecutor(args.jobs) as pool:
         list(pool.map(one, items))
+    ran = [it for it in items if results.get(it["slug"]) != "card-only"]
+    if ran:
+        write_run(ran, results)
 
 
 if __name__ == "__main__":
