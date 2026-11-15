@@ -189,7 +189,7 @@ func (ck *citer) one(ctx context.Context, cl *claims.Claim, e claims.Evidence) (
 	if why != "" {
 		return cite.Record{}, why
 	}
-	r := cite.Check(cl, e, d, snap, w.Authors...)
+	r := cite.CheckWork(cl, e, d, snap, w)
 	r.Checked = time.Now().UTC().Format("2006-01-02")
 	return r, ""
 }
@@ -219,6 +219,9 @@ func (ck *citer) work(slug string) (cite.Work, string) {
 	}
 	if raw, ok := cd.Fields["authors"]; ok {
 		_ = json.Unmarshal(raw, &w.Authors)
+	}
+	if raw, ok := cd.Fields["year"]; ok {
+		_ = json.Unmarshal(raw, &w.Year)
 	}
 	if w.URL == "" || w.Format == "none" {
 		return w, "the work has no open full text, so the claim needs a reviewer's attestation or another source (7.5)"

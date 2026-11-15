@@ -457,3 +457,47 @@ func TestParseContents(t *testing.T) {
 		t.Errorf("the first heading is in the table of contents, at %d", d.Heads[0].Start)
 	}
 }
+
+// A claim may cite the work by its authors and year; the year is on the title page, not in the passage. The year of
+// another work, or a year given without the authors, is still a number that the located place must hold.
+func TestCheckWorkOwnYear(t *testing.T) {
+	d := Parse(paper)
+	snap := Snapshot{Work: "w", Hash: "abc", Extractor: "x+" + ExtractorVersion}
+	w := Work{Slug: "w", Authors: []string{"Nitish Srivastava", "Geoffrey Hinton"}, Year: 2014}
+	for _, tc := range []struct {
+		text string
+		pass bool
+	}{
+		{"Srivastava et al. (2014) report that the MNIST error falls from 1.6% to 1.25%.", true},
+		{"The MNIST error falls from 1.6% to 1.25% (Srivastava et al., 2014).", true},
+		{"Srivastava and Hinton (2014a) report that the MNIST error falls from 1.6% to 1.25%.", true},
+		{"Srivastava et al. (2014) report that the MNIST error falls from 1.6% to 1.20%.", false},
+		{"Srivastava et al. (2013) report that the MNIST error falls from 1.6% to 1.25%.", false},
+		{"In 2014 the MNIST error falls from 1.6% to 1.25%.", false},
+	} {
+		c := &claims.Claim{ID: "c", Text: tc.text}
+		r := CheckWork(c, claims.Evidence{Work: "w", Locator: "Section 3"}, d, snap, w)
+		if r.Pass != tc.pass {
+			t.Errorf("%q: pass = %v, want %v (%s)", tc.text, r.Pass, tc.pass, r.Why())
+		}
+		if !tc.pass && !strings.Contains(r.Why(), "the numbers") {
+			t.Errorf("%q fails for another reason than a number: %s", tc.text, r.Why())
+		}
+	}
+	for _, tc := range []struct{ in, want string }{
+		{"Hinton (2014) finds", "Hinton ( ) finds"},
+		{"Krizhevsky (2014) finds", "Krizhevsky (2014) finds"},
+		{"Srivastava et al., 2014b, find", "Srivastava et al.,  b, find"},
+		{"Srivastava (20145) finds", "Srivastava (20145) finds"},
+	} {
+		if got := ownYear(tc.in, w.Authors, w.Year); got != tc.want {
+			t.Errorf("ownYear(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+	// Without the year of the card, CheckWork is Check.
+	c := &claims.Claim{ID: "c", Text: "Srivastava et al. (2014) report that the MNIST error falls from 1.6% to 1.25%."}
+	e := claims.Evidence{Work: "w", Locator: "Section 3"}
+	if a, b := CheckWork(c, e, d, snap, Work{Authors: w.Authors}), Check(c, e, d, snap, w.Authors...); a.Pass != b.Pass || a.Pass {
+		t.Errorf("with no year: CheckWork pass = %v, Check pass = %v, want both false", a.Pass, b.Pass)
+	}
+}

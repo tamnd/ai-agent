@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -39,6 +40,9 @@ type Work struct {
 	Licence string `json:"licence_class,omitempty"`
 	// Authors are the names of the authors, which a claim may name without the source holding them.
 	Authors []string `json:"authors,omitempty"`
+	// Year is the year of the work card, which a claim may give in a citation of the work without the located place
+	// holding it.
+	Year int `json:"year,omitempty"`
 }
 
 // Snapshot is a line of manifests/works.jsonl: the stored copy of the cited version of a work.
@@ -109,6 +113,42 @@ func Key(claim, snapshot, locator, extractor string) string {
 // Check runs the steps of 13.6 for one source of a claim against the text of its snapshot. The words of exempt, as
 // the names of the authors of the work, are not key terms.
 func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...string) Record {
+	return check(c, e, d, snap, c.Text, exempt)
+}
+
+// CheckWork is Check for a source whose work card is w. The names of its authors are not key terms, and the year of
+// the work in a citation of it, as "Hubinger et al. (2024)" or "(Guo et al., 2017)", is not a number that the located
+// place must hold: it is on the title page or in the venue, not in the passage. Any other number of the claim, and
+// the year of another work, is still checked. The rule takes numbers away and never adds one, so a record that
+// passed under Check passes here, and CheckerVersion stays.
+func CheckWork(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, w Work) Record {
+	return check(c, e, d, snap, ownYear(c.Text, w.Authors, w.Year), w.Authors)
+}
+
+// ownYear takes out of a claim the year of the cited work where the claim cites it by the surname of one of its
+// authors: "Shazeer (2017)", "Fedus, Zoph and Shazeer (2022)", "Hubinger et al. (2024)", "(Guo et al., 2017a)".
+func ownYear(claim string, authors []string, year int) string {
+	if year <= 0 {
+		return claim
+	}
+	var names []string
+	for _, a := range authors {
+		if f := strings.Fields(a); len(f) > 0 {
+			names = append(names, regexp.QuoteMeta(f[len(f)-1]))
+		}
+	}
+	if len(names) == 0 {
+		return claim
+	}
+	y := strconv.Itoa(year)
+	re, err := regexp.Compile(`\b(?:` + strings.Join(names, "|") + `)(?: et al\.?)?,? \(?` + y + `[a-z]?\b`)
+	if err != nil {
+		return claim
+	}
+	return re.ReplaceAllStringFunc(claim, func(m string) string { return strings.Replace(m, y, " ", 1) })
+}
+
+func check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, text string, exempt []string) Record {
 	r := Record{Claim: c.ID, Work: e.Work, Locator: e.Locator, Snapshot: snap.Hash, Key: Key(Judged(c), snap.Hash, e.Locator, snap.Extractor)}
 	refs, err := ParseLocator(e.Locator)
 	if err != nil {
@@ -127,7 +167,7 @@ func Check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, exempt ...
 		span.WriteByte('\n')
 	}
 	in := Numbers(span.String())
-	for _, n := range Numbers(ownIDs(c.Text, d)) {
+	for _, n := range Numbers(ownIDs(text, d)) {
 		r.Numbers++
 		if !Found(n, in) {
 			r.NumbersMiss = append(r.NumbersMiss, n.Text)
