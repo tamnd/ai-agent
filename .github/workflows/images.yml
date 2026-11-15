@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Builds the Python runner images of aik test (spec 08.7 and 08.9), tests them on the content repository, and pushes them to ghcr.io with build provenance. Only a push to main publishes.
 # tamnd/ai has only Python code: plain Python, NumPy, PyTorch and JAX. The other directories of images/ stay for a later framework of tier 2 or 3.
+# vectors is aik-vectors, the image of the official metric implementations that only aik vectors make uses (08.7.5).
 name: Images
 
 on:
@@ -24,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [python, numpy, pytorch, jax]
+        image: [python, numpy, pytorch, jax, vectors]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -34,7 +35,7 @@ jobs:
       attestations: write
     env:
       IMAGE: ${{ matrix.image }}
-      REF: ghcr.io/tamnd/aik-runner-${{ matrix.image }}
+      REF: ${{ matrix.image == 'vectors' && 'ghcr.io/tamnd/aik-vectors' || format('ghcr.io/tamnd/aik-runner-{0}', matrix.image) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -54,7 +55,7 @@ jobs:
       - name: Show the packages
         run: docker run --rm --network none "$ID" python -m pip list --format freeze
       - name: Import the framework with no network
-        if: matrix.image != 'python'
+        if: matrix.image != 'python' && matrix.image != 'vectors'
         run: |
           case "$IMAGE" in
             numpy) mod=numpy ;;
@@ -62,6 +63,17 @@ jobs:
             jax) mod=jax ;;
           esac
           docker run --rm --network none --read-only --tmpfs /tmp "$ID" python -c "import $mod, sys; print($mod.__name__, $mod.__version__, sys.version.split()[0])"
+      - name: Score with the official packages with no network
+        if: matrix.image == 'vectors'
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp "$ID" python -c '
+          import jiwer, sacrebleu, sklearn
+          from sklearn.metrics import f1_score
+          assert sacrebleu.corpus_bleu(["the cat sat on the mat"], [["the cat sat on the mat"]]).score == 100.0
+          assert f1_score([0, 1, 1], [0, 1, 0]) == 2 / 3
+          assert jiwer.wer("a b c", "a x c") == 1 / 3
+          print("sacrebleu", sacrebleu.__version__, "scikit-learn", sklearn.__version__, "jiwer ok")
+          '
       - name: Test that a socket fails in the sandbox
         env:
           AIK_TEST_PYTHON_IMAGE: ${{ env.ID }}
@@ -70,7 +82,11 @@ jobs:
         run: |
           go build -o "$RUNNER_TEMP/aik" ./cmd/aik
           echo "$IMAGE: $ID" > "$RUNNER_TEMP/images.yaml"
-          "$RUNNER_TEMP/aik" test -root content -sandbox docker -images "$RUNNER_TEMP/images.yaml" -lang "$IMAGE" -out "$RUNNER_TEMP/results"
+          if [ "$IMAGE" = vectors ]; then
+            "$RUNNER_TEMP/aik" vectors make -check -root content -sandbox docker -images "$RUNNER_TEMP/images.yaml"
+          else
+            "$RUNNER_TEMP/aik" test -root content -sandbox docker -images "$RUNNER_TEMP/images.yaml" -lang "$IMAGE" -out "$RUNNER_TEMP/results"
+          fi
       - name: Push the image
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
