@@ -412,3 +412,23 @@ func TestNature(t *testing.T) {
 		}
 	}
 }
+
+// Guo et al. 2017 on arXiv prints no page numbers, and its footnote marks 2 and 3 stand alone at the feet of its fifth
+// and sixth pages: they step by one with the pages, but p. 1 is the first page, not the fourth.
+func TestPrintedNumbersFootnotes(t *testing.T) {
+	pages := []string{
+		"On Calibration of Modern Neural Networks\n1. Introduction\nRecent advances in deep learning.\n",
+		"the text of the second page\nExpected Calibration Error approximates the expectation.\n",
+		"Varying Depth\nResNet - CIFAR-100\nthe text of the third page\n",
+		"NLL Overfitting on CIFAR-100\nthe text of the fourth page\nY = {0, 1}. For simplicity, throughout this subsection,\n",
+		"we assume the model outputs only the confidence for the\npositive class.\nthe text of the fifth page\nmore of it\n2\nBecause the validation dataset is finite, S is as well, and so on.\n",
+		"Dataset\nModel\nthe text of the sixth page\nmore of it\n3\nTo highlight the connection with prior works we define temperature scaling.\n",
+		"scores to determine if samples are out-of-distribution.\nthe text of the seventh page\n",
+	}
+	d := Parse(strings.Join(pages, "\f"))
+	for n := 1; n <= 7; n++ {
+		if got := d.printed(n); got != n-1 {
+			t.Errorf("p. %d is the page %d, want %d", n, got, n-1)
+		}
+	}
+}
