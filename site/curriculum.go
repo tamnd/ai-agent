@@ -4,6 +4,7 @@ package site
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -61,7 +62,7 @@ func (b *builder) curriculumPage(cw crosswalk.Crosswalk, p crosswalk.Path, secs 
 			}
 		}
 		units++
-		if len(s.Items) > 0 {
+		if slices.ContainsFunc(s.Items, func(it crosswalk.Item) bool { return crosswalk.Covered(b.c, it) }) {
 			covered++
 		}
 		if len(s.Items) == 0 {
@@ -73,8 +74,8 @@ func (b *builder) curriculumPage(cw crosswalk.Crosswalk, p crosswalk.Path, secs 
 		}
 		ps = append(ps, sec)
 	}
-	desc := fmt.Sprintf("The pages of the %s units of %s that the crosswalk maps, in the order of %s; %d of the units have a page.",
-		comma(units), cw.System, cw.System, covered)
+	desc := fmt.Sprintf("The %s units of %s, in their order, with the pages that the crosswalk maps to each; %d of the %s %s a page.",
+		comma(units), cw.System, covered, comma(units), plural(covered, "has", "have"))
 	page := b.pathPage(p.ID, p.Title, desc, ps)
 	var basis []string
 	if cw.Version != "" {
@@ -109,7 +110,9 @@ func (b *builder) itemSteps(it crosswalk.Item) []PathStep {
 		}
 	}
 	if len(ns) == 0 {
-		return []PathStep{{Link: b.link(it.Area[strings.LastIndex(it.Area, "/")+1:]), Key: "area:" + it.Area}}
+		l := b.link(it.Area[strings.LastIndex(it.Area, "/")+1:])
+		l.URL, l.Missing, l.Note = "", true, "No page of this area is written yet."
+		return []PathStep{{Link: l, Key: "area:" + it.Area}}
 	}
 	var out []PathStep
 	for _, n := range readingOrder(ns) {

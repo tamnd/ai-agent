@@ -140,6 +140,14 @@ func Resolve(c *node.Corpus, m Map) (Item, bool) {
 	return it, false
 }
 
+// Covered tells if an item is a page: a node, a card, or an area with at least one node in it.
+func Covered(c *node.Corpus, it Item) bool {
+	if it.Area != "" {
+		return len(c.InArea(it.Area)) > 0
+	}
+	return it.Node != nil || it.Key != ""
+}
+
 // Check gives the problems of the crosswalks against the corpus: a row with no id or name, an id twice, a parent that
 // is not a row before it, a map with an unknown match or a target that names nothing, and a path with no id or whose
 // under is not a row.
@@ -194,14 +202,15 @@ func Check(c *node.Corpus, cws []Crosswalk) []string {
 	return out
 }
 
-// Gap is a row that maps to no item and has no note: an outside id with no page, for 18.4.
+// Gap is a row that maps to no page and has no note: an outside id with no page, for 18.4. A row that maps only to
+// areas with no node in them is a gap too.
 type Gap struct {
 	Crosswalk string `json:"crosswalk"`
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 }
 
-// Gaps are the rows of the crosswalks with no map that resolves and no note, in order.
+// Gaps are the rows of the crosswalks with no covered item and no note, in order.
 func Gaps(c *node.Corpus, cws []Crosswalk) []Gap {
 	var out []Gap
 	for _, cw := range cws {
@@ -211,7 +220,7 @@ func Gaps(c *node.Corpus, cws []Crosswalk) []Gap {
 			}
 			found := false
 			for _, m := range r.Maps {
-				if _, ok := Resolve(c, m); ok {
+				if it, ok := Resolve(c, m); ok && Covered(c, it) {
 					found = true
 					break
 				}
