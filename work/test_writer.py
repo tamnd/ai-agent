@@ -39,10 +39,6 @@ class GateTest(unittest.TestCase):
         self.assertEqual(calls[0], ("gate", "-json", "-unsafe-local", "-no-exp", "q-learning"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ClimbTest(unittest.TestCase):
     """A climb to a writer of a new family would leave no auditor of another family; it is skipped."""
     ladder = ["codex:gpt-6-luna", "claude:claude-haiku-5-5", "codex:gpt-6-sol"]
@@ -65,3 +61,47 @@ class ClimbTest(unittest.TestCase):
 
     def test_takes_the_next_rung_when_it_fits(self):
         self.assertEqual(self.climb(lambda fams: True), (1, "claude", "claude-haiku-5-5"))
+
+
+class RunRecordTest(unittest.TestCase):
+    """Each gate is kept in the state, and a batch writes its run record with the totals of its calls."""
+
+    def test_gated_records(self):
+        st, saved = {"slug": "q", "history": []}, []
+        with mock.patch.object(writer, "gate", lambda item, final=False: ["E01 a problem"] if not final else []), \
+                mock.patch.object(writer, "save", saved.append):
+            self.assertEqual(writer.gated({"slug": "q"}, st), ["E01 a problem"])
+            self.assertEqual(writer.gated({"slug": "q"}, st, final=True), [])
+        self.assertEqual(st["gates"], [{"ok": False, "n": 1, "run": writer.RUN_ID},
+                                       {"ok": True, "n": 0, "run": writer.RUN_ID, "final": True}])
+        self.assertEqual(len(saved), 2)
+
+    def test_totals_count_this_run(self):
+        sts = [{"history": [
+            {"role": "write", "backend": "codex", "model": "m1", "tokens_in": 10, "tokens_out": 5, "cost": 0.1, "run": writer.RUN_ID},
+            {"role": "audit", "backend": "claude", "model": "m2", "tokens_in": 3, "tokens_out": None, "cost": None, "run": writer.RUN_ID},
+            {"role": "write", "backend": "codex", "model": "m1", "tokens_in": 99, "tokens_out": 99, "cost": 9.0, "run": "an-old-run"}]},
+            {"history": [{"role": "fix-gate", "backend": "codex", "model": "m1", "tokens_in": 1, "tokens_out": 1, "cost": 0.05,
+                          "run": writer.RUN_ID}]}]
+        self.assertEqual(writer.run_totals(sts), {
+            "claude:m2": {"calls": 1, "tokens_in": 3, "tokens_out": 0, "cost": 0.0},
+            "codex:m1": {"calls": 2, "tokens_in": 11, "tokens_out": 6, "cost": 0.15}})
+
+    def test_rates_skip_an_old_aik(self):
+        with mock.patch.object(writer, "aik_has", lambda cmd, flag="": False):
+            self.assertIsNone(writer.run_rates())
+
+    def test_rates_parse(self):
+        calls = []
+
+        def fake_aik(*args, **kw):
+            calls.append(args)
+            return 0, '{"run": "r", "kinds": [], "total": {"kind": "total", "items": 0}}'
+        with mock.patch.object(writer, "aik_has", lambda cmd, flag="": True), mock.patch.object(writer, "aik", fake_aik):
+            self.assertEqual(writer.run_rates()["total"]["kind"], "total")
+        self.assertEqual(calls[0][:2], ("report", "rates"))
+        self.assertIn("-run", calls[0])
+
+
+if __name__ == "__main__":
+    unittest.main()

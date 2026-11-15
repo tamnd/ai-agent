@@ -80,7 +80,7 @@ func init() {
 		{"quarantine", "hide a node or some of its files from the site at the next build, or clear it: quarantine -by <login> -why <reason> [-file <path>] <slug> | -clear | -list", cmdQuarantine},
 		{"mcp", "serve the content tree to agents over MCP (16.10), on stdio or with -http on an address", cmdMCP},
 		{"search", "run the evaluation set of 17.10 on the built index with the ranking of the browser: search eval", cmdSearch},
-		{"report", "report cost sums the metered model calls of the agent runs; report quality computes the metrics of 15.9", cmdReport},
+		{"report", "report cost sums the metered model calls of the agent runs; report quality computes the metrics of 15.9; report rates gives the gate and audit pass rates by kind", cmdReport},
 		{"sample", "draw the weekly sample of 15.6 from the pages that changed in an ISO week: sample -week 2027-W14", cmdSample},
 		{"release", "freeze a monthly release: release cut <YYYY.MM>", cmdRelease},
 		{"version", "print the version", func([]string) error { fmt.Println("aik", ver()); return nil }},
