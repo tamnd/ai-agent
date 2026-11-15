@@ -149,7 +149,7 @@ rows:
 	}
 	cu := read("paths/cs2023-ai/index.html")
 	for _, want := range []string{"<h2>Search (AI-Search)</h2>", "<h2>Machine Learning (AI-ML)</h2>", "<h2>Robotics (AI-Robo)</h2>",
-		`title="No page covers this unit yet."`, `data-step="toy-c"`, "2 of the 3 have a page", "checked 2026-11-15", `href="https://csed.acm.org/"`} {
+		`title="No page covers this yet."`, `data-step="toy-c"`, "2 of the 3 have a page", "checked 2026-11-15", `href="https://csed.acm.org/"`} {
 		if !strings.Contains(cu, want) {
 			t.Errorf("/paths/cs2023-ai/ does not contain %q", want)
 		}

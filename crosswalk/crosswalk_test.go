@@ -74,8 +74,9 @@ func TestLoadAndSections(t *testing.T) {
 	for _, g := range gaps {
 		ids = append(ids, g.ID)
 	}
-	// The rows above the leaves map to nothing and are gaps too; the row with a note is not.
-	if strings.Join(ids, " ") != "10010147 10010257 10010293" {
+	// A row above a covered row is not a gap; a row with no map and nothing covered under it is, and the row with a
+	// note is not.
+	if strings.Join(ids, " ") != "10010293" {
 		t.Errorf("gaps = %v", ids)
 	}
 	secs, err := cws[0].Sections(c, cws[0].Paths[0])
@@ -89,8 +90,13 @@ func TestLoadAndSections(t *testing.T) {
 		t.Errorf("the section of depth 1 does not join its child: %+v", s)
 	}
 	all, _ := cws[0].Sections(c, Path{ID: "x", Title: "x"})
-	if len(all) != 6 {
-		t.Errorf("a path with no under and no depth has a section for each row: %d", len(all))
+	var heads []string
+	for _, s := range all {
+		heads = append(heads, s.Row.ID)
+	}
+	// 10010147 and 10010257 are headings: no maps, and their child rows are sections.
+	if strings.Join(heads, " ") != "10010258 10010259 10010293 10010178" {
+		t.Errorf("a path with no under and no depth has a section for each row but the headings: %v", heads)
 	}
 	if _, err := cws[0].Sections(c, Path{ID: "x", Under: "nothing"}); err == nil {
 		t.Error("a path under no row has sections")

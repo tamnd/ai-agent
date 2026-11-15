@@ -38,8 +38,11 @@ type Crosswalk struct {
 	Source  string `yaml:"source,omitempty" json:"source,omitempty"`
 	Licence string `yaml:"licence,omitempty" json:"licence,omitempty"`
 	Checked string `yaml:"checked,omitempty" json:"checked,omitempty"` // the date the rows were checked against the source
-	Paths   []Path `yaml:"paths,omitempty" json:"paths,omitempty"`
-	Rows    []Row  `yaml:"rows" json:"rows"`
+	// Units is the plural noun of a row of the outside system for the site, such as "knowledge units" or "concepts".
+	// The default is "units".
+	Units string `yaml:"units,omitempty" json:"units,omitempty"`
+	Paths []Path `yaml:"paths,omitempty" json:"paths,omitempty"`
+	Rows  []Row  `yaml:"rows" json:"rows"`
 }
 
 // Path is a curriculum path of 16.12: the rows under one row (all rows when Under is empty), each a section.
@@ -210,22 +213,28 @@ type Gap struct {
 	Name      string `json:"name"`
 }
 
-// Gaps are the rows of the crosswalks with no covered item and no note, in order.
+// Gaps are the rows of the crosswalks with no note and no covered item, in order. A row with a covered item in a row
+// under it is not a gap: the outside id is a heading whose parts have pages.
 func Gaps(c *node.Corpus, cws []Crosswalk) []Gap {
 	var out []Gap
 	for _, cw := range cws {
+		covered := map[string]bool{}
 		for _, r := range cw.Rows {
-			if r.Note != "" {
-				continue
-			}
-			found := false
 			for _, m := range r.Maps {
 				if it, ok := Resolve(c, m); ok && Covered(c, it) {
-					found = true
+					covered[r.ID] = true
 					break
 				}
 			}
-			if !found {
+		}
+		// The rows come after their parents, so the walk from the last row up carries each row to its ancestors.
+		for i := len(cw.Rows) - 1; i >= 0; i-- {
+			if r := cw.Rows[i]; covered[r.ID] && r.Parent != "" {
+				covered[r.Parent] = true
+			}
+		}
+		for _, r := range cw.Rows {
+			if r.Note == "" && !covered[r.ID] {
 				out = append(out, Gap{Crosswalk: cw.Name, ID: r.ID, Name: r.Name})
 			}
 		}
@@ -294,5 +303,24 @@ func (cw Crosswalk) Sections(c *node.Corpus, p Path) ([]Section, error) {
 			}
 		}
 	}
-	return out, nil
+	// A row with no maps of its own whose child rows are sections is a heading, not a section.
+	parentOf := map[int]bool{}
+	for i, sec := range out {
+		if i > 0 && sec.Row.Parent != "" {
+			for j := i - 1; j >= 0; j-- {
+				if out[j].Row.ID == sec.Row.Parent {
+					parentOf[j] = true
+					break
+				}
+			}
+		}
+	}
+	kept := out[:0]
+	for i, sec := range out {
+		if parentOf[i] && len(sec.Items) == 0 && len(sec.Rows) == 1 && len(sec.Row.Maps) == 0 {
+			continue
+		}
+		kept = append(kept, sec)
+	}
+	return kept, nil
 }

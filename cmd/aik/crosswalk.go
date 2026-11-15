@@ -73,7 +73,7 @@ func cmdCrosswalk(args []string) error {
 		by[g.Crosswalk]++
 	}
 	for _, cw := range cws {
-		fmt.Printf("%s: %d of %d rows map to no item\n", cw.Name, by[cw.Name], len(cw.Rows))
+		fmt.Printf("%s: %d of %d rows have no page\n", cw.Name, by[cw.Name], len(cw.Rows))
 	}
 	return nil
 }

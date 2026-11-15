@@ -66,7 +66,7 @@ func (b *builder) curriculumPage(cw crosswalk.Crosswalk, p crosswalk.Path, secs 
 			covered++
 		}
 		if len(s.Items) == 0 {
-			note := "No page covers this unit yet."
+			note := "No page covers this yet."
 			if s.Row.Note != "" {
 				note = upperFirst(strings.TrimSuffix(s.Row.Note, ".")) + "."
 			}
@@ -74,8 +74,12 @@ func (b *builder) curriculumPage(cw crosswalk.Crosswalk, p crosswalk.Path, secs 
 		}
 		ps = append(ps, sec)
 	}
-	desc := fmt.Sprintf("The %s units of %s, in their order, with the pages that the crosswalk maps to each; %d of the %s %s a page.",
-		comma(units), cw.System, covered, comma(units), plural(covered, "has", "have"))
+	noun := cw.Units
+	if noun == "" {
+		noun = "units"
+	}
+	desc := fmt.Sprintf("The %s %s of %s, in their order, with the pages that the crosswalk maps to each; %d of the %s %s a page.",
+		comma(units), noun, cw.System, covered, comma(units), plural(covered, "has", "have"))
 	page := b.pathPage(p.ID, p.Title, desc, ps)
 	var basis []string
 	if cw.Version != "" {
