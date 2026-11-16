@@ -166,7 +166,7 @@ func check(c *claims.Claim, e claims.Evidence, d *Doc, snap Snapshot, text strin
 		span.WriteString(d.Text[s.Start:s.End])
 		span.WriteByte('\n')
 	}
-	in := Numbers(span.String())
+	in := SourceNumbers(span.String())
 	for _, n := range Numbers(ownIDs(text, d)) {
 		r.Numbers++
 		if !Found(n, in) {

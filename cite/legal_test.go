@@ -337,3 +337,30 @@ func TestCarryWhiteSpace(t *testing.T) {
 		t.Error("the verdict is carried to another passage")
 	}
 }
+
+// The text of a PDF writes "40,000" as "40, 000" and "4 × 10^5" as "4 · 105"; a claim's number is found in both.
+func TestFoundPDFText(t *testing.T) {
+	src := SourceNumbers("trained for 40, 000 steps on 4 · 105 tokens, with widths 64, 128 and 256.")
+	for claim, want := range map[string]bool{
+		"40,000":     true,
+		"40000":      true,
+		"4 × 10^5":   true,
+		"128":        true, // a list stays a list
+		"64":         true,
+		"41,000":     false,
+		"5 × 10^5":   false,
+		"4 × 10^6":   false,
+		"64,128,256": false, // "and" ends the run
+	} {
+		n := Numbers(claim)
+		if len(n) != 1 {
+			t.Fatalf("Numbers(%q) = %+v", claim, n)
+		}
+		if got := Found(n[0], src); got != want {
+			t.Errorf("Found(%q) = %v, want %v", claim, got, want)
+		}
+	}
+	if ns := Numbers("40, 000"); len(ns) != 2 {
+		t.Errorf("Numbers joins the parts of a claim: %+v", ns)
+	}
+}
