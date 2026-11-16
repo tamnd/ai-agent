@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/tamnd/ai-agent/lang"
 	"github.com/tamnd/ai-agent/node"
 	"github.com/tamnd/ai-agent/status"
 )
@@ -94,5 +95,28 @@ func TestTestCache(t *testing.T) {
 	tc2.Prune([]string{"go"})
 	if _, ok := tc2.Get("go", k1); ok {
 		t.Error("Prune kept an entry that the run did not use")
+	}
+}
+
+// TestRunsKeepChanged checks that the mutation run and the differential run test only the implementations that
+// -changed selects: with none selected, neither reaches the runner, which is empty here.
+func TestRunsKeepChanged(t *testing.T) {
+	c, err := node.Load(corpus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	asked := 0
+	d := diffFlags{classes: "tiny", out: t.TempDir(), only: func(*node.Node, string) bool { asked++; return false }}
+	if err := runMutate(&lang.Runner{}, c.Nodes, nil, contractsOf(c), d, 10, 1, nil, false); err != nil {
+		t.Fatalf("runMutate: %v", err)
+	}
+	if err := runDiff(&lang.Runner{}, c.Nodes, nil, contractsOf(c), d); err != nil {
+		t.Fatalf("runDiff: %v", err)
+	}
+	if asked == 0 {
+		t.Error("the runs did not ask which implementations changed")
+	}
+	if ents, _ := os.ReadDir(d.out); len(ents) != 0 {
+		t.Errorf("the runs wrote %d results for no implementation", len(ents))
 	}
 }

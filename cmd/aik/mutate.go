@@ -100,7 +100,7 @@ func runMutate(r *lang.Runner, nodes []*node.Node, want map[string]bool, problem
 	failed := 0
 	for _, n := range nodes {
 		for _, im := range n.Impls {
-			if len(want) > 0 && !want[im.Lang] {
+			if len(want) > 0 && !want[im.Lang] || d.only != nil && !d.only(n, im.Lang) {
 				continue
 			}
 			rc, ok := lang.Recipes[im.Lang]
