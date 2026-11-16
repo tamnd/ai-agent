@@ -140,3 +140,32 @@ func mustRender(t *testing.T, src string) Result {
 	}
 	return res
 }
+
+// A relative link goes to the file in the directory of Options.Files; a link to a fragment, to a path of the site or
+// to another host does not move.
+func TestRelativeLinks(t *testing.T) {
+	src := "[a](derivations/x.md) [b](../y/node.md#s) [c](#claims) [d](/transformer/) [e](https://arxiv.org/abs/1) [f](mailto:a@b.c)"
+	r, err := RenderWith(src, Options{Files: "https://github.com/o/r/blob/main/nodes/a/q/"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`href="https://github.com/o/r/blob/main/nodes/a/q/derivations/x.md"`,
+		`href="https://github.com/o/r/blob/main/nodes/a/y/node.md#s"`,
+		`href="#claims"`,
+		`href="/transformer/"`,
+		`href="https://arxiv.org/abs/1"`,
+		`href="mailto:a@b.c"`,
+	} {
+		if !strings.Contains(r.HTML, want) {
+			t.Errorf("no %s in %s", want, r.HTML)
+		}
+	}
+	r, err = RenderWith("[a](derivations/x.md)", Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(r.HTML, `href="derivations/x.md"`) {
+		t.Errorf("a relative link moved with no Files: %s", r.HTML)
+	}
+}

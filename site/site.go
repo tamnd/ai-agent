@@ -418,8 +418,17 @@ func areaOf(c *node.Corpus, id string) *node.Area {
 	return nil
 }
 
-func (b *builder) render(src string) markup.Result {
-	r, err := markup.RenderWith(src, markup.Options{Resolve: b.resolve, Math: b.math.Render})
+func (b *builder) render(src string) markup.Result { return b.renderIn(src, "") }
+
+// renderIn renders Markdown that sits in the directory dir of the repository, so that a relative link to a file
+// beside it, such as derivations/x.md, goes to that file in the repository instead of to a path the site does not
+// have. An empty dir leaves relative links alone.
+func (b *builder) renderIn(src, dir string) markup.Result {
+	files := ""
+	if dir != "" {
+		files = b.opt.Repo + "/blob/main/" + strings.Trim(dir, "/") + "/"
+	}
+	r, err := markup.RenderWith(src, markup.Options{Resolve: b.resolve, Math: b.math.Render, Files: files})
 	if err != nil {
 		b.opt.Log("markup: %v", err)
 	}
