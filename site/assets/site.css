@@ -3,6 +3,9 @@
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 400 760; font-display: swap; src: url("fonts/InterVariable.woff2") format("woff2"); }
 @font-face { font-family: "Inter"; font-style: italic; font-weight: 400 760; font-display: swap; src: url("fonts/InterVariable-Italic.woff2") format("woff2"); }
 
+/* An element with the hidden attribute stays hidden, whatever display its class gives it: the path strip of a node page is hidden until the reader follows a path. */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #fbfaf8;
   --surface: #f2f1ee;
