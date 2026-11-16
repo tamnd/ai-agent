@@ -75,6 +75,11 @@ func TestMakeFixtures(t *testing.T) {
 	if fr := run(); !fr.OK() {
 		t.Errorf("a run on the files it wrote: %+v", fr)
 	}
+	// Another CPU sums in another order and gives other last bits: that is no change of the reference.
+	put(strings.Replace(toyMake, "SCALE = 2.0", "SCALE = 2.0 * (1 + 2.3e-16)", 1))
+	if fr := run(); !fr.OK() {
+		t.Errorf("values that differ by rounding: %+v", fr)
+	}
 	put(strings.Replace(toyMake, "SCALE = 2.0", "SCALE = 2.5", 1))
 	fr = run()
 	if len(fr.Changed) != 2 || len(fr.Changed[0].Arrays) != 1 {
