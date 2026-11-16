@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"fmt"
 	"html"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -37,6 +38,10 @@ type Options struct {
 	Resolve Resolver
 	// Math renders formulas at build time. When it is nil, a formula is left as TeX between \( \) or \[ \], for a renderer in the browser.
 	Math MathFunc
+	// Files is the URL of the directory that holds the Markdown, such as the node's directory in the repository. A
+	// relative link, such as derivations/x.md, resolves against it; the site has no page at such a path. When it is
+	// empty, relative links are left as they are.
+	Files string
 }
 
 // Heading is one entry of the table of contents.
@@ -77,7 +82,13 @@ func RenderWith(src string, opt Options) (Result, error) {
 	)
 	source := []byte(src)
 	doc := md.Parser().Parse(text.NewReader(source))
+	files, _ := url.Parse(opt.Files)
 	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if l, ok := n.(*ast.Link); ok && entering && opt.Files != "" && files != nil {
+			if u := relative(string(l.Destination)); u != nil {
+				l.Destination = []byte(files.ResolveReference(u).String())
+			}
+		}
 		h, ok := n.(*ast.Heading)
 		if !ok || !entering {
 			return ast.WalkContinue, nil
@@ -102,6 +113,19 @@ func RenderWith(src string, opt Options) (Result, error) {
 	}
 	res.HTML = buf.String()
 	return res, nil
+}
+
+// relative parses a link destination that names a file next to the Markdown: no scheme, no host, not a path from
+// the root of the site, and not a fragment of the page.
+func relative(dest string) *url.URL {
+	if dest == "" || strings.HasPrefix(dest, "#") || strings.HasPrefix(dest, "/") {
+		return nil
+	}
+	u, err := url.Parse(dest)
+	if err != nil || u.Scheme != "" || u.Host != "" {
+		return nil
+	}
+	return u
 }
 
 func plainText(n ast.Node, src []byte) string {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -333,7 +334,7 @@ func (b *builder) nodePage(n *node.Node) (*NodePage, error) {
 	}
 	p.Related = b.links(rel)
 
-	r := b.render(factRefs(b.c, shapeRefs(n.Shapes, n.Body)))
+	r := b.renderIn(factRefs(b.c, shapeRefs(n.Shapes, n.Body)), filepath.ToSlash(n.Rel))
 	html := b.claimMarks(n, r.HTML)
 	p.Impls = b.implViews(n)
 	p.Proofs = b.proofViews(n)
@@ -721,7 +722,7 @@ func markerMap(src string) template.JS {
 func (b *builder) proofViews(n *node.Node) []ProofView {
 	var out []ProofView
 	for _, pr := range n.Proofs {
-		r := b.render(pr.Body)
+		r := b.renderIn(pr.Body, path.Dir(pr.Path))
 		t := pr.Front.Title
 		if t == "" {
 			t = humanize(pr.ID)
