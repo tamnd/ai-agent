@@ -274,10 +274,15 @@ func (ck *citer) doc(ctx context.Context, w cite.Work) (cite.Snapshot, *cite.Doc
 		if err != nil {
 			return fail(err.Error())
 		}
-		if have && h != s.Hash {
+		switch {
+		case have && h == s.Hash:
+			// The same bytes as the manifest records: the snapshot is the one fetched before, so its date stays.
+		case have:
 			fmt.Fprintf(os.Stderr, "aik cite: %s: the bytes at %s changed since %s; the new snapshot replaces the old one\n", w.Slug, w.URL, s.Fetched)
+			fallthrough
+		default:
+			s = cite.Snapshot{Work: w.Slug, Version: w.Version, URL: w.URL, Format: w.Format, Hash: h, Size: len(b), Fetched: now.Format("2006-01-02")}
 		}
-		s = cite.Snapshot{Work: w.Slug, Version: w.Version, URL: w.URL, Format: w.Format, Hash: h, Size: len(b), Fetched: now.Format("2006-01-02")}
 	}
 	d, err := cite.Extract(ctx, b, w.Format)
 	if errors.Is(err, cite.ErrNoExtractor) {
