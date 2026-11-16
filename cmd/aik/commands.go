@@ -518,13 +518,6 @@ func cmdTest(args []string) error {
 			return err
 		}
 	}
-	if *kind == "diff" || *kind == "mutate" {
-		d.root, d.box, d.out = c.Root, box, under(*root, *out)
-		if *kind == "mutate" {
-			return runMutate(r, nodes, want, problems, d, *maxMutants, *jobs, tc, f.NArg() == 0)
-		}
-		return runDiff(r, nodes, want, problems, d)
-	}
 	var aff affected
 	if *changed != "" {
 		files, err := changedFiles(c.Root, *changed)
@@ -539,6 +532,17 @@ func cmdTest(args []string) error {
 			fmt.Println("no implementation changed")
 			return nil
 		}
+	}
+	if *kind == "diff" || *kind == "mutate" {
+		d.root, d.box, d.out = c.Root, box, under(*root, *out)
+		if *changed != "" {
+			d.only = aff.Has
+		}
+		if *kind == "mutate" {
+			// The cache drops the entries that a run did not use only after a run of every implementation.
+			return runMutate(r, nodes, want, problems, d, *maxMutants, *jobs, tc, f.NArg() == 0 && *changed == "")
+		}
+		return runDiff(r, nodes, want, problems, d)
 	}
 	for _, n := range nodes {
 		for _, p := range problems(n) {

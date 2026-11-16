@@ -24,6 +24,8 @@ type diffFlags struct {
 	write          bool
 	root, out      string
 	box            *lang.Sandbox
+	// only, when set, keeps the implementations that -changed selects.
+	only func(n *node.Node, lang string) bool
 }
 
 // problemInputs are the generated inputs of one problem, made once for all the implementations, or the reason why the problem has none.
@@ -145,7 +147,7 @@ func runDiff(r *lang.Runner, nodes []*node.Node, want map[string]bool, problems 
 	dirs := map[string]string{}
 	for _, n := range nodes {
 		for _, im := range n.Impls {
-			if len(want) > 0 && !want[im.Lang] {
+			if len(want) > 0 && !want[im.Lang] || d.only != nil && !d.only(n, im.Lang) {
 				continue
 			}
 			rc, ok := lang.Recipes[im.Lang]
