@@ -153,6 +153,9 @@
       if (preset) preset.value = p ? p.name : "";
     };
     for (const el of inputs) el.addEventListener("input", () => { match(); update(); });
+    // The page allows no inline script (CSP script-src 'self'), so the form is kept from submitting here.
+    const form = fig.querySelector("form.arch-controls");
+    if (form) form.addEventListener("submit", (e) => e.preventDefault());
     if (preset) {
       preset.addEventListener("change", () => {
         const p = d.presets.find((p) => p.name === preset.value);

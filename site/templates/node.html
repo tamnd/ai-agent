@@ -100,7 +100,7 @@
 
 {{define "arch-figure"}}<figure class="arch" aria-labelledby="arch-title">
 <figcaption id="arch-title"><strong>{{.Title}}, block by block.</strong> Change a size or pick a preset, and every shape, parameter count and FLOP count of the figure follows, from the formulas of the tables below.</figcaption>
-<form class="arch-controls" action="#" onsubmit="return false">
+<form class="arch-controls" action="#">
 <label class="arch-preset">Preset <select data-preset>{{range .Presets}}<option value="{{.}}">{{.}}</option>{{end}}<option value="">custom</option></select></label>
 {{range .Controls}}<label title="{{.Meaning}}"><span class="arch-sym">{{.Symbol}}</span> <code>{{.Name}}</code> <input type="number" min="1" step="1" inputmode="numeric" data-size="{{.Name}}" value="{{.Value}}" list="arch-{{.Name}}" aria-label="{{.Name}}: {{.Meaning}}"></label><datalist id="arch-{{.Name}}">{{range .Choices}}<option value="{{.}}"></option>{{end}}</datalist>
 {{end}}</form>
