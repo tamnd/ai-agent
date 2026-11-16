@@ -148,7 +148,7 @@ func (ck *citer) result(ctx context.Context, slug, loc string, s results.Score) 
 		return results.CiteNotFound, "the locator names no place of the text: " + strings.Join(fails, "; ")
 	}
 	passage, _ := cite.Passage(d, spans)
-	in := cite.Numbers(passage)
+	in := cite.SourceNumbers(passage)
 	for _, n := range scoreNumbers(*s.V, s.Unit) {
 		if cite.Found(n, in) {
 			return results.CiteFound, ""

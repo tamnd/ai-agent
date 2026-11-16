@@ -78,6 +78,23 @@ func Numbers(s string) []Number {
 	return out
 }
 
+// spacedRE finds a number whose thousands the text of a PDF writes with a space after the comma: "40, 000".
+var spacedRE = regexp.MustCompile(`(^|[^\w.,])([0-9]{1,3}(?:, [0-9]{3})+)([^\w.,]|[.,]\D|[.,]$|$)`)
+
+// SourceNumbers finds the numbers of a source text, as Numbers does, and also reads "40, 000" as 40000, which is how
+// the text of a PDF often writes a number with a thousands separator. The parts are kept as numbers too, since "64,
+// 128" may be a list; a source with more numbers only finds more of a claim's numbers.
+func SourceNumbers(s string) []Number {
+	out := Numbers(s)
+	for _, m := range spacedRE.FindAllStringSubmatch(s, -1) {
+		digits := strings.ReplaceAll(m[2], ", ", "")
+		if v, err := strconv.ParseFloat(digits, 64); err == nil {
+			out = append(out, Number{Text: strings.ReplaceAll(m[2], ", ", ","), Value: v, Step: 1})
+		}
+	}
+	return out
+}
+
 // power reads a match of powRE: the value of "3 × 10^-4" is 3e-4, at the precision of its 3.
 func power(s string, m []int) (Number, bool) {
 	sub := func(k int) string {
@@ -154,6 +171,15 @@ func Found(n Number, in []Number) bool {
 		b, e := Numbers(base), Numbers(strings.TrimPrefix(exp, "-"))
 		if len(b) == 1 && len(e) == 1 && (Found(b[0], in) && Found(e[0], in) || foundJoined(base, exp, in)) {
 			return true
+		}
+	}
+	if c, pow, ok := strings.Cut(n.Text, "×"); ok {
+		// "4×10^5" is also found as 4 and the power, which the text of a PDF writes "4 · 105".
+		if base, exp, ok := strings.Cut(pow, "^"); ok {
+			k, p := Numbers(c), Numbers(base+"^"+exp)
+			if len(k) == 1 && len(p) == 1 && Found(k[0], in) && Found(p[0], in) {
+				return true
+			}
 		}
 	}
 	pct := percent(n)
