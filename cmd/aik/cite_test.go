@@ -4,6 +4,8 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -91,5 +93,37 @@ func TestCiteProvedWithoutSource(t *testing.T) {
 	ck := &citer{ix: &cite.Index{}, docs: map[string]*cite.Doc{}}
 	if _, ungrounded := ck.node(context.Background(), n); ungrounded != 2 {
 		t.Errorf("%d claims are ungrounded, want 2 (c-bare and c-emp)", ungrounded)
+	}
+}
+
+// A snapshot fetched again into an empty store keeps the date of the manifest when the bytes are the same, and takes
+// the date of the new fetch when they changed.
+func TestCiteRefetchKeepsDate(t *testing.T) {
+	body := "<html><body><h1>1 Introduction</h1><p>Dropout addresses overfitting.</p></body></html>"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	w := cite.Work{Slug: "w", Version: "v1", URL: srv.URL, Format: "html"}
+	for _, c := range []struct {
+		hash, want string
+	}{
+		{cite.Hash([]byte(body)), "2020-01-02"},
+		{cite.Hash([]byte("other bytes")), ""},
+	} {
+		old := cite.Snapshot{Work: "w", Version: "v1", URL: srv.URL, Format: "html", Hash: c.hash, Fetched: "2020-01-02"}
+		ck := &citer{ix: &cite.Index{Snapshots: map[string]cite.Snapshot{"w": old}}, store: cite.Store{Dir: t.TempDir()},
+			docs: map[string]*cite.Doc{}, prev: map[string]*cite.Doc{}, failed: map[string]string{}}
+		s, d, why := ck.doc(context.Background(), w)
+		if d == nil {
+			t.Fatalf("no text: %s", why)
+		}
+		if c.want != "" && s.Fetched != c.want {
+			t.Errorf("the same bytes fetched again have the date %s, want %s", s.Fetched, c.want)
+		}
+		if c.want == "" && (s.Fetched == old.Fetched || s.Hash == old.Hash) {
+			t.Errorf("changed bytes keep the old snapshot %+v", s)
+		}
 	}
 }
