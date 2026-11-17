@@ -68,6 +68,19 @@ func (r *run) shapes(n *node.Node) {
 // shapeRefs checks that each {shape:...} of the prose names a formula of shapes.yaml and, with @config, a config (rule X20).
 func (r *run) shapeRefs(n *node.Node) {
 	for i, line := range strings.Split(n.Body, "\n") {
+		read := map[int]bool{}
+		for _, loc := range shapes.RefRE.FindAllStringIndex(line, -1) {
+			read[loc[0]] = true
+		}
+		for _, loc := range shapes.RefStartRE.FindAllStringIndex(line, -1) {
+			if !read[loc[0]] {
+				end := min(len(line), loc[0]+40)
+				if j := strings.IndexByte(line[loc[0]:end], '}'); j >= 0 {
+					end = loc[0] + j + 1
+				}
+				r.add("X20", Block, n.Rel+"/node.md", n.BodyLine+i, "%s is not a reference {shape:<name>} or {shape:<name>@<config>}, so the page would print it as it is", line[loc[0]:end])
+			}
+		}
 		for _, m := range shapes.RefRE.FindAllStringSubmatch(line, -1) {
 			if n.Shapes == nil {
 				r.add("X20", Block, n.Rel+"/node.md", n.BodyLine+i, "%s names the shape contract, but the node has no %s", m[0], shapes.FileName)
