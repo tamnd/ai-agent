@@ -47,6 +47,32 @@ func TestWikiLinkFragment(t *testing.T) {
 	}
 }
 
+func TestEquationAnchor(t *testing.T) {
+	src := "The model:\n\n$$ y = W x + b $$ {#eq-layer}\n\nand on two lines\n$$ a =\nb $$ {#eq-two}\n\n$$ c $$ {#c-not-an-equation}\n"
+	r, err := Render(src, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`<div class="math display" id="eq-layer">\[y = W x + b\]</div>`, `<div class="math display" id="eq-two">\[a =` + "\n" + `b\]</div>`} {
+		if !strings.Contains(r.HTML, want) {
+			t.Errorf("no %s in %s", want, r.HTML)
+		}
+	}
+	if strings.Contains(r.HTML, "{#eq-") {
+		t.Errorf("an equation anchor is left as text: %s", r.HTML)
+	}
+	if !strings.Contains(r.HTML, "{#c-not-an-equation}") {
+		t.Errorf("text after $$ that is not an equation anchor must stay: %s", r.HTML)
+	}
+	r, err = RenderWith("$$ x $$ {#eq-x}\n", Options{Math: func(tex string, display bool) (string, error) { return "K(" + tex + ")", nil }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(r.HTML, `<div class="math display" id="eq-x">K(x)</div>`) {
+		t.Errorf("no anchor on the rendered formula: %s", r.HTML)
+	}
+}
+
 func TestMath(t *testing.T) {
 	r, err := Render("The cost is $O(n \\log n)$, and it costs $5 and $6.\n", nil)
 	if err != nil {
