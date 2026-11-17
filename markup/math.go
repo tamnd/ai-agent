@@ -87,6 +87,7 @@ func (mathExt) Extend(m goldmark.Markdown) {
 // It accepts the formula on one line, "$$ x $$", and on several lines, from a line that starts with $$ to a line that ends with $$.
 // A fenced block can interrupt a paragraph, so the text before and after the formula needs no blank line.
 // A $$ with no closing $$ is reported in bad, and the text is left as it is.
+// An equation anchor after the closing $$, "$$ x $$ {#eq-name}", goes to the info string, "```math {#eq-name}".
 func displayMath(src string) (out string, bad []string) {
 	lines := strings.Split(src, "\n")
 	res := make([]string, 0, len(lines))
@@ -112,9 +113,13 @@ func displayMath(src string) (out string, bad []string) {
 		j := i
 		var tex []string
 		closed := false
+		anchor := ""
 		for {
 			if k := strings.Index(body, "$$"); k >= 0 {
-				if strings.TrimSpace(body[k+2:]) != "" {
+				rest := strings.TrimSpace(body[k+2:])
+				if m := eqAnchor.FindStringSubmatch(rest); m != nil {
+					anchor = m[1]
+				} else if rest != "" {
 					break // text after the closing $$: leave it to the inline parser
 				}
 				tex = append(tex, body[:k])
@@ -137,7 +142,11 @@ func displayMath(src string) (out string, bad []string) {
 			res = append(res, l)
 			continue
 		}
-		res = append(res, indent+"```math", indent+strings.TrimSpace(strings.Join(tex, "\n")), indent+"```")
+		info := "```math"
+		if anchor != "" {
+			info += " {#" + anchor + "}"
+		}
+		res = append(res, indent+info, indent+strings.TrimSpace(strings.Join(tex, "\n")), indent+"```")
 		i = j
 	}
 	return strings.Join(res, "\n"), bad

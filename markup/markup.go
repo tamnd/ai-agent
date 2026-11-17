@@ -204,9 +204,19 @@ func (r *codeRenderer) RegisterFuncs(reg renderer.NodeRendererFuncRegisterer) {
 
 // formula writes one formula, rendered at build time when it can be.
 func (r *codeRenderer) formula(w util.BufWriter, tex string, display bool) {
+	r.formulaID(w, tex, display, "")
+}
+
+// formulaID writes one formula. A display formula with an equation anchor gets it as its id, so that a link such
+// as [[transformer#eq-pe|...]] lands on it.
+func (r *codeRenderer) formulaID(w util.BufWriter, tex string, display bool, id string) {
 	cls, open, closeTag := "math", `\(`, `\)`
 	if display {
 		cls, open, closeTag = "math display", `\[`, `\]`
+	}
+	attr := ""
+	if id != "" {
+		attr = fmt.Sprintf(" id=\"%s\"", html.EscapeString(id))
 	}
 	if r.math != nil {
 		out, err := r.math(tex, display)
@@ -215,15 +225,15 @@ func (r *codeRenderer) formula(w util.BufWriter, tex string, display bool) {
 			if display {
 				tag = "div"
 			}
-			fmt.Fprintf(w, "<%s class=\"%s\">%s</%s>", tag, cls, out, tag)
+			fmt.Fprintf(w, "<%s class=\"%s\"%s>%s</%s>", tag, cls, attr, out, tag)
 			return
 		}
 		r.res.MathErrors = append(r.res.MathErrors, tex+": "+err.Error())
-		fmt.Fprintf(w, "<code class=\"math-error\" title=\"%s\">%s</code>", html.EscapeString(err.Error()), html.EscapeString(tex))
+		fmt.Fprintf(w, "<code class=\"math-error\"%s title=\"%s\">%s</code>", attr, html.EscapeString(err.Error()), html.EscapeString(tex))
 		return
 	}
 	if display {
-		fmt.Fprintf(w, "<div class=\"%s\">%s%s%s</div>\n", cls, open, html.EscapeString(tex), closeTag)
+		fmt.Fprintf(w, "<div class=\"%s\"%s>%s%s%s</div>\n", cls, attr, open, html.EscapeString(tex), closeTag)
 		return
 	}
 	fmt.Fprintf(w, "<span class=\"%s\">%s%s%s</span>", cls, open, html.EscapeString(tex), closeTag)
@@ -245,12 +255,25 @@ func (r *codeRenderer) render(w util.BufWriter, src []byte, n ast.Node, entering
 		ids := Pseudo(w, code.String())
 		r.res.LineIDs = append(r.res.LineIDs, ids...)
 	case "math":
-		r.formula(w, strings.TrimSpace(code.String()), true)
+		id := ""
+		if b.Info != nil {
+			if m := mathInfoAnchor.FindSubmatch(b.Info.Segment.Value(src)); m != nil {
+				id = string(m[1])
+			}
+		}
+		r.formulaID(w, strings.TrimSpace(code.String()), true, id)
 	default:
 		_, _ = w.WriteString(Highlight(code.String(), lang))
 	}
 	return ast.WalkSkipChildren, nil
 }
+
+// eqAnchor is an equation anchor after a display formula, "$$ x $$ {#eq-name}" (spec 06, display math), and
+// mathInfoAnchor the same anchor in the info string of a math block, "```math {#eq-name}".
+var (
+	eqAnchor       = regexp.MustCompile(`^\{#(eq-[A-Za-z0-9][A-Za-z0-9_-]*)\}$`)
+	mathInfoAnchor = regexp.MustCompile(`\{#(eq-[A-Za-z0-9][A-Za-z0-9_-]*)\}`)
+)
 
 var pseudoLine = regexp.MustCompile(`^(L\d+)( +)(.*)$`)
 var pseudoKeywords = regexp.MustCompile(`\b(if|then|else|while|do|for|to|downto|each|in|repeat|until|return|and|or|not|nil|break|continue|true|false)\b`)
