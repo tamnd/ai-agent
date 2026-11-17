@@ -193,8 +193,11 @@ func long(s string) bool {
 
 func isNumber(s string) bool { return s != "" && s[0] >= '0' && s[0] <= '9' }
 
-// RefRE finds a reference of the prose to the shape contract: {shape:params} prints the formula of params, and {shape:params@base} prints its value at the config base (rule X20).
-var RefRE = regexp.MustCompile(`\{shape:([A-Za-z_][A-Za-z0-9_.]*)(?:@([a-z0-9][a-z0-9-]*))?\}`)
+// RefRE finds a reference of the prose to the shape contract: {shape:params} prints the formula of params, and {shape:params@base} prints its value at the config base (rule X20). A config name is a name of letters, digits and _, as shapes.yaml requires.
+var RefRE = regexp.MustCompile(`\{shape:([A-Za-z_][A-Za-z0-9_.]*)(?:@([A-Za-z_][A-Za-z0-9_]*))?\}`)
+
+// RefStartRE finds the start of anything that looks like a reference, so that a check can report one that RefRE cannot read.
+var RefStartRE = regexp.MustCompile(`\{shape:`)
 
 // Ref resolves a reference: the TeX of the formula of a name when config is empty, else the value of the name at the config, which is "example" or a named config.
 func (f *File) Ref(name, config string) (tex string, value *big.Int, err error) {

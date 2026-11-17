@@ -67,7 +67,7 @@ func TestShapesRules(t *testing.T) {
 	// Broken formulas, a missing anchor, and bad references.
 	bad := strings.Replace(archShapes, `"I * O + O"`, `"I * O + Z"`, 1)
 	bad = strings.Replace(bad, "eq: [linear]", "eq: [linear, bias]", 1)
-	page := archNode + "\nAt the big config: {shape:params@big}. Unknown: {shape:nope}.\n"
+	page := archNode + "\nAt the big config: {shape:params@big}. Unknown: {shape:nope}. Unreadable: {shape:params@a-b}.\n"
 	c = fixture(t, map[string]string{archDir + "node.md": page, archDir + "shapes.yaml": bad})
 	fs = Run(c, Options{})
 	x09 := strings.Join(fired(fs, "X09"), "\n")
@@ -77,7 +77,7 @@ func TestShapesRules(t *testing.T) {
 		}
 	}
 	x20 := strings.Join(fired(fs, "X20"), "\n")
-	for _, want := range []string{`has no config "big"`, "nope is not a name"} {
+	for _, want := range []string{`has no config "big"`, "nope is not a name", "{shape:params@a-b} is not a reference"} {
 		if !strings.Contains(x20, want) {
 			t.Errorf("X20 has no %q in:\n%s", want, x20)
 		}

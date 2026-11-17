@@ -17,8 +17,8 @@ func TestShapesSection(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := filepath.Join(root, "nodes", "foundations", "models-of-computation", "toy-net")
-	md := "---\ntag: 7TQYNT\nkind: architecture\nslug: toy-net\nname: Toy net\narea: foundations/models-of-computation\nlevel: intro\nsummary: A toy architecture.\n---\n\n## Overview\n\nThe toy net has {shape:params@wide} parameters at the wide config, by the formula {shape:params}. In code: `{shape:params}`.\n\n## Computation and cost\n\nIt is one matrix product.\n"
-	sy := "config:\n  d_in: {meaning: input width, example: 4}\n  d_out: {meaning: output width, example: 3}\naxes:\n  B: {meaning: batch, example: 2}\n  I: d_in\n  O: d_out\nblocks:\n  - id: linear\n    inputs: {x: \"(B, I)\"}\n    outputs: {y: \"(B, O)\"}\n    params: \"I * O + O\"\n    flops_forward: \"2 * B * I * O\"\nmodel:\n  params: {formula: \"linear.params\", meaning: all parameters}\nconfigs:\n  wide: {d_in: 1000, d_out: 1000}\n"
+	md := "---\ntag: 7TQYNT\nkind: architecture\nslug: toy-net\nname: Toy net\narea: foundations/models-of-computation\nlevel: intro\nsummary: A toy architecture.\n---\n\n## Overview\n\nThe toy net has {shape:params@wide} parameters at the wide config and {shape:params@wide_io} at the wide_io config, by the formula {shape:params}. In code: `{shape:params}`.\n\n## Computation and cost\n\nIt is one matrix product.\n"
+	sy := "config:\n  d_in: {meaning: input width, example: 4}\n  d_out: {meaning: output width, example: 3}\naxes:\n  B: {meaning: batch, example: 2}\n  I: d_in\n  O: d_out\nblocks:\n  - id: linear\n    inputs: {x: \"(B, I)\"}\n    outputs: {y: \"(B, O)\"}\n    params: \"I * O + O\"\n    flops_forward: \"2 * B * I * O\"\nmodel:\n  params: {formula: \"linear.params\", meaning: all parameters}\nconfigs:\n  wide: {d_in: 1000, d_out: 1000}\n  wide_io: {d_in: 10, d_out: 10}\n"
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestShapesSection(t *testing.T) {
 	}
 	page := string(b)
 	for _, want := range []string{
-		"has 1,001,000 parameters at the wide config",
+		"has 1,001,000 parameters at the wide config and 110 at the wide_io config",
 		`<h2 id="shapes-and-parameters">Shapes and parameters</h2>`,
 		"<caption>Blocks</caption>",
 		`<td class="num">15</td>`,
