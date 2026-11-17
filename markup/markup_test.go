@@ -31,6 +31,22 @@ func TestWikiLinks(t *testing.T) {
 	}
 }
 
+func TestWikiLinkFragment(t *testing.T) {
+	r, err := Render("The [[merge-sort#eq-merge|merge step]], [[merge-sort#cost]] and [[nope#eq-x|a label]].\n", resolve)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(r.HTML, `<a href="/merge-sort/#eq-merge">merge step</a>`) {
+		t.Errorf("no link to the anchor: %s", r.HTML)
+	}
+	if !strings.Contains(r.HTML, `<a href="/merge-sort/#cost">Merge sort</a>`) {
+		t.Errorf("no link to the anchor with the name as its label: %s", r.HTML)
+	}
+	if strings.Contains(r.HTML, "[[") || len(r.Missing) != 1 || r.Missing[0] != "nope" {
+		t.Errorf("an unresolved link with a fragment: missing = %v, html %s", r.Missing, r.HTML)
+	}
+}
+
 func TestMath(t *testing.T) {
 	r, err := Render("The cost is $O(n \\log n)$, and it costs $5 and $6.\n", nil)
 	if err != nil {
