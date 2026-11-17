@@ -61,8 +61,9 @@ type Result struct {
 	MathErrors []string // the formulas that do not render (rule W07)
 }
 
-// wikiLink finds [[slug]], [[slug|label]], and a link to a neighbour such as [[al:k-means]] (spec 6.2).
-var wikiLink = regexp.MustCompile(`\[\[((?:(?:al|m2|pg):)?[a-z0-9][a-z0-9-]*)(?:\|([^\]]+))?\]\]`)
+// wikiLink finds [[slug]], [[slug|label]], a link to a neighbour such as [[al:k-means]] (spec 6.2), and any of
+// them with a fragment, such as [[transformer#eq-pe|the positional encoding]], which links to an anchor of the page.
+var wikiLink = regexp.MustCompile(`\[\[((?:(?:al|m2|pg):)?[a-z0-9][a-z0-9-]*)(#[A-Za-z0-9][A-Za-z0-9_-]*)?(?:\|([^\]]+))?\]\]`)
 
 // Render renders Markdown to HTML.
 func Render(src string, resolve Resolver) (Result, error) {
@@ -166,7 +167,7 @@ func linkWiki(src string, resolve Resolver, res *Result) string {
 		}
 		lines[i] = wikiLink.ReplaceAllStringFunc(l, func(m string) string {
 			sm := wikiLink.FindStringSubmatch(m)
-			slug, label := sm[1], sm[2]
+			slug, frag, label := sm[1], sm[2], sm[3]
 			name, url, ok := "", "", false
 			if resolve != nil {
 				name, url, ok = resolve(slug)
@@ -180,6 +181,9 @@ func linkWiki(src string, resolve Resolver, res *Result) string {
 			}
 			if label == "" {
 				label = name
+			}
+			if frag != "" {
+				url = strings.TrimSuffix(url, "#") + frag
 			}
 			return "[" + label + "](" + url + ")"
 		})
